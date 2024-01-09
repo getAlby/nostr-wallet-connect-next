@@ -131,11 +131,12 @@ func (svc *Service) AppsListHandler(c echo.Context) error {
 	eventsCounts := make(map[uint]int64)
 	for _, app := range apps {
 		var lastEvent NostrEvent
-		var eventsCount int64
-		svc.db.Where("app_id = ?", app.ID).Order("id desc").Limit(1).Find(&lastEvent)
-		svc.db.Model(&NostrEvent{}).Where("app_id = ?", app.ID).Count(&eventsCount)
+		lastEventResult := svc.db.Where("app_id = ?", app.ID).Order("id desc").Limit(1).Find(&lastEvent)
 		lastEvents[app.ID] = lastEvent
-		eventsCounts[app.ID] = eventsCount
+		eventsCounts[app.ID] = 0
+		if lastEventResult.RowsAffected > 0 {
+			eventsCounts[app.ID] = 1
+		}
 	}
 
 	return c.Render(http.StatusOK, "apps/index.html", map[string]interface{}{
