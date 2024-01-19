@@ -1,4 +1,4 @@
-FROM node:18-alpine as frontend
+FROM node:19-alpine as frontend
 WORKDIR /build
 COPY frontend ./frontend
 RUN cd frontend && yarn install && yarn build
@@ -28,17 +28,18 @@ COPY --from=frontend /build/frontend/dist ./frontend/dist
 
 RUN go build -o main .
 
+RUN wget https://github.com/breez/breez-sdk-go/raw/main/breez_sdk/lib/linux-amd64/libbreez_sdk_bindings.so
+
 # Start a new, final image to reduce size.
-#FROM alpine as final
+FROM debian as final
 
-#RUN apk add libc6-compat
 
-# FROM gcr.io/distroless/static-debian11
+ENV LD_LIBRARY_PATH=/usr/lib/libbreez
 
-# USER small-user:small-user
+#
+# # Copy the binaries and entrypoint from the builder image.
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /build/libbreez_sdk_bindings.so /usr/lib/libbreez/
+COPY --from=builder /build/main /bin/
 
-# Copy the binaries and entrypoint from the builder image.
-# COPY --from=builder /build/main /bin/
-
-ENTRYPOINT [ "/build/main" ]
-#ENTRYPOINT ["/bin/sh","-c","sleep infinity"]
+ENTRYPOINT [ "/bin/main" ]
