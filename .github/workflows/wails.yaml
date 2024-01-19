@@ -1,0 +1,26 @@
+name: Multiplatform Docker build & push
+on:
+  push:
+  release:
+    types: [published]
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [
+          { name: nostr-wallet-connect, platform: linux/amd64, os: ubuntu-latest },
+        ]
+    env:
+      REGISTRY: ghcr.io
+      IMAGENAME: ${{ github.event.repository.name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        name: Check out code
+      - uses: dAppServer/wails-build-action@v2.2
+        with:
+          build-name: ${{ matrix.build.name }}
+          build-platform: ${{ matrix.build.platform }}
+          package: false
+          go-version: '1.21'
