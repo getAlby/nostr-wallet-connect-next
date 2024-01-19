@@ -3,10 +3,10 @@ WORKDIR /build
 COPY frontend ./frontend
 RUN cd frontend && yarn install && yarn build
 
-FROM golang:latest as builder
+FROM golang:1.21 as builder
 
 RUN apt-get update && \
-    apt-get install -y gcc
+   apt-get install -y gcc
 
 ENV CGO_ENABLED=1
 ENV GOOS=linux
@@ -29,7 +29,9 @@ COPY --from=frontend /build/frontend/dist ./frontend/dist
 RUN go build -o main .
 
 # Start a new, final image to reduce size.
-FROM alpine as final
+#FROM alpine as final
+
+#RUN apk add libc6-compat
 
 # FROM gcr.io/distroless/static-debian11
 
@@ -39,3 +41,4 @@ FROM alpine as final
 COPY --from=builder /build/main /bin/
 
 ENTRYPOINT [ "/bin/main" ]
+#ENTRYPOINT ["/bin/sh","-c","sleep infinity"]
