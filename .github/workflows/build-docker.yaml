@@ -1,4 +1,4 @@
-name: Linux Docker build
+name: Multiplatform Docker build & push
 on:
   push:
   release:
@@ -26,5 +26,7 @@ jobs:
         with:
           image: ${{ env.IMAGENAME }}
           registry: ${{ env.REGISTRY }}
+          multiPlatform: true
+          platform: linux/amd64
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
