@@ -42,7 +42,7 @@ jobs:
         shell: bash
       - uses: actions/upload-artifact@v3
         with:
-          name: Wails Build ${{ matrix.build.platform }} nostr-wallet-connect
+          name: Wails Build ${{runner.os}} nostr-wallet-connect
           path: |
             */bin/
             *\bin\*
