@@ -1,7 +1,7 @@
 FROM node:19-alpine as frontend
 WORKDIR /build
 COPY frontend ./frontend
-RUN cd frontend && yarn install && yarn build
+RUN cd frontend && yarn install && yarn prepare:http && yarn build
 
 FROM golang:1.21 as builder
 
