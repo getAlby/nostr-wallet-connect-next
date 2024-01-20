@@ -5,10 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/labstack/echo-contrib/session"
-	"github.com/labstack/echo/v4"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/sirupsen/logrus"
@@ -23,29 +22,7 @@ type Service struct {
 	ReceivedEOS bool
 	Logger      *logrus.Logger
 	ctx         context.Context
-}
-
-func (svc *Service) GetUser(c echo.Context) (user *User, err error) {
-	sess, _ := session.Get(CookieName, c)
-	userID := sess.Values["user_id"]
-
-	// FIXME: split app into single-user and multi-user
-	if svc.cfg.LNBackendType != AlbyBackendType {
-		//if we self-host, there is always only one user
-		userID = 1
-	}
-	if userID == nil {
-		return nil, nil
-	}
-	user = &User{}
-	err = svc.db.Preload("Apps").First(&user, userID).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return
+	wg          *sync.WaitGroup
 }
 
 func (svc *Service) StartSubscription(ctx context.Context, sub *nostr.Subscription) error {
@@ -123,7 +100,6 @@ func (svc *Service) StartSubscription(ctx context.Context, sub *nostr.Subscripti
 				}
 			}(event)
 		}
-		svc.Logger.Info("Subscription ended")
 	}()
 
 	select {
@@ -135,7 +111,7 @@ func (svc *Service) StartSubscription(ctx context.Context, sub *nostr.Subscripti
 			svc.Logger.Errorf("Subscription error %v", ctx.Err())
 			return ctx.Err()
 		}
-		svc.Logger.Info("Exiting subscription.")
+		svc.Logger.Info("Exiting subscription...")
 		return nil
 	}
 }
@@ -161,7 +137,7 @@ func (svc *Service) HandleEvent(ctx context.Context, event *nostr.Event) (result
 	}
 
 	app := App{}
-	err = svc.db.Preload("User").First(&app, &App{
+	err = svc.db.First(&app, &App{
 		NostrPubkey: event.PubKey,
 	}).Error
 	if err != nil {
