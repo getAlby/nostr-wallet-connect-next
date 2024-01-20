@@ -16,6 +16,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip19"
+	"github.com/orandin/lumberjackrus"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -93,11 +94,34 @@ func NewService(ctx context.Context) *Service {
 
 	logger := log.New()
 	logger.SetFormatter(&log.JSONFormatter{})
-	logger.SetOutput(os.Stdout)
 	logger.SetLevel(log.InfoLevel)
+
+	hook, err := lumberjackrus.NewHook(
+		&lumberjackrus.LogFile{
+			Filename: "nwc.general.log",
+		},
+		log.InfoLevel,
+		&log.JSONFormatter{},
+		&lumberjackrus.LogFileOpts{
+			log.InfoLevel: &lumberjackrus.LogFile{
+				Filename:   "./log/nwc-info.log",
+				MaxAge:     1,
+				MaxBackups: 2,
+			},
+			log.ErrorLevel: &lumberjackrus.LogFile{
+				Filename:   "./log/nwc-error.log",
+				MaxAge:     1,
+				MaxBackups: 2,
+			},
+		},
+	)
+	if err != nil {
+		log.Fatalf("Error log setup: %v", err)
+	}
+	logger.AddHook(hook)
 	svc.Logger = logger
 
-	logger.Infof("Starting nostr-wallet-connect. npub: %s hex: %s", npub, identityPubkey)
+	svc.Logger.Infof("Starting nostr-wallet-connect. npub: %s hex: %s", npub, identityPubkey)
 
 	err = svc.launchLNBackend()
 	if err != nil {

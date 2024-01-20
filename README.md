@@ -15,6 +15,8 @@ Connect applications like [Damus](https://damus.io/) or [Amethyst](https://linkt
 
 ### Requirements
 
+- Go 1.21 or higher
+
 The application has no runtime dependencies. (simple Go executable).
 
 As data storage SQLite is used.
