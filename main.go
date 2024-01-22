@@ -255,6 +255,7 @@ func (svc *Service) launchLNBackend() error {
 		svc.Logger.Fatalf("Unsupported LNBackendType: %v", dbConfig.LNBackendType)
 	}
 	if err != nil {
+		svc.Logger.Errorf("Failed to launch LN backend: %v", err)
 		return err
 	}
 	svc.lnClient = lnClient
