@@ -96,7 +96,7 @@ func NewService(ctx context.Context) *Service {
 	logger.SetFormatter(&log.JSONFormatter{})
 	logger.SetLevel(log.InfoLevel)
 
-	hook, err := lumberjackrus.NewHook(
+	fileLoggerHook, err := lumberjackrus.NewHook(
 		&lumberjackrus.LogFile{
 			Filename: "nwc.general.log",
 		},
@@ -118,7 +118,7 @@ func NewService(ctx context.Context) *Service {
 	if err != nil {
 		log.Fatalf("Error log setup: %v", err)
 	}
-	logger.AddHook(hook)
+	logger.AddHook(fileLoggerHook)
 	svc.Logger = logger
 
 	svc.Logger.Infof("Starting nostr-wallet-connect. npub: %s hex: %s", npub, identityPubkey)
