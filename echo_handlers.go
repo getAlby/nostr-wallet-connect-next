@@ -8,6 +8,7 @@ import (
 	echologrus "github.com/davrux/echo-logrus/v4"
 	"github.com/getAlby/nostr-wallet-connect/frontend"
 	"github.com/getAlby/nostr-wallet-connect/models/api"
+	"github.com/getAlby/nostr-wallet-connect/models/db"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -19,11 +20,31 @@ import (
 
 func (svc *Service) ValidateUserMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// TODO: check if login is required and check if user is logged in
-		//sess, _ := session.Get(CookieName, c)
-		// if user == nil {
-		// 	return c.NoContent(http.StatusUnauthorized)
-		// }
+		dbConfig := db.Config{}
+		svc.db.First(&dbConfig)
+		errorMessage := "Configuration not initialized"
+
+		if dbConfig.LNBackendType == "" {
+			return c.JSON(http.StatusMethodNotAllowed, ErrorResponse{
+				Message: errorMessage,
+			})
+		}
+
+		switch dbConfig.LNBackendType {
+		case LNDBackendType:
+			if dbConfig.LNDAddress == "" || svc.cfg.LNDCertFile == "" || dbConfig.LNDCertHex == "" || svc.cfg.LNDMacaroonFile == "" || dbConfig.LNDMacaroonHex == "" {
+				return c.JSON(http.StatusMethodNotAllowed, ErrorResponse{
+					Message: errorMessage,
+				})
+			}
+		case BreezBackendType:
+			if dbConfig.BreezMnemonic == "" || dbConfig.BreezAPIKey == "" || dbConfig.GreenlightInviteCode == "" || svc.cfg.BreezWorkdir == "" {
+				return c.JSON(http.StatusMethodNotAllowed, ErrorResponse{
+					Message: errorMessage,
+				})
+			}
+		}
+
 		return next(c)
 	}
 }

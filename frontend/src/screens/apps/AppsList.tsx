@@ -5,9 +5,13 @@ import { PlusIcon } from "src/components/icons/PlusIcon";
 import Loading from "src/components/Loading";
 
 function AppsList() {
-  const { data: apps } = useApps();
+  const { data: apps, error } = useApps();
 
   const navigate = useNavigate();
+
+  if (error) {
+    return <p className="text-red-500">{error.message}</p>;
+  }
 
   if (!apps) {
     return <Loading />;
