@@ -3,6 +3,7 @@
 .env.local
 *.db
 *.macaroon
+*.log
 node_modules
 nostr-wallet-connect
 nwc.db
