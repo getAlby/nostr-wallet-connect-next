@@ -134,7 +134,7 @@ func NewService(ctx context.Context) *Service {
 			if err != nil {
 				//err being non-nil means that we have an error on the websocket error channel. In this case we just try to reconnect.
 				svc.Logger.WithError(err).Error("Got an error from the relay while listening to subscription. Reconnecting...")
-				relay, err = nostr.RelayConnect(ctx, cfg.Relay)
+				relay, err = nostr.RelayConnect(ctx, cfg.Relay, nostr.WithNoticeHandler(svc.noticeHandler))
 				if err != nil {
 					svc.Logger.Fatal(err)
 				}
