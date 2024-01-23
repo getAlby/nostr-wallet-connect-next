@@ -23,15 +23,6 @@ type Service struct {
 	Logger      *logrus.Logger
 }
 
-/*var supportedMethods = map[string]bool{
-	NIP_47_PAY_INVOICE_METHOD:       true,
-	NIP_47_GET_BALANCE_METHOD:       true,
-	NIP_47_GET_INFO_METHOD:          true,
-	NIP_47_MAKE_INVOICE_METHOD:      true,
-	NIP_47_LOOKUP_INVOICE_METHOD:    true,
-	NIP_47_LIST_TRANSACTIONS_METHOD: true,
-}*/
-
 func (svc *Service) GetUser(c echo.Context) (user *User, err error) {
 	sess, _ := session.Get(CookieName, c)
 	userID := sess.Values["user_id"]
@@ -61,7 +52,7 @@ func (svc *Service) StartSubscription(ctx context.Context, sub *nostr.Subscripti
 		svc.Logger.Info("Received EOS")
 
 		for event := range sub.Events {
-			go svc.handleAndPublishEvent(ctx, sub, event)
+			go svc.HandleEvent(ctx, sub, event)
 		}
 		svc.Logger.Info("Subscription ended")
 	}()
@@ -101,10 +92,8 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, e
 		}).Error(result.Error)
 		return
 	}
-	nostrEvent.ReplyId = resp.ID
 
 	if status == nostr.PublishStatusSucceeded {
-		nostrEvent.State = NOSTR_EVENT_STATE_PUBLISH_CONFIRMED
 		nostrEvent.RepliedAt = time.Now()
 		svc.db.Save(&nostrEvent)
 		svc.Logger.WithFields(logrus.Fields{
@@ -115,7 +104,6 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, e
 			"appId":        nostrEvent.AppId,
 		}).Info("Published reply")
 	} else if status == nostr.PublishStatusFailed {
-		nostrEvent.State = NOSTR_EVENT_STATE_PUBLISH_FAILED
 		svc.db.Save(&nostrEvent)
 		svc.Logger.WithFields(logrus.Fields{
 			"nostrEventId": nostrEvent.ID,
@@ -125,7 +113,6 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, e
 			"appId":        nostrEvent.AppId,
 		}).Info("Failed to publish reply")
 	} else {
-		nostrEvent.State = NOSTR_EVENT_STATE_PUBLISH_UNCONFIRMED
 		svc.db.Save(&nostrEvent)
 		svc.Logger.WithFields(logrus.Fields{
 			"nostrEventId": nostrEvent.ID,
@@ -137,7 +124,7 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, e
 	}
 }
 
-func (svc *Service) handleAndPublishEvent(ctx context.Context, sub *nostr.Subscription, event *nostr.Event) {
+func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, event *nostr.Event) {
 	var resp *nostr.Event
 	svc.Logger.WithFields(logrus.Fields{
 		"eventId":   event.ID,

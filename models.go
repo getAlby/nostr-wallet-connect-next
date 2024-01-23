@@ -105,10 +105,8 @@ type NostrEvent struct {
 	AppId     uint `validate:"required"`
 	App       App
 	NostrId   string `validate:"required"`
-	ReplyId   string
 	Content   string
-	State     string
-	RepliedAt time.Time
+	RepliedAt time.Time // for multi_* events this will be the last reply
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

@@ -14,7 +14,7 @@ import (
 
 func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, sub *nostr.Subscription, request *Nip47Request, event *nostr.Event, app App, ss []byte) {
 
-	nostrEvent := NostrEvent{App: app, NostrId: event.ID, Content: event.Content, State: "received"}
+	nostrEvent := NostrEvent{App: app, NostrId: event.ID, Content: event.Content}
 	err := svc.db.Create(&nostrEvent).Error
 	if err != nil {
 		svc.Logger.WithFields(logrus.Fields{
@@ -61,7 +61,9 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, sub *nostr.S
 					"bolt11":    bolt11,
 				}).Errorf("Failed to decode bolt11 invoice: %v", err)
 
-				// TODO: Decide what to do if id is empty
+				// NOTE: if Id is empty, and empty d tag will be returned because
+				// the invoice cannot be parsed to return the payment hash.
+				// Currently clients must ensure they pass valid BOLT 11 invoices to this method.
 				dTag := []string{"d", invoiceInfo.Id}
 				resp, err := svc.createResponse(event, Nip47Response{
 					ResultType: NIP_47_MULTI_PAY_INVOICE_METHOD,
@@ -146,8 +148,6 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, sub *nostr.S
 					"appId":     app.ID,
 					"bolt11":    bolt11,
 				}).Infof("Failed to send payment: %v", err)
-				// TODO: What to do here?
-				nostrEvent.State = NOSTR_EVENT_STATE_HANDLER_ERROR
 				svc.db.Save(&nostrEvent)
 
 				resp, err := svc.createResponse(event, Nip47Response{
@@ -166,12 +166,11 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, sub *nostr.S
 					}).Errorf("Failed to process event: %v", err)
 					return
 				}
+
 				svc.PublishEvent(ctx, sub, event, resp)
 				return
 			}
 			payment.Preimage = &preimage
-			// TODO: What to do here?
-			nostrEvent.State = NOSTR_EVENT_STATE_HANDLER_EXECUTED
 			svc.db.Save(&nostrEvent)
 			svc.db.Save(&payment)
 			resp, err := svc.createResponse(event, Nip47Response{
