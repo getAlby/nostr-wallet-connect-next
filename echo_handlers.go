@@ -17,7 +17,18 @@ import (
 
 // TODO: echo methods should not be on Service object
 
-func (svc *Service) ValidateUserMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (svc *Service) ValidateAuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if svc.lnClient == nil {
+			return c.JSON(http.StatusMethodNotAllowed, ErrorResponse{
+				Message: "Lightning Client not initialized",
+			})
+		}
+		return next(c)
+	}
+}
+
+func (svc *Service) ValidateNodeMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if svc.lnClient == nil {
 			return c.JSON(http.StatusMethodNotAllowed, ErrorResponse{
@@ -38,11 +49,11 @@ func (svc *Service) RegisterSharedRoutes(e *echo.Echo) {
 	}))
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(svc.cfg.CookieSecret))))
 
-	authMiddleware := svc.ValidateUserMiddleware
-	e.GET("/api/apps", svc.AppsListHandler, authMiddleware)
-	e.GET("/api/apps/:pubkey", svc.AppsShowHandler, authMiddleware)
-	e.DELETE("/api/apps/:pubkey", svc.AppsDeleteHandler, authMiddleware)
-	e.POST("/api/apps", svc.AppsCreateHandler, authMiddleware)
+	nodeMiddleware := svc.ValidateNodeMiddleware
+	e.GET("/api/apps", svc.AppsListHandler, nodeMiddleware)
+	e.GET("/api/apps/:pubkey", svc.AppsShowHandler, nodeMiddleware)
+	e.DELETE("/api/apps/:pubkey", svc.AppsDeleteHandler, nodeMiddleware)
+	e.POST("/api/apps", svc.AppsCreateHandler, nodeMiddleware)
 
 	e.GET("/api/csrf", svc.CSRFHandler)
 	e.GET("/api/info", svc.InfoHandler)
