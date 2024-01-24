@@ -1,16 +1,23 @@
 FROM node:19-alpine as frontend
 WORKDIR /build
 COPY frontend ./frontend
-RUN cd frontend && yarn install && yarn prepare:http && yarn build
+RUN cd frontend && yarn install && yarn build:http
 
 FROM golang:1.21 as builder
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
 
 RUN apt-get update && \
    apt-get install -y gcc
 
 ENV CGO_ENABLED=1
 ENV GOOS=linux
-ENV GOARCH=arm64
+#ENV GOARCH=$GOARCH
+
+#RUN echo "AAA $GOARCH"
 
 # Move to working directory /build
 WORKDIR /build
@@ -18,7 +25,7 @@ WORKDIR /build
 # Copy and download dependency using go mod
 COPY go.mod .
 COPY go.sum .
-RUN go mod download
+RUN GOARCH=$(echo "$TARGETPLATFORM" | cut -d'/' -f2) go mod download
 
 # Copy the code into the container
 COPY . .
@@ -26,7 +33,7 @@ COPY . .
 # Copy frontend dist files into the container
 COPY --from=frontend /build/frontend/dist ./frontend/dist
 
-RUN go build -o main .
+RUN GOARCH=$(echo "$TARGETPLATFORM" | cut -d'/' -f2) go build -o main .
 
 RUN wget https://github.com/breez/breez-sdk-go/raw/main/breez_sdk/lib/linux-amd64/libbreez_sdk_bindings.so
 
@@ -35,7 +42,6 @@ FROM debian as final
 
 
 ENV LD_LIBRARY_PATH=/usr/lib/libbreez
-
 #
 # # Copy the binaries and entrypoint from the builder image.
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
