@@ -21,21 +21,18 @@ import (
 func main() {
 	log.Info("NWC Starting in HTTP mode")
 	ctx := context.Background()
-	svc := NewService(ctx)
-
-	if svc.cfg.CookieSecret == "" {
-		svc.Logger.Fatalf("required key COOKIE_SECRET missing value")
-	}
+	svc, _ := NewService(ctx)
 
 	echologrus.Logger = svc.Logger
 	e := echo.New()
 
 	//register shared routes
-	svc.RegisterSharedRoutes(e)
+	httpSvc := NewHttpService(svc)
+	httpSvc.RegisterSharedRoutes(e)
 	//start Echo server
 	go func() {
-		if err := e.Start(fmt.Sprintf(":%v", svc.cfg.Port)); err != nil && err != http.ErrServerClosed {
-			e.Logger.Fatalf("shutting down the server: %v", err)
+		if err := e.Start(fmt.Sprintf(":%v", svc.cfg.Env.Port)); err != nil && err != http.ErrServerClosed {
+			svc.Logger.Fatalf("shutting down the server: %v", err)
 		}
 	}()
 	//handle graceful shutdown
