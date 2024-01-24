@@ -209,7 +209,7 @@ func breezPaymentToTransaction(payment *breez_sdk.Payment) *Nip47Transaction {
 	var txType string
 	if payment.PaymentType == breez_sdk.PaymentTypeSent {
 		txType = "outgoing"
-	} else if payment.PaymentType == breez_sdk.PaymentTypeSent {
+	} else if payment.PaymentType == breez_sdk.PaymentTypeReceived {
 		txType = "incoming"
 	}
 
