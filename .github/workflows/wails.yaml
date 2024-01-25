@@ -34,6 +34,10 @@ jobs:
       - name: Install Linux Wails deps
         run: sudo apt-get update && sudo apt-get install libgtk-3-0 libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu
         shell: bash
+      - name: Wails Doctor
+        working-directory: .
+        run: wails doctor
+        shell: bash
       # Building step
       - name: Build App
         working-directory: .
