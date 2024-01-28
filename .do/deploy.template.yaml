@@ -3,5 +3,6 @@ spec:
   services:
     - name: web
       git:
-        branch: feat/onboarding-flow
+        branch: do-hosting
         repo_clone_url: https://github.com/getAlby/nostr-wallet-connect.git
+      dockerfile_path: .do/Dockerfile
