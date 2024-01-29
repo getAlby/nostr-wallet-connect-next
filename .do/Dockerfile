@@ -37,6 +37,5 @@ FROM alpine as final
 
 # Copy the binaries and entrypoint from the builder image.
 COPY --from=builder /build/main /bin/
-RUN touch .env
 
 ENTRYPOINT [ "/bin/main" ]
