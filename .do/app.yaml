@@ -1,6 +1,8 @@
 name: nwc
 services:
   - name: web
-    github:
-      repo: getAlby/nostr-wallet-connect
-      branch: do-hosting
+    image:
+      registry_type: GHCR
+      registry: getAlby
+      repository: nostr-wallet-connect
+      tag: test-fmar-1325553

@@ -2,7 +2,8 @@ spec:
   name: nwc
   services:
     - name: web
-      git:
-        branch: do-hosting
-        repo_clone_url: https://github.com/getAlby/nostr-wallet-connect.git
-      dockerfile_path: .do/Dockerfile
+      image:
+        registry_type: GHCR
+        registry: getAlby
+        repository: nostr-wallet-connect
+        tag: test-fmar-1325553
