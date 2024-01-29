@@ -26,7 +26,7 @@ COPY . .
 # Copy frontend dist files into the container
 COPY --from=frontend /build/frontend/dist ./frontend/dist
 
-RUN go build -o main .
+RUN go build -o main
 
 # Start a new, final image to reduce size.
 FROM alpine as final
