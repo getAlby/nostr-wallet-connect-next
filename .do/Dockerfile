@@ -1,23 +1,16 @@
-FROM node:19-alpine as frontend
+FROM node:18-alpine as frontend
 WORKDIR /build
 COPY frontend ./frontend
-RUN cd frontend && yarn install && yarn build:http
+RUN cd frontend && yarn install && yarn build
 
-FROM golang:1.21 as builder
-
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
+FROM golang:latest as builder
 
 RUN apt-get update && \
-   apt-get install -y gcc
+    apt-get install -y gcc
 
 ENV CGO_ENABLED=1
 ENV GOOS=linux
-#ENV GOARCH=$GOARCH
-
-#RUN echo "AAA $GOARCH"
+ENV GOARCH=amd64
 
 # Move to working directory /build
 WORKDIR /build
@@ -25,7 +18,7 @@ WORKDIR /build
 # Copy and download dependency using go mod
 COPY go.mod .
 COPY go.sum .
-RUN GOARCH=$(echo "$TARGETPLATFORM" | cut -d'/' -f2) go mod download
+RUN go mod download
 
 # Copy the code into the container
 COPY . .
@@ -33,19 +26,17 @@ COPY . .
 # Copy frontend dist files into the container
 COPY --from=frontend /build/frontend/dist ./frontend/dist
 
-RUN GOARCH=$(echo "$TARGETPLATFORM" | cut -d'/' -f2) go build -o main .
-
-RUN wget https://github.com/breez/breez-sdk-go/raw/main/breez_sdk/lib/linux-amd64/libbreez_sdk_bindings.so
+RUN go build -o main .
 
 # Start a new, final image to reduce size.
-FROM debian as final
+FROM alpine as final
 
+# FROM gcr.io/distroless/static-debian11
 
-ENV LD_LIBRARY_PATH=/usr/lib/libbreez
-#
-# # Copy the binaries and entrypoint from the builder image.
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /build/libbreez_sdk_bindings.so /usr/lib/libbreez/
+# USER small-user:small-user
+
+# Copy the binaries and entrypoint from the builder image.
 COPY --from=builder /build/main /bin/
+RUN touch .env
 
 ENTRYPOINT [ "/bin/main" ]
