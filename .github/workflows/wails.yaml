@@ -8,9 +8,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [
-          { name: nostr-wallet-connect, platform: linux/amd64, os: ubuntu-latest },
-        ]
+        build:
+          [
+            {
+              name: nostr-wallet-connect,
+              platform: linux/amd64,
+              os: ubuntu-latest,
+            },
+          ]
     env:
       REGISTRY: ghcr.io
       IMAGENAME: ${{ github.event.repository.name }}
