@@ -1,0 +1,15 @@
+workflows:
+  rust-build:
+    name: Rust Build
+    instance_type: mac_mini_m1 # or another suitable instance type
+    scripts:
+      - name: Install Rust
+        script: |
+          curl -OL https://golang.org/dl/go1.22.0.darwin-arm64.tar.gz
+          sudo tar -C /usr/local -xzf go1.22.0.darwin-arm64.tar.gz
+          export PATH=$PATH:/usr/local/go/bin
+          go mod download
+          go build -o main .
+#    artifacts:
+#      - ffi/golang/ldk_node/*
+
