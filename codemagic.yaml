@@ -5,6 +5,8 @@ workflows:
     scripts:
       - name: Install Rust
         script: |
+          cd frontend && yarn install && yarn build:http
+          cd ..
           curl -OL https://golang.org/dl/go1.22.0.darwin-arm64.tar.gz
           sudo tar -C /usr/local -xzf go1.22.0.darwin-arm64.tar.gz
           export PATH=$PATH:/usr/local/go/bin
