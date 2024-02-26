@@ -123,6 +123,14 @@ void uniffi_ldk_node_bindings_fn_method_builder_set_gossip_source_rgs(
 	RustCallStatus* out_status
 );
 
+void uniffi_ldk_node_bindings_fn_method_builder_set_liquidity_source_lsps2(
+	void* ptr,
+	RustBuffer address,
+	RustBuffer node_id,
+	RustBuffer token,
+	RustCallStatus* out_status
+);
+
 void uniffi_ldk_node_bindings_fn_method_builder_set_listening_addresses(
 	void* ptr,
 	RustBuffer listening_addresses,
@@ -224,7 +232,7 @@ void uniffi_ldk_node_bindings_fn_free_ldknode(
 
 void uniffi_ldk_node_bindings_fn_method_ldknode_close_channel(
 	void* ptr,
-	RustBuffer channel_id,
+	RustBuffer user_channel_id,
 	RustBuffer counterparty_node_id,
 	RustCallStatus* out_status
 );
@@ -237,7 +245,7 @@ void uniffi_ldk_node_bindings_fn_method_ldknode_connect(
 	RustCallStatus* out_status
 );
 
-void uniffi_ldk_node_bindings_fn_method_ldknode_connect_open_channel(
+RustBuffer uniffi_ldk_node_bindings_fn_method_ldknode_connect_open_channel(
 	void* ptr,
 	RustBuffer node_id,
 	RustBuffer address,
@@ -260,6 +268,11 @@ void uniffi_ldk_node_bindings_fn_method_ldknode_event_handled(
 );
 
 int8_t uniffi_ldk_node_bindings_fn_method_ldknode_is_running(
+	void* ptr,
+	RustCallStatus* out_status
+);
+
+RustBuffer uniffi_ldk_node_bindings_fn_method_ldknode_list_balances(
 	void* ptr,
 	RustCallStatus* out_status
 );
@@ -313,10 +326,27 @@ RustBuffer uniffi_ldk_node_bindings_fn_method_ldknode_receive_payment(
 	RustCallStatus* out_status
 );
 
+RustBuffer uniffi_ldk_node_bindings_fn_method_ldknode_receive_payment_via_jit_channel(
+	void* ptr,
+	uint64_t amount_msat,
+	RustBuffer description,
+	uint32_t expiry_secs,
+	RustBuffer max_lsp_fee_limit_msat,
+	RustCallStatus* out_status
+);
+
 RustBuffer uniffi_ldk_node_bindings_fn_method_ldknode_receive_variable_amount_payment(
 	void* ptr,
 	RustBuffer description,
 	uint32_t expiry_secs,
+	RustCallStatus* out_status
+);
+
+RustBuffer uniffi_ldk_node_bindings_fn_method_ldknode_receive_variable_amount_payment_via_jit_channel(
+	void* ptr,
+	RustBuffer description,
+	uint32_t expiry_secs,
+	RustBuffer max_proportional_lsp_fee_limit_ppm_msat,
 	RustCallStatus* out_status
 );
 
@@ -385,11 +415,6 @@ RustBuffer uniffi_ldk_node_bindings_fn_method_ldknode_sign_message(
 	RustCallStatus* out_status
 );
 
-uint64_t uniffi_ldk_node_bindings_fn_method_ldknode_spendable_onchain_balance_sats(
-	void* ptr,
-	RustCallStatus* out_status
-);
-
 void uniffi_ldk_node_bindings_fn_method_ldknode_start(
 	void* ptr,
 	RustCallStatus* out_status
@@ -405,14 +430,9 @@ void uniffi_ldk_node_bindings_fn_method_ldknode_sync_wallets(
 	RustCallStatus* out_status
 );
 
-uint64_t uniffi_ldk_node_bindings_fn_method_ldknode_total_onchain_balance_sats(
-	void* ptr,
-	RustCallStatus* out_status
-);
-
 void uniffi_ldk_node_bindings_fn_method_ldknode_update_channel_config(
 	void* ptr,
-	RustBuffer channel_id,
+	RustBuffer user_channel_id,
 	RustBuffer counterparty_node_id,
 	void* channel_config,
 	RustCallStatus* out_status
@@ -774,6 +794,10 @@ uint16_t uniffi_ldk_node_bindings_checksum_method_builder_set_gossip_source_rgs(
 	RustCallStatus* out_status
 );
 
+uint16_t uniffi_ldk_node_bindings_checksum_method_builder_set_liquidity_source_lsps2(
+	RustCallStatus* out_status
+);
+
 uint16_t uniffi_ldk_node_bindings_checksum_method_builder_set_listening_addresses(
 	RustCallStatus* out_status
 );
@@ -858,6 +882,10 @@ uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_is_running(
 	RustCallStatus* out_status
 );
 
+uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_list_balances(
+	RustCallStatus* out_status
+);
+
 uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_list_channels(
 	RustCallStatus* out_status
 );
@@ -894,7 +922,15 @@ uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_receive_payment(
 	RustCallStatus* out_status
 );
 
+uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_receive_payment_via_jit_channel(
+	RustCallStatus* out_status
+);
+
 uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_receive_variable_amount_payment(
+	RustCallStatus* out_status
+);
+
+uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_receive_variable_amount_payment_via_jit_channel(
 	RustCallStatus* out_status
 );
 
@@ -938,10 +974,6 @@ uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_sign_message(
 	RustCallStatus* out_status
 );
 
-uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_spendable_onchain_balance_sats(
-	RustCallStatus* out_status
-);
-
 uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_start(
 	RustCallStatus* out_status
 );
@@ -951,10 +983,6 @@ uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_stop(
 );
 
 uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_sync_wallets(
-	RustCallStatus* out_status
-);
-
-uint16_t uniffi_ldk_node_bindings_checksum_method_ldknode_total_onchain_balance_sats(
 	RustCallStatus* out_status
 );
 

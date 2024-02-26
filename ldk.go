@@ -214,7 +214,7 @@ func (gs *LDKService) GetBalance(ctx context.Context) (balance int64, err error)
 
 	balance = 0
 	for _, channel := range channels {
-		balance += int64(channel.BalanceMsat)
+		balance += int64(channel.OutboundCapacityMsat)
 	}
 
 	return balance, nil
@@ -371,11 +371,13 @@ func (gs *LDKService) OpenChannel(ctx context.Context, openChannelRequest *lncli
 	}
 
 	gs.svc.Logger.Infof("Opening channel with: %v", foundPeer.NodeId)
-	err := gs.node.ConnectOpenChannel(foundPeer.NodeId, foundPeer.Address, uint64(openChannelRequest.Amount), nil, nil, openChannelRequest.Public)
+	channelId, err := gs.node.ConnectOpenChannel(foundPeer.NodeId, foundPeer.Address, uint64(openChannelRequest.Amount), nil, nil, openChannelRequest.Public)
 	if err != nil {
 		gs.svc.Logger.Errorf("OpenChannel failed: %v", err)
 		return nil, err
 	}
+
+	gs.svc.Logger.Infof("Open channel %v", channelId)
 
 	eventListener := gs.subscribeLdkEvents()
 	defer gs.unsubscribeLdkEvents(eventListener)
@@ -406,13 +408,9 @@ func (gs *LDKService) GetNewOnchainAddress(ctx context.Context) (string, error) 
 }
 
 func (gs *LDKService) GetOnchainBalance(ctx context.Context) (int64, error) {
-	balance, err := gs.node.SpendableOnchainBalanceSats()
-	gs.svc.Logger.Infof("SpendableOnchainBalanceSats: %v", balance)
-	if err != nil {
-		gs.svc.Logger.Errorf("SpendableOnchainBalanceSats failed: %v", err)
-		return 0, err
-	}
-	return int64(balance), nil
+	balances := gs.node.ListBalances()
+
+	return int64(balances.SpendableOnchainBalanceSats), nil
 }
 
 func ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) *Nip47Transaction {
