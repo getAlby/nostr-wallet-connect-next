@@ -1,4 +1,4 @@
-name: Wails build
+name: Wails build multiplatform
 on:
 #  workflow_dispatch:
   push:
