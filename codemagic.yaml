@@ -11,7 +11,7 @@ workflows:
           sudo tar -C /usr/local -xzf go1.22.0.darwin-arm64.tar.gz
           export PATH=$PATH:/usr/local/go/bin
           go install github.com/wailsapp/wails/v2/cmd/wails@latest
-          wails build -tags "wails"
+          ~/go/bin/wails build -tags "wails"
 #          go mod download
 #          go build -o main .
 #    artifacts:
