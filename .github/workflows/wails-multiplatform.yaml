@@ -18,7 +18,7 @@ jobs:
             platform: 'windows/amd64'
             os: 'windows-latest'
           - name: 'App'
-            platform: 'darwin/universal'
+            platform: 'darwin/arm64'
             os: 'macos-latest'
     env:
       REGISTRY: ghcr.io
