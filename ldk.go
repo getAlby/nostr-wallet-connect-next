@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -64,7 +66,8 @@ func NewLDKService(svc *Service, mnemonic, workDir string, network string, esplo
 	builder.SetNetwork(network)
 	builder.SetEsploraServer(esploraServer)
 	builder.SetGossipSourceRgs(gossipSource)
-	builder.SetStorageDirPath(filepath.Join(newpath, "./storage"))
+	ldkStorageDir := filepath.Join(newpath, "storage")
+	builder.SetStorageDirPath(ldkStorageDir)
 
 	// TODO: remove when https://github.com/lightningdevkit/rust-lightning/issues/2914 is merged
 	// LDK default HTLC inflight value is 10% of the channel size. If an LSPS service is configured this will be set to 0.
@@ -74,13 +77,40 @@ func NewLDKService(svc *Service, mnemonic, workDir string, network string, esplo
 	node, err := builder.Build()
 
 	if err != nil {
-		svc.Logger.Errorf("Failed to create LDK node: %v", err)
+		svc.Logger.WithError(err).Error("Failed to create LDK node")
 		return nil, err
+	}
+
+	ldkStorageEntries, err := os.ReadDir(ldkStorageDir)
+	if err != nil {
+		svc.Logger.WithError(err).Error("Failed to list LDK storage directory")
+		return nil, err
+	}
+
+	bdkWalletFixedBackupPath := filepath.Join(ldkStorageDir, "nwc_bdk_wallet_backup.sqlite")
+	if _, err := os.Stat(bdkWalletFixedBackupPath); errors.Is(err, os.ErrNotExist) {
+		// find BDK wallet file (it contains a hash at the end)
+		bdkWalletFileIndex := slices.IndexFunc(ldkStorageEntries, func(entry fs.DirEntry) bool { return strings.HasPrefix(entry.Name(), "bdk_wallet_") })
+		if bdkWalletFileIndex == -1 {
+			return nil, errors.New("could not find BDK file")
+		}
+		bdkWalletFile := ldkStorageEntries[bdkWalletFileIndex]
+		svc.Logger.WithField("filename", bdkWalletFile.Name()).Debug("Found BDK wallet file")
+
+		// store the original BDK wallet filename to be able to restore from backup
+		svc.cfg.SetUpdate("BDKWalletFilename", bdkWalletFile.Name(), "")
+
+		// create a hard link from the BDK wallet file to the fixed filename
+		err = os.Link(filepath.Join(ldkStorageDir, bdkWalletFile.Name()), bdkWalletFixedBackupPath)
+		if err != nil {
+			svc.Logger.WithField("filename", bdkWalletFile.Name()).WithError(err).Error("Failed to create hard link to BDK wallet file")
+			return nil, err
+		}
 	}
 
 	err = node.Start()
 	if err != nil {
-		svc.Logger.Errorf("Failed to start LDK node: %v", err)
+		svc.Logger.WithError(err).Error("Failed to start LDK node")
 		return nil, err
 	}
 

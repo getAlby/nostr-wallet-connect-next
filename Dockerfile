@@ -43,6 +43,12 @@ RUN cp `find /go/pkg/mod/github.com/get\!alby/ | grep libldk_node.so` ./
 FROM debian as final
 
 ENV LD_LIBRARY_PATH=/usr/lib/nwc
+
+# set LDK trace log level
+ENV LDK_LOG_LEVEL=2
+# set NWC debug log level
+ENV LOG_LEVEL=5
+
 #
 # # Copy the binaries and entrypoint from the builder image.
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
@@ -50,5 +56,7 @@ COPY --from=builder /build/libbreez_sdk_bindings.so /usr/lib/nwc/
 COPY --from=builder /build/libglalby_bindings.so /usr/lib/nwc/
 COPY --from=builder /build/libldk_node.so /usr/lib/nwc/
 COPY --from=builder /build/main /bin/
+
+# TODO: enable litestream if env variables are set
 
 ENTRYPOINT [ "/bin/main" ]

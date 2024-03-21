@@ -97,6 +97,19 @@ _If you get a blank screen the first load, close the window and start the app ag
 
 Breez SDK requires gcc to build the Breez bindings. Run `choco install mingw` and copy the breez SDK bindings file into the root of this directory (from your go installation directory) as per the [Breez SDK instructions](https://github.com/breez/breez-sdk-go?tab=readme-ov-file#windows). ALSO copy the bindings file into the output directory alongside the .exe in order to run it.
 
+### Run with Litestream backups (development)
+
+1. `docker run -p 9000:9000 -p 9001:9001 minio/minio server /data --console-address ":9001"`
+
+2. Access `http://127.0.0.1:9001` and login with username: `minioadmin` password: `minioadmin`
+
+3. create a bucket called `nwc`
+
+4. Use following command to run NWC `litestream replicate -config litestream.config`
+
+5. To restore files (each one must be restored individually):
+   `LITESTREAM_ACCESS_KEY_ID=minioadmin LITESTREAM_SECRET_ACCESS_KEY=minioadmin litestream restore -o nwc_restored.db s3://nwc.localhost:9000/nwc.db`
+
 ## Optional configuration parameters
 
 - `NOSTR_PRIVKEY`: the private key of this service. Should be a securely randomly generated 32 byte hex string.

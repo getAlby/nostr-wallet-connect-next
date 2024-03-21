@@ -88,6 +88,8 @@ func NewService(ctx context.Context) (*Service, error) {
 	}
 	// Enable foreign keys for sqlite
 	db.Exec("PRAGMA foreign_keys=ON;")
+	// Wait for up to 5 seconds if there is a lock on the database
+	db.Exec("PRAGMA busy_timeout = 5000;")
 	sqlDb, err = db.DB()
 	if err != nil {
 		return nil, err
