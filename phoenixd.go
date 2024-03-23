@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +17,19 @@ import (
 	"gorm.io/gorm"
 )
 
+type InvoiceResponse struct {
+	PaymentHash string `json:"paymentHash"`
+	Preimage    string `json:"preimage"`
+	ExternalId  string `json:"externalId"`
+	Description string `json:"description"`
+	Invoice     string `json:"invoice"`
+	IsPaid      bool   `json:"isPaid"`
+	ReceivedSat int64  `json:"receivedSat"`
+	Fees        int64  `json:"fees"`
+	CompletedAt int64  `json:"completedAt"`
+	CreatedAt   int64  `json:"createdAt"`
+}
+
 type PayResponse struct {
 	PaymentHash     string `json:"paymentHash"`
 	PaymentId       string `json:"paymentId"`
@@ -23,7 +37,7 @@ type PayResponse struct {
 	RoutingFeeSat   int64  `json:"routingFeeSat"`
 }
 
-type InvoiceResponse struct {
+type MakeInvoiceResponse struct {
 	AmountSat   int64  `json:"amountSat"`
 	PaymentHash string `json:"paymentHash"`
 	Serialized  string `json:"serialized"`
@@ -60,6 +74,9 @@ func (svc *PhoenixService) GetBalance(ctx context.Context) (balance int64, err e
 	req.Header.Add("Authorization", "Basic "+svc.Authorization)
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
+	if err != nil {
+		return 0, err
+	}
 	defer resp.Body.Close()
 
 	var balanceRes BalanceResponse
@@ -74,7 +91,43 @@ func (svc *PhoenixService) GetBalance(ctx context.Context) (balance int64, err e
 }
 
 func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
-	transactions = []Nip47Transaction{}
+	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/incoming?externalId=nwc", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Basic "+svc.Authorization)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var incomingRes []InvoiceResponse
+	if err := json.NewDecoder(resp.Body).Decode(&incomingRes); err != nil {
+		return nil, err
+	}
+	for _, invoice := range incomingRes {
+		settledAtUnix := time.Unix(0, invoice.CompletedAt).Unix()
+		settledAt := &settledAtUnix
+		transaction := Nip47Transaction{
+			Type:        "incoming",
+			Invoice:     invoice.Invoice,
+			Preimage:    invoice.Preimage,
+			PaymentHash: invoice.PaymentHash,
+			Amount:      invoice.ReceivedSat * 1000,
+			FeesPaid:    invoice.Fees * 1000,
+			CreatedAt:   time.Unix(0, invoice.CreatedAt).Unix(),
+			Description: invoice.Description,
+			SettledAt:   settledAt,
+		}
+		transactions = append(transactions, transaction)
+	}
+	// sort by created date descending
+	sort.SliceStable(transactions, func(i, j int) bool {
+		return transactions[i].CreatedAt > transactions[j].CreatedAt
+	})
+
 	return transactions, nil
 }
 
@@ -86,6 +139,9 @@ func (svc *PhoenixService) GetInfo(ctx context.Context) (info *lnclient.NodeInfo
 	req.Header.Add("Authorization", "Basic "+svc.Authorization)
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
 	var infoRes InfoResponse
@@ -111,6 +167,7 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	form := url.Values{}
 	form.Add("amountSat", strconv.FormatInt(amount/1000, 10))
 	form.Add("description", description)
+	form.Add("externalId", "nwc") // for some resone phoenixd requires an external id to query a list of invoices. thus we set this to nwc
 	req, err := http.NewRequest(http.MethodPost, svc.Address+"/createinvoice", strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, err
@@ -119,9 +176,12 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
 	defer resp.Body.Close()
 
-	var invoiceRes InvoiceResponse
+	var invoiceRes MakeInvoiceResponse
 	if err := json.NewDecoder(resp.Body).Decode(&invoiceRes); err != nil {
 		return nil, err
 	}
@@ -142,7 +202,37 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 }
 
 func (svc *PhoenixService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *Nip47Transaction, err error) {
-	return nil, errors.New("not implemented")
+	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/"+paymentHash, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Basic "+svc.Authorization)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var invoiceRes InvoiceResponse
+	if err := json.NewDecoder(resp.Body).Decode(&invoiceRes); err != nil {
+		return nil, err
+	}
+	settledAtUnix := time.Unix(0, invoiceRes.CompletedAt).Unix()
+	settledAt := &settledAtUnix
+
+	transaction = &Nip47Transaction{
+		Type:        "incoming",
+		Invoice:     invoiceRes.Invoice,
+		Preimage:    invoiceRes.Preimage,
+		PaymentHash: invoiceRes.PaymentHash,
+		Amount:      invoiceRes.ReceivedSat * 1000,
+		FeesPaid:    invoiceRes.Fees * 1000,
+		CreatedAt:   time.Unix(0, invoiceRes.CreatedAt).Unix(),
+		Description: invoiceRes.Description,
+		SettledAt:   settledAt,
+	}
+	return transaction, nil
 }
 
 func (svc *PhoenixService) SendPaymentSync(ctx context.Context, payReq string) (preimage string, err error) {
@@ -156,6 +246,9 @@ func (svc *PhoenixService) SendPaymentSync(ctx context.Context, payReq string) (
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
 	defer resp.Body.Close()
 
 	var payRes PayResponse
@@ -175,7 +268,7 @@ func (svc *PhoenixService) RedeemOnchainFunds(ctx context.Context, toAddress str
 }
 
 func (svc *PhoenixService) ResetRouter(ctx context.Context) error {
-	return nil
+	return errors.New("not implemented")
 }
 
 func (svc *PhoenixService) Shutdown() error {
