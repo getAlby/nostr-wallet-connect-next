@@ -84,14 +84,13 @@ func (svc *PhoenixService) GetBalance(ctx context.Context) (balance int64, err e
 		return 0, err
 	}
 
-	svc.Logger.Infof("%v", balanceRes)
 	balance = balanceRes.BalanceSat + balanceRes.FeeCreditSat
 	return balance * 1000, nil
 
 }
 
 func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
-	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/incoming?externalId=nwc", nil)
+	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/incoming?externalId=nws", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -107,9 +106,9 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 	if err := json.NewDecoder(resp.Body).Decode(&incomingRes); err != nil {
 		return nil, err
 	}
+	transactions = []Nip47Transaction{}
 	for _, invoice := range incomingRes {
-		settledAtUnix := time.Unix(0, invoice.CompletedAt).Unix()
-		settledAt := &settledAtUnix
+		settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
 		transaction := Nip47Transaction{
 			Type:        "incoming",
 			Invoice:     invoice.Invoice,
@@ -117,9 +116,9 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 			PaymentHash: invoice.PaymentHash,
 			Amount:      invoice.ReceivedSat * 1000,
 			FeesPaid:    invoice.Fees * 1000,
-			CreatedAt:   time.Unix(0, invoice.CreatedAt).Unix(),
+			CreatedAt:   time.UnixMilli(invoice.CreatedAt).Unix(),
 			Description: invoice.Description,
-			SettledAt:   settledAt,
+			SettledAt:   &settledAtUnix,
 		}
 		transactions = append(transactions, transaction)
 	}
@@ -202,7 +201,7 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 }
 
 func (svc *PhoenixService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *Nip47Transaction, err error) {
-	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/"+paymentHash, nil)
+	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/incoming/"+paymentHash, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +217,7 @@ func (svc *PhoenixService) LookupInvoice(ctx context.Context, paymentHash string
 	if err := json.NewDecoder(resp.Body).Decode(&invoiceRes); err != nil {
 		return nil, err
 	}
-	settledAtUnix := time.Unix(0, invoiceRes.CompletedAt).Unix()
+	settledAtUnix := time.UnixMilli(invoiceRes.CompletedAt).Unix()
 	settledAt := &settledAtUnix
 
 	transaction = &Nip47Transaction{
@@ -228,7 +227,7 @@ func (svc *PhoenixService) LookupInvoice(ctx context.Context, paymentHash string
 		PaymentHash: invoiceRes.PaymentHash,
 		Amount:      invoiceRes.ReceivedSat * 1000,
 		FeesPaid:    invoiceRes.Fees * 1000,
-		CreatedAt:   time.Unix(0, invoiceRes.CreatedAt).Unix(),
+		CreatedAt:   time.UnixMilli(invoiceRes.CreatedAt).Unix(),
 		Description: invoiceRes.Description,
 		SettledAt:   settledAt,
 	}
