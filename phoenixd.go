@@ -90,7 +90,7 @@ func (svc *PhoenixService) GetBalance(ctx context.Context) (balance int64, err e
 }
 
 func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
-	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/incoming?externalId=nws", nil)
+	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/incoming?externalId=nwc", nil)
 	if err != nil {
 		return nil, err
 	}
