@@ -90,7 +90,10 @@ func (svc *PhoenixService) GetBalance(ctx context.Context) (balance int64, err e
 }
 
 func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
-	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/incoming?externalId=nwc", nil)
+	// querying a large number of incoices seems slow in phoenixd thus we limit the amount of invoices we look for by querying by day
+	// see make invoice call where the externalid is set
+	today := time.Now().UTC().Format("2006-01-01")
+	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/incoming?externalId="+today, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +177,8 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	form := url.Values{}
 	form.Add("amountSat", strconv.FormatInt(amount/1000, 10))
 	form.Add("description", description)
-	form.Add("externalId", "nwc") // for some resone phoenixd requires an external id to query a list of invoices. thus we set this to nwc
+	today := time.Now().UTC().Format("2006-01-01") // querying is too slow so we limit the invoices we query with the date - see list transactions
+	form.Add("externalId", today)                  // for some resone phoenixd requires an external id to query a list of invoices. thus we set this to nwc
 	req, err := http.NewRequest(http.MethodPost, svc.Address+"/createinvoice", strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, err
