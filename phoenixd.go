@@ -108,6 +108,10 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 	}
 	transactions = []Nip47Transaction{}
 	for _, invoice := range incomingRes {
+		//we only want paid invoices
+		if invoice.IsPaid != true {
+			continue
+		}
 		var settledAt *int64
 		if invoice.CompletedAt != 0 {
 			settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
