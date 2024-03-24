@@ -108,7 +108,11 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 	}
 	transactions = []Nip47Transaction{}
 	for _, invoice := range incomingRes {
-		settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
+		var settledAt *int64
+		if invoice.CompletedAt != 0 {
+			settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
+			settledAt = &settledAtUnix
+		}
 		transaction := Nip47Transaction{
 			Type:        "incoming",
 			Invoice:     invoice.Invoice,
@@ -118,7 +122,7 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 			FeesPaid:    invoice.Fees * 1000,
 			CreatedAt:   time.UnixMilli(invoice.CreatedAt).Unix(),
 			Description: invoice.Description,
-			SettledAt:   &settledAtUnix,
+			SettledAt:   settledAt,
 		}
 		transactions = append(transactions, transaction)
 	}
@@ -217,9 +221,12 @@ func (svc *PhoenixService) LookupInvoice(ctx context.Context, paymentHash string
 	if err := json.NewDecoder(resp.Body).Decode(&invoiceRes); err != nil {
 		return nil, err
 	}
-	settledAtUnix := time.UnixMilli(invoiceRes.CompletedAt).Unix()
-	settledAt := &settledAtUnix
 
+	var settledAt *int64
+	if invoiceRes.CompletedAt != 0 {
+		settledAtUnix := time.UnixMilli(invoiceRes.CompletedAt).Unix()
+		settledAt = &settledAtUnix
+	}
 	transaction = &Nip47Transaction{
 		Type:        "incoming",
 		Invoice:     invoiceRes.Invoice,
