@@ -96,7 +96,7 @@ function Navbar() {
           </nav>
         </div>
       </div>
-      <div className="flex justify-center px-2 pt-6">
+      <div className="flex justify-center px-2">
         <Outlet />
       </div>
     </>

@@ -41,7 +41,7 @@ export function ImportMnemonic() {
     <>
       <form
         onSubmit={onSubmit}
-        className="flex flex-col gap-2 mx-auto max-w-2xl text-sm"
+        className="flex flex-col gap-2 mx-auto max-w-2xl text-sm pt-6"
       >
         <h1 className="font-semibold text-2xl font-headline mb-2 dark:text-white">
           Import your wallet

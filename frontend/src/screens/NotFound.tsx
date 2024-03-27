@@ -4,7 +4,7 @@ function NotFound() {
   return (
     <div className="flex justify-center">
       <div className="container max-w-screen-lg">
-        <div className="bg-white rounded-md shadow my-4 px-4 lg:p-8 dark:bg-surface-02dp">
+        <div className="bg-white rounded-md shadow mx-2 my-4 p-4 lg:p-8 dark:bg-surface-02dp">
           <h3 className="font-bold text-2xl font-headline mb-4 dark:text-white">
             404 Page Not Found
           </h3>
