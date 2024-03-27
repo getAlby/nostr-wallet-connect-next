@@ -72,7 +72,7 @@ func (svc *PhoenixService) GetBalance(ctx context.Context) (balance int64, err e
 		return 0, err
 	}
 	req.Header.Add("Authorization", "Basic "+svc.Authorization)
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return 0, err
@@ -93,12 +93,18 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 	// querying a large number of incoices seems slow in phoenixd thus we limit the amount of invoices we look for by querying by day
 	// see make invoice call where the externalid is set
 	today := time.Now().UTC().Format("2006-01-01")
-	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/incoming?externalId="+today, nil)
+	url := svc.Address + "/payments/incoming?externalId=" + today
+
+	svc.Logger.WithFields(logrus.Fields{
+		"externalId": today,
+		"url":        url,
+	}).Infof("Fetching tranasctions: %s", url)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Add("Authorization", "Basic "+svc.Authorization)
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -147,7 +153,7 @@ func (svc *PhoenixService) GetInfo(ctx context.Context) (info *lnclient.NodeInfo
 		return nil, err
 	}
 	req.Header.Add("Authorization", "Basic "+svc.Authorization)
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -175,10 +181,15 @@ func (svc *PhoenixService) ListChannels(ctx context.Context) ([]lnclient.Channel
 
 func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *Nip47Transaction, err error) {
 	form := url.Values{}
-	form.Add("amountSat", strconv.FormatInt(amount/1000, 10))
+	amountSat := strconv.FormatInt(amount/1000, 10)
+	form.Add("amountSat", amountSat)
 	form.Add("description", description)
 	today := time.Now().UTC().Format("2006-01-01") // querying is too slow so we limit the invoices we query with the date - see list transactions
 	form.Add("externalId", today)                  // for some resone phoenixd requires an external id to query a list of invoices. thus we set this to nwc
+	svc.Logger.WithFields(logrus.Fields{
+		"externalId": today,
+		"amountSat":  amountSat,
+	}).Infof("Requesting phoenix invoice")
 	req, err := http.NewRequest(http.MethodPost, svc.Address+"/createinvoice", strings.NewReader(form.Encode()))
 	if err != nil {
 		return nil, err
@@ -218,7 +229,7 @@ func (svc *PhoenixService) LookupInvoice(ctx context.Context, paymentHash string
 		return nil, err
 	}
 	req.Header.Add("Authorization", "Basic "+svc.Authorization)
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -258,7 +269,7 @@ func (svc *PhoenixService) SendPaymentSync(ctx context.Context, payReq string) (
 	}
 	req.Header.Add("Authorization", "Basic "+svc.Authorization)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 90 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
