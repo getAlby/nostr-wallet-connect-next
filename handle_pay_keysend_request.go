@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/sirupsen/logrus"
 )
 
@@ -56,6 +57,14 @@ func (svc *Service) HandlePayKeysendEvent(ctx context.Context, request *Nip47Req
 			"appId":           app.ID,
 			"recipientPubkey": payParams.Pubkey,
 		}).Infof("Failed to send payment: %v", err)
+		svc.EventLogger.Log(&events.Event{
+			Event: "nwc_payment_failed",
+			Properties: map[string]interface{}{
+				// "error":   fmt.Sprintf("%v", err),
+				"keysend": true,
+				"amount":  payParams.Amount / 1000,
+			},
+		})
 		return &Nip47Response{
 			ResultType: request.Method,
 			Error: &Nip47Error{
@@ -66,6 +75,13 @@ func (svc *Service) HandlePayKeysendEvent(ctx context.Context, request *Nip47Req
 	}
 	payment.Preimage = &preimage
 	svc.db.Save(&payment)
+	svc.EventLogger.Log(&events.Event{
+		Event: "nwc_payment_succeeded",
+		Properties: map[string]interface{}{
+			"keysend": true,
+			"amount":  payParams.Amount / 1000,
+		},
+	})
 	return &Nip47Response{
 		ResultType: request.Method,
 		Result: Nip47PayResponse{

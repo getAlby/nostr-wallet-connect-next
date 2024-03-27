@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/getAlby/ldk-node-go/ldk_node"
+	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/models/config"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/models/lsp"
 	decodepay "github.com/nbd-wtf/ln-decodepay"
@@ -26,6 +28,7 @@ type LDKService struct {
 	ldkEventBroadcaster LDKEventBroadcaster
 	cancel              context.CancelFunc
 	network             string
+	eventLogger         events.EventLogger
 }
 
 func NewLDKService(svc *Service, mnemonic, workDir string, network string, esploraServer string, gossipSource string) (result lnclient.LNClient, err error) {
@@ -49,9 +52,11 @@ func NewLDKService(svc *Service, mnemonic, workDir string, network string, esplo
 	config.TrustedPeers0conf = []string{
 		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
+		lsp.AlbyPlebsLSP().Pubkey,
 	}
 	config.AnchorChannelsConfig.TrustedPeersNoReserve = []string{
 		lsp.OlympusLSP().Pubkey,
+		lsp.AlbyPlebsLSP().Pubkey,
 	}
 
 	config.ListeningAddresses = &listeningAddresses
@@ -79,14 +84,19 @@ func NewLDKService(svc *Service, mnemonic, workDir string, network string, esplo
 		return nil, err
 	}
 
-	err = node.Start()
-	if err != nil {
-		svc.Logger.Errorf("Failed to start LDK node: %v", err)
-		return nil, err
-	}
-
 	ldkEventConsumer := make(chan *ldk_node.Event)
 	ctx, cancel := context.WithCancel(svc.ctx)
+	ldkEventBroadcaster := NewLDKEventBroadcaster(svc.Logger, ctx, ldkEventConsumer)
+
+	ls := LDKService{
+		workdir:             newpath,
+		node:                node,
+		svc:                 svc,
+		cancel:              cancel,
+		ldkEventBroadcaster: ldkEventBroadcaster,
+		network:             network,
+		eventLogger:         svc.EventLogger,
+	}
 
 	// check for and forward new LDK events to LDKEventBroadcaster (through ldkEventConsumer)
 	go func() {
@@ -104,9 +114,7 @@ func NewLDKService(svc *Service, mnemonic, workDir string, network string, esplo
 					continue
 				}
 
-				svc.Logger.WithFields(logrus.Fields{
-					"event": event,
-				}).Info("Received LDK event")
+				ls.logLdkEvent(ctx, event)
 				ldkEventConsumer <- event
 
 				node.EventHandled()
@@ -114,15 +122,10 @@ func NewLDKService(svc *Service, mnemonic, workDir string, network string, esplo
 		}
 	}()
 
-	// TODO: rename "gs" in this file
-	gs := LDKService{
-		workdir: newpath,
-		node:    node,
-		//listener: &listener,
-		svc:                 svc,
-		cancel:              cancel,
-		ldkEventBroadcaster: NewLDKEventBroadcaster(svc.Logger, ctx, ldkEventConsumer),
-		network:             network,
+	err = node.Start()
+	if err != nil {
+		svc.Logger.Errorf("Failed to start LDK node: %v", err)
+		return nil, err
 	}
 
 	nodeId := node.NodeId()
@@ -135,7 +138,7 @@ func NewLDKService(svc *Service, mnemonic, workDir string, network string, esplo
 		"nodeId": nodeId,
 	}).Info("Connected to LDK node")
 
-	return &gs, nil
+	return &ls, nil
 }
 
 func (gs *LDKService) Shutdown() error {
@@ -146,12 +149,34 @@ func (gs *LDKService) Shutdown() error {
 	return nil
 }
 
-func (gs *LDKService) SendPaymentSync(ctx context.Context, payReq string) (preimage string, err error) {
+func (gs *LDKService) SendPaymentSync(ctx context.Context, invoice string) (preimage string, err error) {
+	paymentRequest, err := decodepay.Decodepay(invoice)
+	if err != nil {
+		gs.svc.Logger.WithFields(logrus.Fields{
+			"bolt11": invoice,
+		}).Errorf("Failed to decode bolt11 invoice: %v", err)
+
+		return "", err
+	}
+
+	maxSendable := gs.getMaxSendable()
+	if paymentRequest.MSatoshi > maxSendable {
+		gs.eventLogger.Log(&events.Event{
+			Event: "nwc_outgoing_liquidity_required",
+			Properties: map[string]interface{}{
+				//"amount":         amount / 1000,
+				//"max_receivable": maxReceivable,
+				//"num_channels":   len(gs.node.ListChannels()),
+				"node_type": config.LDKBackendType,
+			},
+		})
+	}
+
 	paymentStart := time.Now()
 	ldkEventSubscription := gs.ldkEventBroadcaster.Subscribe()
 	defer gs.ldkEventBroadcaster.CancelSubscription(ldkEventSubscription)
 
-	paymentHash, err := gs.node.Bolt11Payment().Send(payReq)
+	paymentHash, err := gs.node.Bolt11Payment().Send(invoice)
 	if err != nil {
 		gs.svc.Logger.WithError(err).Error("SendPayment failed")
 		return "", err
@@ -220,7 +245,7 @@ func (gs *LDKService) SendPaymentSync(ctx context.Context, payReq string) (preim
 				"failureReasonMessage": failureReasonMessage,
 			}).Error("Received payment failed event")
 
-			return "", fmt.Errorf("payment failed event: %v %s", failureReason, failureReasonMessage)
+			return "", fmt.Errorf("received payment failed event: %v %s", failureReason, failureReasonMessage)
 		}
 	}
 	if preimage == "" {
@@ -341,13 +366,51 @@ func (gs *LDKService) GetBalance(ctx context.Context) (balance int64, err error)
 
 	balance = 0
 	for _, channel := range channels {
-		balance += int64(channel.OutboundCapacityMsat)
+		if channel.IsUsable {
+			balance += int64(channel.OutboundCapacityMsat)
+		}
 	}
 
 	return balance, nil
 }
 
+func (gs *LDKService) getMaxReceivable() int64 {
+	var receivable int64 = 0
+	channels := gs.node.ListChannels()
+	for _, channel := range channels {
+		if channel.IsUsable {
+			receivable += min(int64(channel.InboundCapacityMsat), int64(*channel.InboundHtlcMaximumMsat))
+		}
+	}
+	return int64(receivable)
+}
+
+func (gs *LDKService) getMaxSendable() int64 {
+	var spendable int64 = 0
+	channels := gs.node.ListChannels()
+	for _, channel := range channels {
+		if channel.IsUsable {
+			spendable += min(int64(channel.OutboundCapacityMsat), int64(*channel.CounterpartyOutboundHtlcMaximumMsat))
+		}
+	}
+	return int64(spendable)
+}
+
 func (gs *LDKService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *Nip47Transaction, err error) {
+
+	maxReceivable := gs.getMaxReceivable()
+
+	if amount > maxReceivable {
+		gs.eventLogger.Log(&events.Event{
+			Event: "nwc_incoming_liquidity_required",
+			Properties: map[string]interface{}{
+				//"amount":         amount / 1000,
+				//"max_receivable": maxReceivable,
+				//"num_channels":   len(gs.node.ListChannels()),
+				"node_type": config.LDKBackendType,
+			},
+		})
+	}
 
 	// TODO: support passing description hash
 	invoice, err := gs.node.Bolt11Payment().Receive(uint64(amount),
@@ -681,4 +744,40 @@ func (gs *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) 
 		DescriptionHash: descriptionHash,
 		ExpiresAt:       expiresAt,
 	}, nil
+}
+
+func (ls *LDKService) logLdkEvent(ctx context.Context, event *ldk_node.Event) {
+	ls.svc.Logger.WithFields(logrus.Fields{
+		"event": event,
+	}).Info("Received LDK event")
+
+	switch v := (*event).(type) {
+	case ldk_node.EventChannelReady:
+		ls.eventLogger.Log(&events.Event{
+			Event: "nwc_channel_ready",
+			Properties: map[string]interface{}{
+				// "counterparty_node_id": v.CounterpartyNodeId,
+				"node_type": config.LDKBackendType,
+			},
+		})
+	case ldk_node.EventChannelClosed:
+		ls.eventLogger.Log(&events.Event{
+			Event: "nwc_channel_closed",
+			Properties: map[string]interface{}{
+				// "counterparty_node_id": v.CounterpartyNodeId,
+				// "reason":               fmt.Sprintf("%+v", v.Reason),
+				"node_type": config.LDKBackendType,
+			},
+		})
+	case ldk_node.EventPaymentReceived:
+		ls.eventLogger.Log(&events.Event{
+			Event: "nwc_payment_received",
+			Properties: map[string]interface{}{
+				"payment_hash": v.PaymentHash,
+				"amount":       v.AmountMsat / 1000,
+				"node_type":    config.LDKBackendType,
+			},
+		})
+	}
+
 }

@@ -2,41 +2,47 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
+	"path"
+	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
-	"database/sql"
-	"errors"
-	"os"
-	"os/signal"
-	"path"
-
+	"github.com/adrg/xdg"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/sirupsen/logrus"
 
-	"github.com/getAlby/nostr-wallet-connect/migrations"
-	"github.com/getAlby/nostr-wallet-connect/models/config"
-	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
+	alby "github.com/getAlby/nostr-wallet-connect/alby"
+	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/glebarez/sqlite"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/orandin/lumberjackrus"
 	"gorm.io/gorm"
+
+	"github.com/getAlby/nostr-wallet-connect/migrations"
+	"github.com/getAlby/nostr-wallet-connect/models/config"
+	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 )
 
 type Service struct {
 	// config from .env only. Fetch dynamic config from db
-	cfg      *Config
-	db       *gorm.DB
-	lnClient lnclient.LNClient
-	Logger   *logrus.Logger
-	ctx      context.Context
-	wg       *sync.WaitGroup
+	cfg          *Config
+	db           *gorm.DB
+	lnClient     lnclient.LNClient
+	Logger       *logrus.Logger
+	AlbyOAuthSvc *alby.AlbyOAuthService
+	EventLogger  events.EventLogger
+	ctx          context.Context
+	wg           *sync.WaitGroup
 }
 
 // TODO: move to service.go
@@ -58,6 +64,10 @@ func NewService(ctx context.Context) (*Service, error) {
 	}
 	logger.SetLevel(logrus.Level(logLevel))
 
+	if appConfig.Workdir == "" {
+		appConfig.Workdir = filepath.Join(xdg.DataHome, "/alby-nwc")
+		logger.WithField("workdir", appConfig.Workdir).Info("No workdir specified, using default")
+	}
 	// make sure workdir exists
 	os.MkdirAll(appConfig.Workdir, os.ModePerm)
 
@@ -80,6 +90,15 @@ func NewService(ctx context.Context) (*Service, error) {
 	}
 	logger.AddHook(fileLoggerHook)
 
+	// If DATABASE_URI is a URI or a path, leave it unchanged.
+	// If it only contains a filename, prepend the workdir.
+	if !strings.HasPrefix(appConfig.DatabaseUri, "file:") {
+		databasePath, _ := filepath.Split(appConfig.DatabaseUri)
+		if databasePath == "" {
+			appConfig.DatabaseUri = filepath.Join(appConfig.Workdir, appConfig.DatabaseUri)
+		}
+	}
+
 	var db *gorm.DB
 	var sqlDb *sql.DB
 	db, err = gorm.Open(sqlite.Open(appConfig.DatabaseUri), &gorm.Config{})
@@ -96,45 +115,76 @@ func NewService(ctx context.Context) (*Service, error) {
 
 	err = migrations.Migrate(db, appConfig, logger)
 	if err != nil {
-		logger.Errorf("Failed to migrate: %v", err)
+		logger.WithError(err).Error("Failed to migrate")
 		return nil, err
 	}
-
-	ctx, _ = signal.NotifyContext(ctx, os.Interrupt)
 
 	cfg := &Config{}
 	cfg.Init(db, appConfig, logger)
 
+	eventLogger := events.NewEventLogger(logger)
+
+	albyOAuthSvc := alby.NewAlbyOauthService(logger, cfg, cfg.Env, eventLogger)
+	if err != nil {
+		logger.WithError(err).Error("Failed to create Alby OAuth service")
+		return nil, err
+	}
+
+	eventLogger.Subscribe(albyOAuthSvc)
+
 	var wg sync.WaitGroup
 	svc := &Service{
-		cfg:    cfg,
-		db:     db,
-		ctx:    ctx,
-		wg:     &wg,
-		Logger: logger,
+		cfg:          cfg,
+		db:           db,
+		ctx:          ctx,
+		wg:           &wg,
+		Logger:       logger,
+		AlbyOAuthSvc: albyOAuthSvc,
+		EventLogger:  eventLogger,
 	}
+
+	eventLogger.Log(&events.Event{
+		Event: "nwc_started",
+	})
 
 	return svc, nil
 }
 
-func (svc *Service) launchLNBackend(encryptionKey string) error {
+func (svc *Service) StopLNClient() error {
 	if svc.lnClient != nil {
 		err := svc.lnClient.Shutdown()
 		if err != nil {
+			svc.Logger.WithError(err).Error("Failed to stop LN backend")
+			svc.EventLogger.Log(&events.Event{
+				Event: "nwc_node_stop_failed",
+				Properties: map[string]interface{}{
+					"error": fmt.Sprintf("%v", err),
+				},
+			})
 			return err
 		}
 		svc.lnClient = nil
+		svc.EventLogger.Log(&events.Event{
+			Event: "nwc_node_stopped",
+		})
+	}
+	return nil
+}
+
+func (svc *Service) launchLNBackend(encryptionKey string) error {
+	err := svc.StopLNClient()
+	if err != nil {
+		return err
 	}
 
-	lndBackend, _ := svc.cfg.Get("LNBackendType", "")
-	if lndBackend == "" {
+	lnBackend, _ := svc.cfg.Get("LNBackendType", "")
+	if lnBackend == "" {
 		return errors.New("no LNBackendType specified")
 	}
 
-	svc.Logger.Infof("Launching LN Backend: %s", lndBackend)
+	svc.Logger.Infof("Launching LN Backend: %s", lnBackend)
 	var lnClient lnclient.LNClient
-	var err error
-	switch lndBackend {
+	switch lnBackend {
 	case config.LNDBackendType:
 		LNDAddress, _ := svc.cfg.Get("LNDAddress", encryptionKey)
 		LNDCertHex, _ := svc.cfg.Get("LNDCertHex", encryptionKey)
@@ -161,12 +211,19 @@ func (svc *Service) launchLNBackend(encryptionKey string) error {
 	case config.PhoenixBackendType:
 		lnClient, err = NewPhoenixService(svc, svc.cfg.Env.PhoenixdAddress, svc.cfg.Env.PhoenixdAuthorization)
 	default:
-		svc.Logger.Fatalf("Unsupported LNBackendType: %v", lndBackend)
+		svc.Logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
 	}
 	if err != nil {
 		svc.Logger.Errorf("Failed to launch LN backend: %v", err)
 		return err
 	}
+
+	svc.EventLogger.Log(&events.Event{
+		Event: "nwc_node_started",
+		Properties: map[string]interface{}{
+			"node_type": lnBackend,
+		},
+	})
 	svc.lnClient = lnClient
 	return nil
 }
@@ -600,6 +657,15 @@ func (svc *Service) hasPermission(app *App, requestMethod string, amount int64) 
 		RequestMethod: requestMethod,
 	})
 	if findPermissionResult.RowsAffected == 0 {
+		svc.EventLogger.Log(&events.Event{
+			Event: "nwc_permission_missing",
+			Properties: map[string]interface{}{
+				"request_method": requestMethod,
+				"app_name":       app.Name,
+				"app_pubkey":     app.NostrPubkey,
+			},
+		})
+
 		// No permission for this request method
 		return false, NIP_47_ERROR_RESTRICTED, fmt.Sprintf("This app does not have permission to request %s", requestMethod)
 	}
@@ -611,6 +677,14 @@ func (svc *Service) hasPermission(app *App, requestMethod string, amount int64) 
 			"appId":         app.ID,
 			"pubkey":        app.NostrPubkey,
 		}).Info("This pubkey is expired")
+		svc.EventLogger.Log(&events.Event{
+			Event: "nwc_permission_expired",
+			Properties: map[string]interface{}{
+				"request_method": requestMethod,
+				"app_name":       app.Name,
+				"app_pubkey":     app.NostrPubkey,
+			},
+		})
 		return false, NIP_47_ERROR_EXPIRED, "This app has expired"
 	}
 
@@ -620,6 +694,17 @@ func (svc *Service) hasPermission(app *App, requestMethod string, amount int64) 
 			budgetUsage := svc.GetBudgetUsage(&appPermission)
 
 			if budgetUsage+amount/1000 > int64(maxAmount) {
+				svc.EventLogger.Log(&events.Event{
+					Event: "nwc_permission_budget_exceeded",
+					Properties: map[string]interface{}{
+						"request_method": requestMethod,
+						"app_name":       app.Name,
+						"app_pubkey":     app.NostrPubkey,
+						// "max_amount":     maxAmount,
+						// "budget_usage":   budgetUsage,
+						// "amount":         amount / 1000,
+					},
+				})
 				return false, NIP_47_ERROR_QUOTA_EXCEEDED, "Insufficient budget remaining to make payment"
 			}
 		}

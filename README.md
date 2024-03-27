@@ -66,32 +66,31 @@ Go to `/frontend`
 
 _Make sure to have [wails](https://wails.io/docs/gettingstarted/installation) installed and all platform-specific dependencies installed (see wails doctor)_
 
-`unset GTK_PATH && wails dev -tags "wails"`
+    $ unset GTK_PATH && wails dev -tags "wails"
 
 _If you get a blank screen the first load, close the window and start the app again_
 
 #### Wails Production build
 
-`wails build -tags "wails"`
+    $ wails build -tags "wails"
 
 ### Build and run locally (HTTP mode)
 
-`mkdir tmp`
-`go build -o main`
-`cp main tmp`
-`cp .env tmp`
-`cd tmp`
-`./main`
+    $ mkdir tmp
+    $ go build -o main
+    $ cp main tmp
+    $ cp .env tmp
+    $ cd tmp
+    $ ./main
 
 ### Run dockerfile locally (HTTP mode)
 
-`docker build . -t nwc-local --progress=plain`
-
-`docker run --env-file .env -p 8080:8080 nwc-local`
+    $ docker build . -t nwc-local --progress=plain
+    $ docker run --env-file .env -p 8080:8080 nwc-local
 
 ### Testing
 
-`go test`
+    $ go test
 
 ### Windows
 
@@ -103,9 +102,9 @@ Breez SDK requires gcc to build the Breez bindings. Run `choco install mingw` an
 - `CLIENT_NOSTR_PUBKEY`: if set, this service will only listen to events authored by this public key. You can set this to your own nostr public key.
 - `RELAY`: default: "wss://relay.getalby.com/v1"
 - `COOKIE_SECRET`: a randomly generated secret string. (only needed in http mode)
-- `DATABASE_URI`: a sqlite filename. Default: .data/nwc.db
+- `DATABASE_URI`: a sqlite filename. Default: $XDG_DATA_HOME/nostr-wallet-connect/nwc.db
 - `PORT`: the port on which the app should listen on (default: 8080)
-- `WORK_DIR`: directory to store NWC data files. Default: .data
+- `WORK_DIR`: directory to store NWC data files. Default: $XDG_DATA_HOME/nostr-wallet-connect
 - `LOG_LEVEL`: log level for the application. Higher is more verbose. Default: 4 (info)
 
 ### LND Backend parameters
@@ -134,6 +133,12 @@ _To configure via env, the following parameters must be provided:_
 - `LDK_NETWORK=signet`
 - `LDK_ESPLORA_SERVER=https://mutinynet.com/api`
 - `LDK_GOSSIP_SOURCE=https://rgs.mutinynet.com/snapshot`
+
+### Alby OAuth
+
+Create an OAuth client at the [Alby Developer Portal](https://getalby.com/developer) and set your `ALBY_OAUTH_CLIENT_ID` and `ALBY_OAUTH_CLIENT_SECRET` in your .env. If not running locally, you'll also need to change your `BASE_URL`.
+
+> If running the React app locally, OAuth redirects will not work locally if running the react app you will need to manually change the port to 5173. **Login in Wails mode is not yet supported**
 
 ## Application deeplink options
 

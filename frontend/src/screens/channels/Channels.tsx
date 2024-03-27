@@ -134,6 +134,27 @@ export default function Channels() {
     }
   }
 
+  async function stopNode() {
+    try {
+      if (!csrf) {
+        throw new Error("csrf not loaded");
+      }
+
+      await request("/api/stop", {
+        method: "POST",
+        headers: {
+          "X-CSRF-Token": csrf,
+          "Content-Type": "application/json",
+        },
+      });
+      await reloadInfo();
+      alert(`🎉 Node stopped`);
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong: " + error);
+    }
+  }
+
   return (
     <div>
       <div className="grid gap-6 mb-8 md:grid-cols-3 xl:grid-cols-3">
@@ -234,7 +255,7 @@ export default function Channels() {
         Open a channel
       </Link>
       <Link
-        to={`/onchain/new-address`}
+        to={`/channels/onchain/new-address`}
         className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
       >
         Onchain address
@@ -245,6 +266,14 @@ export default function Channels() {
           className="text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-none dark:focus:ring-orange-800"
         >
           Reset Router
+        </button>
+      )}
+      {info?.backendType === "LDK" && (
+        <button
+          onClick={stopNode}
+          className="text-white bg-orange-700 hover:bg-orange-800 focus:ring-4 focus:ring-orange-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 dark:bg-orange-600 dark:hover:bg-orange-700 focus:outline-none dark:focus:ring-orange-800"
+        >
+          Restart
         </button>
       )}
       {(info?.backendType === "LDK" || info?.backendType === "GREENLIGHT") &&

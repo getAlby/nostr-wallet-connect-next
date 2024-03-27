@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"sync"
 
+	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
@@ -83,6 +84,15 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, request *Nip
 					"appId":           app.ID,
 					"recipientPubkey": keysendInfo.Pubkey,
 				}).Infof("Failed to send payment: %v", err)
+				svc.EventLogger.Log(&events.Event{
+					Event: "nwc_payment_failed",
+					Properties: map[string]interface{}{
+						// "error":   fmt.Sprintf("%v", err),
+						"keysend": true,
+						"multi":   true,
+						"amount":  keysendInfo.Amount / 1000,
+					},
+				})
 
 				publishResponse(&Nip47Response{
 					ResultType: request.Method,
@@ -97,6 +107,14 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, request *Nip
 			mu.Lock()
 			svc.db.Save(&payment)
 			mu.Unlock()
+			svc.EventLogger.Log(&events.Event{
+				Event: "nwc_payment_succeeded",
+				Properties: map[string]interface{}{
+					"keysend": true,
+					"multi":   true,
+					"amount":  keysendInfo.Amount / 1000,
+				},
+			})
 			publishResponse(&Nip47Response{
 				ResultType: request.Method,
 				Result: Nip47PayResponse{
