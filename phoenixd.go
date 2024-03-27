@@ -92,7 +92,7 @@ func (svc *PhoenixService) GetBalance(ctx context.Context) (balance int64, err e
 func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
 	// querying a large number of incoices seems slow in phoenixd thus we limit the amount of invoices we look for by querying by day
 	// see make invoice call where the externalid is set
-	today := time.Now().UTC().Format("2006-01-01")
+	today := time.Now().UTC().Format("2006-02-01")
 	url := svc.Address + "/payments/incoming?externalId=" + today
 
 	svc.Logger.WithFields(logrus.Fields{
@@ -184,7 +184,7 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	amountSat := strconv.FormatInt(amount/1000, 10)
 	form.Add("amountSat", amountSat)
 	form.Add("description", description)
-	today := time.Now().UTC().Format("2006-01-01") // querying is too slow so we limit the invoices we query with the date - see list transactions
+	today := time.Now().UTC().Format("2006-02-01") // querying is too slow so we limit the invoices we query with the date - see list transactions
 	form.Add("externalId", today)                  // for some resone phoenixd requires an external id to query a list of invoices. thus we set this to nwc
 	svc.Logger.WithFields(logrus.Fields{
 		"externalId": today,
