@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import {
@@ -15,10 +15,17 @@ import { EditIcon } from "src/components/icons/EditIcon";
 
 import { request } from "src/utils/request"; // build the project for this to appear
 import { handleRequestError } from "src/utils/handleRequestError";
-import Input from "src/components/Input";
 import Permissions from "../../components/Permissions";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "src/components/ui/card";
+import { Button } from "src/components/ui/button";
+import { Input } from "src/components/ui/input";
 
-const NewApp = () => {
+const NewConnection = () => {
   const { data: csrf } = useCSRF();
   const navigate = useNavigate();
 
@@ -99,7 +106,7 @@ const NewApp = () => {
         window.location.href = createAppResponse.returnTo;
         return;
       }
-      navigate("/apps/created", {
+      navigate("/connections/created", {
         state: createAppResponse,
       });
       toast.success("App created!");
@@ -109,12 +116,14 @@ const NewApp = () => {
   };
 
   return (
-    <div className="container max-w-screen-lg">
-      <form onSubmit={handleSubmit} acceptCharset="UTF-8">
-        <div className="bg-white dark:bg-surface-02dp rounded-md shadow p-4 md:p-8">
-          <h2 className="font-bold text-2xl font-headline mb-4 dark:text-white">
+    <form onSubmit={handleSubmit} acceptCharset="UTF-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>
             {nameParam ? `Connect to ${appName}` : "Connect a new app"}
-          </h2>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           {!nameParam && (
             <>
               <label
@@ -154,27 +163,15 @@ const NewApp = () => {
             isEditing={isEditing}
             isNew
           />
-        </div>
-
-        <div className="mt-6 flex flex-col sm:flex-row sm:justify-center px-4 md:px-8">
-          {!pubkey && (
-            <Link
-              to="/apps"
-              className="inline-flex p-4 underline cursor-pointer duration-150 items-center justify-center text-gray-700 dark:text-neutral-300 w-full sm:w-[250px] order-last sm:order-first"
-            >
-              Cancel
-            </Link>
-          )}
-          <button
-            type="submit"
-            className="inline-flex w-full sm:w-[250px] bg-indigo-500 cursor-pointer dark:text-neutral-200 duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus:outline-none font-medium hover:bg-indigo-700 items-center justify-center px-5 py-3 rounded-md shadow text-white transition"
-          >
-            {pubkey ? "Connect" : "Next"}
-          </button>
-        </div>
-      </form>
-    </div>
+        </CardContent>
+      </Card>
+      <div className="mt-6 flex flex-col sm:flex-row sm:justify-center px-4 md:px-8">
+        <Button type="submit" size={"lg"}>
+          {pubkey ? "Connect" : "Next"}
+        </Button>
+      </div>
+    </form>
   );
 };
 
-export default NewApp;
+export default NewConnection;
