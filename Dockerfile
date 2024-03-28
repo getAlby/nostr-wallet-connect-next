@@ -1,4 +1,4 @@
-FROM node:19-alpine as frontend
+FROM node:20-alpine as frontend
 WORKDIR /build
 COPY frontend ./frontend
 RUN cd frontend && yarn install && yarn build:http
@@ -11,7 +11,7 @@ ARG BUILDPLATFORM
 RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
 
 RUN apt-get update && \
-   apt-get install -y gcc
+  apt-get install -y gcc
 
 ENV CGO_ENABLED=1
 ENV GOOS=linux
