@@ -29,6 +29,7 @@ type AppConfig struct {
 	AlbyClientSecret      string `envconfig:"ALBY_OAUTH_CLIENT_SECRET"`
 	AlbyOAuthAuthUrl      string `envconfig:"ALBY_OAUTH_AUTH_URL" default:"https://getalby.com/oauth"`
 	BaseUrl               string `envconfig:"BASE_URL" default:"http://localhost:8080"`
+	LogEvents             bool   `envconfig:"LOG_EVENTS" default:"false"`
 	PhoenixdAddress       string `envconfig:"PHOENIXD_ADDRESS" default:"http://127.0.0.1:9740"`
 	PhoenixdAuthorization string `envconfig:"PHOENIXD_AUTHORIZATION"`
 }

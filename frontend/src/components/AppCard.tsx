@@ -1,12 +1,12 @@
 import gradientAvatar from "gradient-avatar";
 import { Link } from "react-router-dom";
-
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "src/components/ui/card";
+
 import { Progress } from "src/components/ui/progress";
 import { App, NIP_47_PAY_INVOICE_METHOD } from "src/types";
 
@@ -18,7 +18,7 @@ type Props = {
 export default function AppCard({ app }: Props) {
   return (
     <>
-      <Link to={`/connections/${app.nostrPubkey}`}>
+      <Link to={`/apps/${app.nostrPubkey}`}>
         <Card>
           <CardHeader>
             <CardTitle>
@@ -35,7 +35,7 @@ export default function AppCard({ app }: Props) {
                     {app.name.charAt(0)}
                   </span>
                 </div>
-                <h2 className="flex-1 font-semibold whitespace-nowrap text-ellipsis overflow-hidden ml-4">
+                <h2 className="flex-1 leading-5 font-semibold whitespace-nowrap text-ellipsis overflow-hidden ml-4">
                   {app.name}
                 </h2>
               </div>

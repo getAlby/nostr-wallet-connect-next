@@ -1,18 +1,15 @@
-import Input from "@/components/Input";
-import {
-  PopiconsLifebuoyLine,
-  PopiconsShieldLine,
-  PopiconsTriangleExclamationLine,
-} from "@popicons/react";
+import { LifeBuoy, ShieldAlert, ShieldCheck } from "lucide-react";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import ConnectButton from "src/components/ConnectButton";
 import Container from "src/components/Container";
 import Loading from "src/components/Loading";
 import MnemonicInputs from "src/components/MnemonicInputs";
-import PasswordViewAdornment from "src/components/PasswordAdornment";
 import toast from "src/components/Toast";
+import { Button } from "src/components/ui/button";
+import { Input } from "src/components/ui/input";
+import { Label } from "src/components/ui/label";
+import { LoadingButton } from "src/components/ui/loading-button";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useEncryptedMnemonic } from "src/hooks/useEncryptedMnemonic";
 import { useInfo } from "src/hooks/useInfo";
@@ -27,7 +24,6 @@ export function BackupMnemonic() {
   const { data: mnemonic } = useEncryptedMnemonic();
 
   const [unlockPassword, setUnlockPassword] = React.useState("");
-  const [passwordVisible, setPasswordVisible] = React.useState(false);
   const [decryptedMnemonic, setDecryptedMnemonic] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [backedUp, isBackedUp] = useState<boolean>(false);
@@ -84,26 +80,26 @@ export function BackupMnemonic() {
     <>
       {!decryptedMnemonic ? (
         <Container>
+          <h1 className="text-xl font-medium">Confirm it's you</h1>
           <p className="font-light text-center text-md leading-relaxed dark:text-neutral-400 mb-14">
             Enter your unlock password to continue
           </p>
-          <form onSubmit={onSubmitPassword} className="w-full">
+          <form
+            onSubmit={onSubmitPassword}
+            className="w-full flex flex-col gap-3"
+          >
             <>
-              <Input
-                name="unlock"
-                onChange={(e) => setUnlockPassword(e.target.value)}
-                value={unlockPassword}
-                type={passwordVisible ? "text" : "password"}
-                placeholder="Password"
-                endAdornment={
-                  <PasswordViewAdornment
-                    onChange={(passwordView) => {
-                      setPasswordVisible(passwordView);
-                    }}
-                  />
-                }
-              />
-              <ConnectButton isConnecting={loading} />
+              <div className="grid gap-1.5">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  type="password"
+                  name="password"
+                  onChange={(e) => setUnlockPassword(e.target.value)}
+                  value={unlockPassword}
+                  placeholder="Password"
+                />
+              </div>
+              <LoadingButton loading={loading}>Continue</LoadingButton>
             </>
           </form>
         </Container>
@@ -112,33 +108,33 @@ export function BackupMnemonic() {
           onSubmit={onSubmit}
           className="flex mt-6 flex-col gap-2 mx-auto max-w-2xl text-sm"
         >
-          <h1 className="font-semibold text-2xl font-headline mb-2 dark:text-white">
+          <h1 className="font-semibold text-2xl font-headline mb-">
             Back up your wallet
           </h1>
 
-          <div className="flex flex-col gap-4 mb-4">
-            <div className="flex gap-2 items-center">
-              <div className="shrink-0 text-gray-600 dark:text-neutral-400">
-                <PopiconsLifebuoyLine className="w-6 h-6" />
+          <div className="flex flex-col gap-4 mb-4 text-muted-foreground">
+            <div className="flex gap-2 items-center ">
+              <div className="shrink-0 ">
+                <LifeBuoy className="w-6 h-6" />
               </div>
-              <span className="text-gray-600 dark:text-neutral-400">
+              <span>
                 Your recovery phrase is a set of 12 words that{" "}
                 <b>backs up your wallet</b>
               </span>
             </div>
             <div className="flex gap-2 items-center">
-              <div className="shrink-0 text-gray-600 dark:text-neutral-400">
-                <PopiconsShieldLine className="w-6 h-6" />
+              <div className="shrink-0">
+                <ShieldCheck className="w-6 h-6" />
               </div>
-              <span className="text-gray-600 dark:text-neutral-400">
+              <span>
                 Make sure to write them down somewhere safe and private
               </span>
             </div>
-            <div className="flex gap-2 items-center">
-              <div className="shrink-0 text-red-600 dark:text-red-800">
-                <PopiconsTriangleExclamationLine className="w-6 h-6" />
+            <div className="flex gap-2 items-center text-destructive">
+              <div className="shrink-0 ">
+                <ShieldAlert className="w-6 h-6" />
               </div>
-              <span className="font-medium text-red-600 dark:text-red-800">
+              <span>
                 If you lose your recovery phrase, you will lose access to your
                 funds
               </span>
@@ -146,7 +142,7 @@ export function BackupMnemonic() {
           </div>
 
           <MnemonicInputs mnemonic={decryptedMnemonic} readOnly={true}>
-            <div className="flex items-center">
+            <div className="flex items-center mt-5">
               <input
                 id="checkbox"
                 type="checkbox"
@@ -165,12 +161,11 @@ export function BackupMnemonic() {
               </label>
             </div>
           </MnemonicInputs>
-          <ConnectButton
-            submitText="Finish"
-            loadingText="Saving..."
-            isConnecting={false}
-            disabled={!backedUp}
-          />
+          <div className="flex justify-center">
+            <Button type="submit" disabled={!backedUp} size="lg">
+              Continue
+            </Button>
+          </div>
         </form>
       )}
     </>

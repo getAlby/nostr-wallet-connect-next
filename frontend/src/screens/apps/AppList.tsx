@@ -7,7 +7,7 @@ import { Button } from "src/components/ui/button";
 import { useApps } from "src/hooks/useApps";
 import { useInfo } from "src/hooks/useInfo";
 
-function ConnectionList() {
+function AppList() {
   const { data: apps } = useApps();
   const { data: info } = useInfo();
 
@@ -40,7 +40,7 @@ function ConnectionList() {
               <p className="text-sm text-muted-foreground">
                 Create your first one by checking out our recommended apps
               </p>
-              <Link to="/apps">
+              <Link to="/appstore">
                 <Button className="mt-4">See recommended apps</Button>
               </Link>
             </div>
@@ -59,4 +59,4 @@ function ConnectionList() {
   );
 }
 
-export default ConnectionList;
+export default AppList;
