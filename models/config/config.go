@@ -5,6 +5,7 @@ const (
 	GreenlightBackendType = "GREENLIGHT"
 	LDKBackendType        = "LDK"
 	BreezBackendType      = "BREEZ"
+	CashuBackendType      = "CASHU"
 )
 
 type AppConfig struct {

@@ -53,6 +53,12 @@ func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *
 			return
 		}
 		paymentHash = paymentRequest.PaymentHash
+		svc.Logger.WithFields(logrus.Fields{
+			"requestEventNostrId": requestEvent.NostrId,
+			"appId":               app.ID,
+			"invoice":             lookupInvoiceParams.Invoice,
+			"paymentHash":         paymentHash,
+		}).Info("Got payment hash from payment request")
 	}
 
 	transaction, err := svc.lnClient.LookupInvoice(ctx, paymentHash)
@@ -61,7 +67,7 @@ func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 			"invoice":             lookupInvoiceParams.Invoice,
-			"paymentHash":         lookupInvoiceParams.PaymentHash,
+			"paymentHash":         paymentHash,
 		}).Infof("Failed to lookup invoice: %v", err)
 
 		publishResponse(&Nip47Response{

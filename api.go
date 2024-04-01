@@ -833,5 +833,9 @@ func (api *API) Setup(setupRequest *models.SetupRequest) error {
 		api.svc.cfg.SetUpdate("LNDMacaroonHex", setupRequest.LNDMacaroonHex, setupRequest.UnlockPassword)
 	}
 
+	if setupRequest.CashuMintUrl != "" {
+		api.svc.cfg.SetUpdate("CashuMintUrl", setupRequest.CashuMintUrl, setupRequest.UnlockPassword)
+	}
+
 	return nil
 }

@@ -1,7 +1,7 @@
-import React from "react";
 import * as bip39 from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
-import { useLocation, useNavigate } from "react-router-dom";
+import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import ConnectButton from "src/components/ConnectButton";
 import Container from "src/components/Container";
 import Input from "src/components/Input";
@@ -59,6 +59,7 @@ export function SetupNode() {
             <option value={"BREEZ"}>Breez</option>
             <option value={"GREENLIGHT"}>Greenlight</option>
             <option value={"LDK"}>LDK</option>
+            <option value={"CASHU"}>Cashu</option>
             {!isNew && <option value={"LND"}>LND</option>}
           </select>
           {backendType === "BREEZ" && <BreezForm handleSubmit={handleSubmit} />}
@@ -66,6 +67,7 @@ export function SetupNode() {
             <GreenlightForm handleSubmit={handleSubmit} />
           )}
           {backendType === "LDK" && <LDKForm handleSubmit={handleSubmit} />}
+          {backendType === "CASHU" && <CashuForm handleSubmit={handleSubmit} />}
           {backendType === "LND" && <LNDForm handleSubmit={handleSubmit} />}
         </div>
       </Container>
@@ -181,6 +183,37 @@ function LDKForm({ handleSubmit }: SetupFormProps) {
 
   return (
     <form onSubmit={onSubmit} className="w-full">
+      <ConnectButton isConnecting={false} submitText="Next" />
+    </form>
+  );
+}
+
+function CashuForm({ handleSubmit }: SetupFormProps) {
+  const [cashuMintUrl, setCashuMintUrl] = React.useState<string>("");
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    handleSubmit({ cashuMintUrl });
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="w-full">
+      <label
+        htmlFor="cashu-mint-url"
+        className="mt-8 mb-2 text-md dark:text-white flex justify-between items-center"
+      >
+        <span>Cashu Mint URL</span>{" "}
+        <Link to="https://bitcoinmints.com/" target="_blank">
+          <span className="text-purple-500">Find a mint</span>
+        </Link>
+      </label>
+      <Input
+        name="cashu-mint-url"
+        onChange={(e) => setCashuMintUrl(e.target.value)}
+        value={cashuMintUrl}
+        id="cashu-mint-url"
+      />
+
       <ConnectButton isConnecting={false} submitText="Next" />
     </form>
   );

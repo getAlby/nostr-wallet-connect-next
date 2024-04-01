@@ -56,10 +56,11 @@ type BackupReminderRequest struct {
 }
 
 type SetupRequest struct {
-	LNBackendType string `json:"backendType"`
+	LNBackendType  string `json:"backendType"`
+	UnlockPassword string `json:"unlockPassword"`
+	Mnemonic       string `json:"mnemonic"`
 
 	// Breez / Greenlight
-	Mnemonic             string `json:"mnemonic"`
 	GreenlightInviteCode string `json:"greenlightInviteCode"`
 	NextBackupReminder   string `json:"nextBackupReminder"`
 
@@ -72,7 +73,9 @@ type SetupRequest struct {
 	LNDMacaroonFile string `json:"lndMacaroonFile"`
 	LNDCertHex      string `json:"lndCertHex"`
 	LNDMacaroonHex  string `json:"lndMacaroonHex"`
-	UnlockPassword  string `json:"unlockPassword"`
+
+	// Cashu fields
+	CashuMintUrl string `json:"cashuMintUrl"`
 }
 
 type CreateAppResponse struct {

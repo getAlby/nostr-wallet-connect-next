@@ -1,6 +1,6 @@
 module github.com/getAlby/nostr-wallet-connect
 
-go 1.21
+go 1.21.0
 
 toolchain go1.21.1
 
@@ -8,6 +8,7 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/breez/breez-sdk-go v0.3.4
 	github.com/davrux/echo-logrus/v4 v4.0.3
+	github.com/elnosh/gonuts v0.0.0-20240326153246-777404dcc1c1
 	github.com/getAlby/glalby-go v0.0.0-20240319195439-4ec5332e5493
 	github.com/getAlby/ldk-node-go v0.0.0-20240318131343-7ddfe35d7ce9
 	github.com/go-gormigrate/gormigrate/v2 v2.1.1
@@ -153,7 +154,7 @@ require (
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xiang90/probing v0.0.0-20221125231312-a49e3df8f510 // indirect
-	go.etcd.io/bbolt v1.3.6 // indirect
+	go.etcd.io/bbolt v1.3.7 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.6 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.6 // indirect
 	go.etcd.io/etcd/client/v2 v2.305.6 // indirect
@@ -175,7 +176,7 @@ require (
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/sys v0.16.0 // indirect
 	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect

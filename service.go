@@ -208,6 +208,13 @@ func (svc *Service) launchLNBackend(encryptionKey string) error {
 		BreezWorkdir := path.Join(svc.cfg.Env.Workdir, "breez")
 
 		lnClient, err = NewBreezService(svc.Logger, Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
+	case config.CashuBackendType:
+		// Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
+
+		cashuMintUrl, _ := svc.cfg.Get("CashuMintUrl", encryptionKey)
+		cashuWorkdir := path.Join(svc.cfg.Env.Workdir, "cashu")
+
+		lnClient, err = NewCashuService(svc.Logger, cashuWorkdir, cashuMintUrl, svc.cfg)
 	default:
 		svc.Logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
 	}

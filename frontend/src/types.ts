@@ -16,7 +16,7 @@ export const NIP_47_LOOKUP_INVOICE_METHOD = "lookup_invoice";
 export const NIP_47_LIST_TRANSACTIONS_METHOD = "list_transactions";
 export const NIP_47_SIGN_MESSAGE_METHOD = "sign_message";
 
-export type BackendType = "LND" | "BREEZ" | "GREENLIGHT" | "LDK";
+export type BackendType = "LND" | "BREEZ" | "GREENLIGHT" | "LDK" | "CASHU";
 
 export type RequestMethodType =
   | "pay_invoice"
