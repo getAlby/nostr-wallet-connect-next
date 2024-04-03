@@ -42,7 +42,7 @@ export default function FirstChannel() {
             </p>
 
             <div className="flex flex-row items-center justify-center gap-3">
-              <Link to={info.albyAuthUrl}>
+              <Link to={info.albyAuthUrl} target="_blank">
                 <Button>Connect your Alby Account</Button>
               </Link>
               <Link to="/channels/new">
