@@ -27,6 +27,7 @@ func (albyHttpSvc *AlbyHttpService) RegisterSharedRoutes(e *echo.Echo, authMiddl
 	e.GET("/api/alby/me", albyHttpSvc.albyMeHandler, authMiddleware)
 	e.GET("/api/alby/balance", albyHttpSvc.albyBalanceHandler, authMiddleware)
 	e.POST("/api/alby/pay", albyHttpSvc.albyPayHandler, authMiddleware)
+	e.POST("/api/alby/connect-account", albyHttpSvc.albyConnectAccountHandler, authMiddleware)
 }
 
 func (albyHttpSvc *AlbyHttpService) albyCallbackHandler(c echo.Context) error {
@@ -88,6 +89,19 @@ func (albyHttpSvc *AlbyHttpService) albyPayHandler(c echo.Context) error {
 		albyHttpSvc.logger.WithError(err).Error("Failed to request alby pay endpoint")
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Message: fmt.Sprintf("Failed to request alby pay endpoint: %s", err.Error()),
+		})
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (albyHttpSvc *AlbyHttpService) albyConnectAccountHandler(c echo.Context) error {
+
+	err := albyHttpSvc.albyOAuthSvc.ConnectAccount(c.Request().Context())
+	if err != nil {
+		albyHttpSvc.logger.WithError(err).Error("Failed to connect alby account")
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: fmt.Sprintf("Failed to connect alby account: %s", err.Error()),
 		})
 	}
 

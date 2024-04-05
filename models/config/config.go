@@ -32,8 +32,9 @@ type AppConfig struct {
 	LogEvents        bool   `envconfig:"LOG_EVENTS" default:"false"`
 }
 
-type ConfigKVStore interface {
+type Config interface {
 	Get(key string, encryptionKey string) (string, error)
 	SetIgnore(key string, value string, encryptionKey string)
 	SetUpdate(key string, value string, encryptionKey string)
+	GetNostrPublicKey() string
 }

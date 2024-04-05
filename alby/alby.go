@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/models/api"
 	"github.com/getAlby/nostr-wallet-connect/models/config"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -19,10 +20,11 @@ import (
 
 type AlbyOAuthService struct {
 	appConfig   *config.AppConfig
-	kvStore     config.ConfigKVStore
+	config      config.Config
 	oauthConf   *oauth2.Config
 	logger      *logrus.Logger
 	eventLogger events.EventLogger
+	api         api.API
 }
 
 // TODO: move to models/alby
@@ -49,7 +51,7 @@ const (
 	userIdentifierKey    = "AlbyUserIdentifier"
 )
 
-func NewAlbyOauthService(logger *logrus.Logger, kvStore config.ConfigKVStore, appConfig *config.AppConfig, eventLogger events.EventLogger) *AlbyOAuthService {
+func NewAlbyOauthService(logger *logrus.Logger, kvStore config.Config, appConfig *config.AppConfig, eventLogger events.EventLogger, api api.API) *AlbyOAuthService {
 	conf := &oauth2.Config{
 		ClientID:     appConfig.AlbyClientId,
 		ClientSecret: appConfig.AlbyClientSecret,
@@ -65,9 +67,10 @@ func NewAlbyOauthService(logger *logrus.Logger, kvStore config.ConfigKVStore, ap
 	albyOAuthSvc := &AlbyOAuthService{
 		appConfig:   appConfig,
 		oauthConf:   conf,
-		kvStore:     kvStore,
+		config:      kvStore,
 		logger:      logger,
 		eventLogger: eventLogger,
+		api:         api,
 	}
 	return albyOAuthSvc
 }
@@ -87,13 +90,13 @@ func (svc *AlbyOAuthService) CallbackHandler(ctx context.Context, code string) e
 		return err
 	}
 
-	svc.kvStore.SetUpdate(userIdentifierKey, me.Identifier, "")
+	svc.config.SetUpdate(userIdentifierKey, me.Identifier, "")
 
 	return nil
 }
 
 func (svc *AlbyOAuthService) GetUserIdentifier() string {
-	userIdentifier, err := svc.kvStore.Get(userIdentifierKey, "")
+	userIdentifier, err := svc.config.Get(userIdentifierKey, "")
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to fetch user identifier from user configs")
 		return ""
@@ -110,9 +113,9 @@ func (svc *AlbyOAuthService) IsConnected(ctx context.Context) bool {
 }
 
 func (svc *AlbyOAuthService) saveToken(token *oauth2.Token) {
-	svc.kvStore.SetUpdate(accessTokenExpiryKey, strconv.FormatInt(token.Expiry.Unix(), 10), "")
-	svc.kvStore.SetUpdate(accessTokenKey, token.AccessToken, "")
-	svc.kvStore.SetUpdate(refreshTokenKey, token.RefreshToken, "")
+	svc.config.SetUpdate(accessTokenExpiryKey, strconv.FormatInt(token.Expiry.Unix(), 10), "")
+	svc.config.SetUpdate(accessTokenKey, token.AccessToken, "")
+	svc.config.SetUpdate(refreshTokenKey, token.RefreshToken, "")
 }
 
 var tokenMutex sync.Mutex
@@ -120,7 +123,7 @@ var tokenMutex sync.Mutex
 func (svc *AlbyOAuthService) fetchUserToken(ctx context.Context) (*oauth2.Token, error) {
 	tokenMutex.Lock()
 	defer tokenMutex.Unlock()
-	accessToken, err := svc.kvStore.Get(accessTokenKey, "")
+	accessToken, err := svc.config.Get(accessTokenKey, "")
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +132,7 @@ func (svc *AlbyOAuthService) fetchUserToken(ctx context.Context) (*oauth2.Token,
 		return nil, nil
 	}
 
-	expiry, err := svc.kvStore.Get(accessTokenExpiryKey, "")
+	expiry, err := svc.config.Get(accessTokenExpiryKey, "")
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +145,7 @@ func (svc *AlbyOAuthService) fetchUserToken(ctx context.Context) (*oauth2.Token,
 	if err != nil {
 		return nil, err
 	}
-	refreshToken, err := svc.kvStore.Get(refreshTokenKey, "")
+	refreshToken, err := svc.config.Get(refreshTokenKey, "")
 	if err != nil {
 		return nil, err
 	}
@@ -332,10 +335,46 @@ func (svc *AlbyOAuthService) GetAuthUrl() string {
 	return svc.oauthConf.AuthCodeURL("unused")
 }
 
+func (svc *AlbyOAuthService) ConnectAccount(ctx context.Context) error {
+	connectionPubkey, err := svc.createAlbyAccountNWCNode(ctx)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to create alby account nwc node")
+		return err
+	}
+
+	app, err := svc.api.CreateApp(&api.CreateAppRequest{
+		Name:          "getalby.com",
+		Pubkey:        connectionPubkey,
+		MaxAmount:     100_000,
+		BudgetRenewal: "monthly",
+		// TODO: do not hardcode this
+		// copied from NIP_47_CAPABILITIES which is in the main package
+		RequestMethods: "pay_invoice pay_keysend get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice multi_pay_keysend sign_message",
+	})
+
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to create app connection")
+		return err
+	}
+
+	svc.logger.WithFields(logrus.Fields{
+		"app": app,
+	}).Info("Created alby app connection")
+
+	err = svc.activateAlbyAccountNWCNode(ctx)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to activate alby account nwc node")
+		return err
+	}
+
+	return nil
+}
+
 func (svc *AlbyOAuthService) Log(ctx context.Context, event *events.Event) error {
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to fetch user token")
+		return err
 	}
 
 	client := svc.oauthConf.Client(ctx, token)
@@ -372,6 +411,108 @@ func (svc *AlbyOAuthService) Log(ctx context.Context, event *events.Event) error
 		}).Error("Request to /events returned non-success status")
 		return errors.New("request to /events returned non-success status")
 	}
+
+	return nil
+}
+
+func (svc *AlbyOAuthService) createAlbyAccountNWCNode(ctx context.Context) (string, error) {
+	token, err := svc.fetchUserToken(ctx)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to fetch user token")
+	}
+
+	client := svc.oauthConf.Client(ctx, token)
+
+	type CreateNWCNodeRequest struct {
+		WalletPubkey string `json:"wallet_pubkey"`
+	}
+
+	createNodeRequest := CreateNWCNodeRequest{
+		WalletPubkey: svc.config.GetNostrPublicKey(),
+	}
+
+	body := bytes.NewBuffer([]byte{})
+	err = json.NewEncoder(body).Encode(createNodeRequest)
+
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to encode request payload")
+		return "", err
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/internal/nwcs", svc.appConfig.AlbyAPIURL), body)
+	if err != nil {
+		svc.logger.WithError(err).Error("Error creating request /internal/nwcs")
+		return "", err
+	}
+
+	req.Header.Set("User-Agent", "NWC-next")
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		svc.logger.WithFields(logrus.Fields{
+			"createNodeRequest": createNodeRequest,
+		}).WithError(err).Error("Failed to send request to /internal/nwcs")
+		return "", err
+	}
+
+	if resp.StatusCode >= 300 {
+		svc.logger.WithFields(logrus.Fields{
+			"createNodeRequest": createNodeRequest,
+			"status":            resp.StatusCode,
+		}).Error("Request to /internal/nwcs returned non-success status")
+		return "", errors.New("request to /internal/nwcs returned non-success status")
+	}
+
+	type CreateNWCNodeResponse struct {
+		Pubkey string `json:"pubkey"`
+	}
+
+	responsePayload := &CreateNWCNodeResponse{}
+	err = json.NewDecoder(resp.Body).Decode(responsePayload)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to decode response payload")
+		return "", err
+	}
+
+	svc.logger.WithFields(logrus.Fields{
+		"pubkey": responsePayload.Pubkey,
+	}).Info("Created alby nwc node successfully")
+
+	return responsePayload.Pubkey, nil
+}
+
+func (svc *AlbyOAuthService) activateAlbyAccountNWCNode(ctx context.Context) error {
+	token, err := svc.fetchUserToken(ctx)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to fetch user token")
+	}
+
+	client := svc.oauthConf.Client(ctx, token)
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/internal/nwcs/activate", svc.appConfig.AlbyAPIURL), nil)
+	if err != nil {
+		svc.logger.WithError(err).Error("Error creating request /internal/nwcs/activate")
+		return err
+	}
+
+	req.Header.Set("User-Agent", "NWC-next")
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to send request to /internal/nwcs/activate")
+		return err
+	}
+
+	if resp.StatusCode >= 300 {
+		svc.logger.WithFields(logrus.Fields{
+			"status": resp.StatusCode,
+		}).Error("Request to /internal/nwcs/activate returned non-success status")
+		return errors.New("request to /internal/nwcs/activate returned non-success status")
+	}
+
+	svc.logger.Info("Activated alby nwc node successfully")
 
 	return nil
 }

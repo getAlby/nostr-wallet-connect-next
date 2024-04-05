@@ -38,6 +38,7 @@ import TwoColumnFullScreenLayout from "src/components/layouts/TwoColumnFullScree
 import { OnboardingRedirect } from "src/components/redirects/OnboardingRedirect";
 import { Toaster } from "src/components/ui/toaster";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
+import { ConnectAlbyAccount } from "src/screens/onboarding/ConnectAlbyAccount";
 import LightningOnboarding from "src/screens/onboarding/LightningOnboarding";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 
@@ -118,6 +119,10 @@ function App() {
                   <Route path="migrate-alby" element={<MigrateAlbyFunds />} />
                   <Route path="channels">{newChannelRoutes}</Route>
                 </Route>
+                <Route
+                  path="connect-alby-account"
+                  element={<ConnectAlbyAccount />}
+                />
               </Route>
             </Route>
             <Route path="/*" element={<NotFound />} />

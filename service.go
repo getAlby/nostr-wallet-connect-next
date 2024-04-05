@@ -124,24 +124,24 @@ func NewService(ctx context.Context) (*Service, error) {
 
 	eventLogger := events.NewEventLogger(logger, cfg.Env.LogEvents)
 
-	albyOAuthSvc := alby.NewAlbyOauthService(logger, cfg, cfg.Env, eventLogger)
+	var wg sync.WaitGroup
+	svc := &Service{
+		cfg:         cfg,
+		db:          db,
+		ctx:         ctx,
+		wg:          &wg,
+		Logger:      logger,
+		EventLogger: eventLogger,
+	}
+
+	// FIXME: tangled dependency
+	svc.AlbyOAuthSvc = alby.NewAlbyOauthService(logger, cfg, cfg.Env, eventLogger, NewAPI(svc))
 	if err != nil {
 		logger.WithError(err).Error("Failed to create Alby OAuth service")
 		return nil, err
 	}
 
-	eventLogger.Subscribe(albyOAuthSvc)
-
-	var wg sync.WaitGroup
-	svc := &Service{
-		cfg:          cfg,
-		db:           db,
-		ctx:          ctx,
-		wg:           &wg,
-		Logger:       logger,
-		AlbyOAuthSvc: albyOAuthSvc,
-		EventLogger:  eventLogger,
-	}
+	eventLogger.Subscribe(svc.AlbyOAuthSvc)
 
 	eventLogger.Log(&events.Event{
 		Event: "nwc_started",
