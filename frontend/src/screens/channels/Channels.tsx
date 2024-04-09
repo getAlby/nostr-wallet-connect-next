@@ -186,8 +186,8 @@ export default function Channels() {
   return (
     <>
       <AppHeader
-        title={"Channels"}
-        description={"Manage liquidity on your lightnig node."}
+        title="Channels"
+        description="Manage liquidity on your lightnig node"
         contentRight={
           <>
             <DropdownMenu>
