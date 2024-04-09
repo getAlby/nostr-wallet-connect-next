@@ -6,17 +6,25 @@ import Loading from "src/components/Loading";
 import {
   ArrowDownToDot,
   ArrowUpFromDot,
+  BitcoinIcon,
   CopyIcon,
   Dot,
   ShieldCheckIcon,
   Sparkles,
   WalletIcon,
+  ZapIcon,
 } from "lucide-react";
 import AppHeader from "src/components/AppHeader";
 import BreezRedeem from "src/components/BreezRedeem";
 import EmptyState from "src/components/EmptyState";
 import { Alert, AlertDescription, AlertTitle } from "src/components/ui/alert";
 import { Button } from "src/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "src/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -161,6 +169,56 @@ function Wallet() {
         }
       />
 
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5">
+        <div className="text-5xl font-semibold">
+          {new Intl.NumberFormat().format(
+            balances.lightning.totalSpendable / 1000 + balances.onchain.total
+          )}{" "}
+          sats
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          <Button variant="secondary" className="cursor-not-allowed">
+            Buy
+          </Button>
+          <Button variant="secondary" className="cursor-not-allowed">
+            Scan
+          </Button>
+          <Button className="cursor-not-allowed">Receive</Button>
+          <Button className="cursor-not-allowed">Send</Button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <Card>
+          <CardHeader>
+            <div className="flex flex-row justify-between">
+              <CardTitle>Lightning</CardTitle>
+              <ZapIcon className="w-5 h-5 text-[#FFD648]" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <span className="text-3xl font-semibold">
+              {new Intl.NumberFormat().format(
+                balances.lightning.totalSpendable / 1000
+              )}{" "}
+              sats
+            </span>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <div className="flex flex-row justify-between">
+              <CardTitle>Onchain</CardTitle>
+              <BitcoinIcon className="w-5 h-5 text-[#F7931A]" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <span className="text-3xl font-semibold">
+              {new Intl.NumberFormat().format(balances.onchain.total)} sats
+            </span>
+          </CardContent>
+        </Card>
+      </div>
+
       <BreezRedeem />
 
       {info?.showBackupReminder && showBackupPrompt && (
@@ -184,7 +242,7 @@ function Wallet() {
         </>
       )}
 
-      {!isWalletUsable && (
+      {balances.lightning.totalSpendable === 0 && (
         <EmptyState
           icon={<WalletIcon />}
           title="You have no funds, yet"
