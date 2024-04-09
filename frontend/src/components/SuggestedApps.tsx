@@ -1,30 +1,43 @@
-import { Link } from "react-router-dom";
-
+import { Label } from "@radix-ui/react-dropdown-menu";
+import React from "react";
+import QRCode from "react-qr-code";
 import alby from "src/assets/suggested-apps/alby.png";
-import damus from "src/assets/suggested-apps/damus.png";
 import amethyst from "src/assets/suggested-apps/amethyst.png";
-import primal from "src/assets/suggested-apps/primal.png";
-import zapstream from "src/assets/suggested-apps/zap-stream.png";
-import wavelake from "src/assets/suggested-apps/wavelake.png";
-import snort from "src/assets/suggested-apps/snort.png";
+import bc from "src/assets/suggested-apps/bitcoin-connect.png";
+import damus from "src/assets/suggested-apps/damus.png";
 import hablanews from "src/assets/suggested-apps/habla-news.png";
+import kiwi from "src/assets/suggested-apps/kiwi.png";
+import lume from "src/assets/suggested-apps/lume.png";
 import nostrudel from "src/assets/suggested-apps/nostrudel.png";
+import nostur from "src/assets/suggested-apps/nostur.png";
+import primal from "src/assets/suggested-apps/primal.png";
+import snort from "src/assets/suggested-apps/snort.png";
+import wavelake from "src/assets/suggested-apps/wavelake.png";
+import wherostr from "src/assets/suggested-apps/wherostr.png";
 import yakihonne from "src/assets/suggested-apps/yakihonne.png";
+import zapstream from "src/assets/suggested-apps/zap-stream.png";
 import zapplanner from "src/assets/suggested-apps/zapplanner.png";
 import zapplepay from "src/assets/suggested-apps/zapple-pay.png";
-import lume from "src/assets/suggested-apps/lume.png";
-import bc from "src/assets/suggested-apps/bitcoin-connect.png";
-import kiwi from "src/assets/suggested-apps/kiwi.png";
 import zappybird from "src/assets/suggested-apps/zappy-bird.png";
-import nostur from "src/assets/suggested-apps/nostur.png";
-import wherostr from "src/assets/suggested-apps/wherostr.png";
-import { SuggestedApp } from "src/types";
+import { Button } from "src/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardTitle,
 } from "src/components/ui/card";
+import { Checkbox } from "src/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "src/components/ui/dialog";
+import { Input } from "src/components/ui/input";
+import { SuggestedApp } from "src/types";
 
 const suggestedApps: SuggestedApp[] = [
   {
@@ -137,25 +150,113 @@ const suggestedApps: SuggestedApp[] = [
   },
 ];
 
-function SuggestedApp({ to, title, description, logo }: SuggestedApp) {
+export function DialogDemo() {
   return (
-    <Link to={to} target="_blank">
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-3 items-center">
-            <img
-              src={logo}
-              alt="logo"
-              className="inline rounded-lg w-10 h-10"
-            />
-            <div className="flex-grow">
-              <CardTitle>{title}</CardTitle>
-              <CardDescription>{description}</CardDescription>
-            </div>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">Edit Profile</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Edit profile</DialogTitle>
+          <DialogDescription>
+            Make changes to your profile here. Click save when you're done.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              Name
+            </Label>
+            <Input id="name" value="Pedro Duarte" className="col-span-3" />
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="username" className="text-right">
+              Username
+            </Label>
+            <Input id="username" value="@peduarte" className="col-span-3" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="submit">Save changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function SuggestedApp({ to, title, description, logo }: SuggestedApp) {
+  const [connecting, setConnecting] = React.useState(false);
+
+  return (
+    <Dialog>
+      <DialogTrigger>
+        <Card className="text-left">
+          <CardContent className="pt-6">
+            <div className="flex gap-3 items-center">
+              <img
+                src={logo}
+                alt="logo"
+                className="inline rounded-lg w-10 h-10"
+              />
+              <div className="flex-grow">
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </DialogTrigger>
+      <DialogContent>
+        {!connecting && (
+          <>
+            <DialogHeader>Connect to {title}</DialogHeader>
+            <div className="text-muted-foreground text-sm -mt-3 mb-3">
+              Configure wallet permissions for the app
+            </div>
+            <div className="flex flex-row justify-center items-center gap-2">
+              <img
+                src={logo}
+                alt="logo"
+                className="inline rounded-lg w-10 h-10"
+              />
+              <h3 className="font-semibold text-2xl">{title}</h3>
+            </div>
+            <div>
+              <h3 className="font-semibold">Authorize the app to:</h3>
+              <div className="flex items-center space-x-2 mt-2">
+                <Checkbox id="terms" />
+                <label
+                  htmlFor="terms"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Send payments
+                </label>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold">Monthly budget</h3>
+              <div className="flex items-center space-x-2 mt-2">100k sats</div>
+            </div>
+            <Button onClick={() => setConnecting(true)}>Continue</Button>
+          </>
+        )}
+        {connecting && (
+          <>
+            <DialogHeader>Finalize connection</DialogHeader>
+            <DialogContent>
+              <div className="text-muted-foreground text-sm -mt-3 mb-3">
+                ...
+              </div>
+              <QRCode value="123" />
+            </DialogContent>
+            <DialogFooter>
+              <Button variant={"secondary"}>Copy Connection Secret</Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
