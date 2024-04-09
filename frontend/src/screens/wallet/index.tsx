@@ -4,11 +4,15 @@ import { Link } from "react-router-dom";
 import Loading from "src/components/Loading";
 
 import {
+  ArrowDown,
   ArrowDownToDot,
+  ArrowUp,
   ArrowUpFromDot,
   BitcoinIcon,
   CopyIcon,
+  CreditCard,
   Dot,
+  Scan,
   ShieldCheckIcon,
   Sparkles,
   WalletIcon,
@@ -178,13 +182,21 @@ function Wallet() {
         </div>
         <div className="grid grid-cols-4 gap-3">
           <Button variant="secondary" className="cursor-not-allowed">
+            <CreditCard className="w-4 h-4 mr-2" />
             Buy
           </Button>
           <Button variant="secondary" className="cursor-not-allowed">
+            <Scan className="w-4 h-4 mr-2" />
             Scan
           </Button>
-          <Button className="cursor-not-allowed">Receive</Button>
-          <Button className="cursor-not-allowed">Send</Button>
+          <Button className="cursor-not-allowed">
+            <ArrowDown className="w-4 h-4 mr-2" />
+            Receive
+          </Button>
+          <Button className="cursor-not-allowed">
+            <ArrowUp className="w-4 h-4 mr-2" />
+            Send
+          </Button>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
