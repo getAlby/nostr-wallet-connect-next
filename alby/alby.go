@@ -216,7 +216,7 @@ func (svc *AlbyOAuthService) GetBalance(ctx context.Context) (*AlbyBalance, erro
 
 	client := svc.oauthConf.Client(ctx, token)
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/internal/lndhub/balance", svc.appConfig.AlbyAPIURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/balance", svc.appConfig.AlbyAPIURL), nil)
 	if err != nil {
 		svc.logger.WithError(err).Error("Error creating request to balance endpoint")
 		return nil, err
