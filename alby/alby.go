@@ -19,12 +19,12 @@ import (
 )
 
 type AlbyOAuthService struct {
-	appConfig   *config.AppConfig
-	config      config.Config
-	oauthConf   *oauth2.Config
-	logger      *logrus.Logger
-	eventLogger events.EventLogger
-	api         api.API
+	appConfig      *config.AppConfig
+	config         config.Config
+	oauthConf      *oauth2.Config
+	logger         *logrus.Logger
+	eventPublisher events.EventPublisher
+	api            api.API
 }
 
 // TODO: move to models/alby
@@ -51,7 +51,7 @@ const (
 	userIdentifierKey    = "AlbyUserIdentifier"
 )
 
-func NewAlbyOauthService(logger *logrus.Logger, kvStore config.Config, appConfig *config.AppConfig, eventLogger events.EventLogger, api api.API) *AlbyOAuthService {
+func NewAlbyOAuthService(logger *logrus.Logger, kvStore config.Config, appConfig *config.AppConfig, eventPublisher events.EventPublisher, api api.API) *AlbyOAuthService {
 	conf := &oauth2.Config{
 		ClientID:     appConfig.AlbyClientId,
 		ClientSecret: appConfig.AlbyClientSecret,
@@ -65,12 +65,12 @@ func NewAlbyOauthService(logger *logrus.Logger, kvStore config.Config, appConfig
 	}
 
 	albyOAuthSvc := &AlbyOAuthService{
-		appConfig:   appConfig,
-		oauthConf:   conf,
-		config:      kvStore,
-		logger:      logger,
-		eventLogger: eventLogger,
-		api:         api,
+		appConfig:      appConfig,
+		oauthConf:      conf,
+		config:         kvStore,
+		logger:         logger,
+		eventPublisher: eventPublisher,
+		api:            api,
 	}
 	return albyOAuthSvc
 }
@@ -370,7 +370,13 @@ func (svc *AlbyOAuthService) ConnectAccount(ctx context.Context) error {
 	return nil
 }
 
-func (svc *AlbyOAuthService) Log(ctx context.Context, event *events.Event) error {
+func (svc *AlbyOAuthService) ConsumeEvent(ctx context.Context, event *events.Event) error {
+	// TODO: rename this config option to be specific to the alby API
+	if !svc.appConfig.LogEvents {
+		svc.logger.WithField("event", event).Debug("Skipped sending to alby events API")
+		return nil
+	}
+
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to fetch user token")

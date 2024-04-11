@@ -38,9 +38,8 @@ import TwoColumnFullScreenLayout from "src/components/layouts/TwoColumnFullScree
 import { OnboardingRedirect } from "src/components/redirects/OnboardingRedirect";
 import { Toaster } from "src/components/ui/toaster";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
-import { ConnectAlbyAccount } from "src/screens/onboarding/ConnectAlbyAccount";
-import LightningOnboarding from "src/screens/onboarding/LightningOnboarding";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
+import DebugTools from "src/screens/settings/DebugTools";
 
 const newChannelRoutes = (
   <Route path="new">
@@ -84,6 +83,9 @@ function App() {
                 <Route path=":pubkey" element={<ShowApp />} />
                 <Route path="created" element={<AppCreated />} />
               </Route>
+              <Route path="debug-tools" element={<DefaultRedirect />}>
+                <Route index element={<DebugTools />} />
+              </Route>
               <Route path="channels" element={<DefaultRedirect />}>
                 <Route index path="" element={<Channels />} />
                 {newChannelRoutes}
@@ -115,7 +117,6 @@ function App() {
               </Route>
               <Route path="onboarding" element={<OnboardingRedirect />}>
                 <Route path="lightning">
-                  <Route path="" element={<LightningOnboarding />} />
                   <Route path="migrate-alby" element={<MigrateAlbyFunds />} />
                   <Route path="channels">{newChannelRoutes}</Route>
                 </Route>
@@ -127,7 +128,7 @@ function App() {
             </Route>
             <Route path="/*" element={<NotFound />} />
           </Routes>
-        </HashRouter>{" "}
+        </HashRouter>
       </ThemeProvider>
     </>
   );

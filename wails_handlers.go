@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -65,6 +66,26 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 	}
 
+	peerChannelRegex := regexp.MustCompile(
+		`/api/peers/([^/]+)/channels/([^/]+)`,
+	)
+
+	peerChannelMatch := peerChannelRegex.FindStringSubmatch(route)
+
+	switch {
+	case len(peerChannelMatch) > 1:
+		peerId := peerChannelMatch[1]
+		channelId := peerChannelMatch[2]
+		switch method {
+		case "DELETE":
+			closeChannelResponse, err := app.api.CloseChannel(ctx, peerId, channelId)
+			if err != nil {
+				return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+			}
+			return WailsRequestRouterResponse{Body: closeChannelResponse, Error: ""}
+		}
+	}
+
 	mempoolLightningNodePubkeyRegex := regexp.MustCompile(
 		`/api/mempool/lightning/nodes/([0-9a-f]+)`,
 	)
@@ -107,23 +128,6 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			}
 			return WailsRequestRouterResponse{Body: createAppResponse, Error: ""}
 		}
-	// TODO: should this be DELETE /api/channels/:id?
-	case "/api/channels/close":
-		closeChannelRequest := &api.CloseChannelRequest{}
-		err := json.Unmarshal([]byte(body), closeChannelRequest)
-		if err != nil {
-			app.svc.Logger.WithFields(logrus.Fields{
-				"route":  route,
-				"method": method,
-				"body":   body,
-			}).WithError(err).Error("Failed to decode request to wails router")
-			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
-		}
-		closeChannelResponse, err := app.api.CloseChannel(ctx, closeChannelRequest)
-		if err != nil {
-			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
-		}
-		return WailsRequestRouterResponse{Body: closeChannelResponse, Error: ""}
 	case "/api/reset-router":
 		err := app.api.ResetRouter(ctx)
 		if err != nil {
@@ -197,21 +201,30 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		return WailsRequestRouterResponse{Body: *redeemOnchainFundsResponse, Error: ""}
 	case "/api/peers":
-		connectPeerRequest := &api.ConnectPeerRequest{}
-		err := json.Unmarshal([]byte(body), connectPeerRequest)
-		if err != nil {
-			app.svc.Logger.WithFields(logrus.Fields{
-				"route":  route,
-				"method": method,
-				"body":   body,
-			}).WithError(err).Error("Failed to decode request to wails router")
-			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		switch method {
+		case "GET":
+			peers, err := app.api.ListPeers(ctx)
+			if err != nil {
+				return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+			}
+			return WailsRequestRouterResponse{Body: peers, Error: ""}
+		case "POST":
+			connectPeerRequest := &api.ConnectPeerRequest{}
+			err := json.Unmarshal([]byte(body), connectPeerRequest)
+			if err != nil {
+				app.svc.Logger.WithFields(logrus.Fields{
+					"route":  route,
+					"method": method,
+					"body":   body,
+				}).WithError(err).Error("Failed to decode request to wails router")
+				return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+			}
+			err = app.api.ConnectPeer(ctx, connectPeerRequest)
+			if err != nil {
+				return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+			}
+			return WailsRequestRouterResponse{Body: nil, Error: ""}
 		}
-		err = app.api.ConnectPeer(ctx, connectPeerRequest)
-		if err != nil {
-			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
-		}
-		return WailsRequestRouterResponse{Body: nil, Error: ""}
 	case "/api/node/connection-info":
 		nodeConnectionInfo, err := app.api.GetNodeConnectionInfo(ctx)
 		if err != nil {
@@ -318,7 +331,77 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 		return WailsRequestRouterResponse{Body: nil, Error: ""}
+	case "/api/send-payment-probes":
+		sendPaymentProbesRequest := &api.SendPaymentProbesRequest{}
+		err := json.Unmarshal([]byte(body), sendPaymentProbesRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		sendPaymentProbesResponse, err := app.api.SendPaymentProbes(ctx, sendPaymentProbesRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to send payment probes")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: sendPaymentProbesResponse, Error: ""}
+	case "/api/send-spontaneous-payment-probes":
+		sendSpontaneousPaymentProbesRequest := &api.SendSpontaneousPaymentProbesRequest{}
+		err := json.Unmarshal([]byte(body), sendSpontaneousPaymentProbesRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		sendSpontaneousPaymentProbesResponse, err := app.api.SendSpontaneousPaymentProbes(ctx, sendSpontaneousPaymentProbesRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to send spontaneous payment probes")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: sendSpontaneousPaymentProbesResponse, Error: ""}
 	}
+
+	if strings.HasPrefix(route, "/api/log/") {
+		logType := strings.TrimPrefix(route, "/api/log/")
+		if logType != api.LogTypeNode && logType != api.LogTypeApp {
+			return WailsRequestRouterResponse{Body: nil, Error: fmt.Sprintf("Invalid log type: '%s'", logType)}
+		}
+		getLogOutputRequest := &api.GetLogOutputRequest{}
+		err := json.Unmarshal([]byte(body), getLogOutputRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		logOutputResponse, err := app.api.GetLogOutput(ctx, logType, getLogOutputRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to get log output")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: logOutputResponse, Error: ""}
+	}
+
 	app.svc.Logger.WithFields(logrus.Fields{
 		"route":  route,
 		"method": method,

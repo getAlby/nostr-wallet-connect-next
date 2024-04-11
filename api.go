@@ -248,6 +248,7 @@ func (api *API) GetApp(userApp *App) *models.App {
 }
 
 func (api *API) ListApps() ([]models.App, error) {
+	// TODO: join apps and permissions
 	apps := []App{}
 	api.svc.db.Find(&apps)
 
@@ -344,6 +345,13 @@ func (api *API) GetNodeConnectionInfo(ctx context.Context) (*lnclient.NodeConnec
 	return api.svc.lnClient.GetNodeConnectionInfo(ctx)
 }
 
+func (api *API) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, error) {
+	if api.svc.lnClient == nil {
+		return nil, errors.New("LNClient not started")
+	}
+	return api.svc.lnClient.ListPeers(ctx)
+}
+
 func (api *API) ConnectPeer(ctx context.Context, connectPeerRequest *models.ConnectPeerRequest) error {
 	if api.svc.lnClient == nil {
 		return errors.New("LNClient not started")
@@ -358,11 +366,14 @@ func (api *API) OpenChannel(ctx context.Context, openChannelRequest *models.Open
 	return api.svc.lnClient.OpenChannel(ctx, openChannelRequest)
 }
 
-func (api *API) CloseChannel(ctx context.Context, closeChannelRequest *models.CloseChannelRequest) (*models.CloseChannelResponse, error) {
+func (api *API) CloseChannel(ctx context.Context, peerId, channelId string) (*models.CloseChannelResponse, error) {
 	if api.svc.lnClient == nil {
 		return nil, errors.New("LNClient not started")
 	}
-	return api.svc.lnClient.CloseChannel(ctx, closeChannelRequest)
+	return api.svc.lnClient.CloseChannel(ctx, &lnclient.CloseChannelRequest{
+		NodeId:    peerId,
+		ChannelId: channelId,
+	})
 }
 
 func (api *API) GetNewOnchainAddress(ctx context.Context) (*models.NewOnchainAddressResponse, error) {
@@ -546,7 +557,6 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 
 	// TODO: switch on LSPType and extract to separate functions
 	if selectedLsp.SupportsWrappedInvoices {
-
 		api.svc.Logger.Infoln("Requesting fee information")
 
 		var feeResponse lsp.FeeResponse
@@ -591,6 +601,14 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 				return nil, errors.New("failed to read response body")
 			}
 
+			if res.StatusCode >= 300 {
+				api.svc.Logger.WithFields(logrus.Fields{
+					"body":       string(body),
+					"statusCode": res.StatusCode,
+				}).Error("fee endpoint returned non-success code")
+				return nil, fmt.Errorf("fee endpoint returned non-success code: %s", string(body))
+			}
+
 			err = json.Unmarshal(body, &feeResponse)
 			if err != nil {
 				api.svc.Logger.WithError(err).WithFields(logrus.Fields{
@@ -609,6 +627,7 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 				}).Error("No fee id in fee response")
 				return nil, fmt.Errorf("no fee id in fee response %v", feeResponse)
 			}
+			fee = feeResponse.FeeAmountMsat / 1000
 		}
 
 		// because we don't want the sender to pay the fee
@@ -663,6 +682,14 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 				return nil, errors.New("failed to read response body")
 			}
 
+			if res.StatusCode >= 300 {
+				api.svc.Logger.WithFields(logrus.Fields{
+					"body":       string(body),
+					"statusCode": res.StatusCode,
+				}).Error("proposal endpoint returned non-success code")
+				return nil, fmt.Errorf("proposal endpoint returned non-success code: %s", string(body))
+			}
+
 			err = json.Unmarshal(body, &proposalResponse)
 			if err != nil {
 				api.svc.Logger.WithError(err).WithFields(logrus.Fields{
@@ -680,21 +707,19 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 			}
 		}
 		invoice = proposalResponse.Bolt11
-		fee = feeResponse.FeeAmountMsat / 1000
 	} else {
 		client := http.Client{
 			Timeout: time.Second * 10,
 		}
 		payloadBytes, err := json.Marshal(lsp.NewInstantChannelRequest{
-			ChannelAmount: request.Amount,
-			NodePubkey:    nodeInfo.Pubkey,
+			Amount: request.Amount,
+			Pubkey: nodeInfo.Pubkey,
 		})
 		if err != nil {
 			return nil, err
 		}
 		bodyReader := bytes.NewReader(payloadBytes)
 
-		// TODO: JSON error logging
 		req, err := http.NewRequest(http.MethodPost, selectedLsp.Url+"/new-channel", bodyReader)
 		if err != nil {
 			api.svc.Logger.WithError(err).WithFields(logrus.Fields{
@@ -713,8 +738,6 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 			return nil, err
 		}
 
-		// TODO: check status
-
 		defer res.Body.Close()
 
 		body, err := io.ReadAll(res.Body)
@@ -725,9 +748,30 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 			return nil, errors.New("failed to read response body")
 		}
 
-		invoice = string(body)
+		if res.StatusCode >= 300 {
+			api.svc.Logger.WithFields(logrus.Fields{
+				"body":       string(body),
+				"statusCode": res.StatusCode,
+			}).Error("new-channel endpoint returned non-success code")
+			return nil, fmt.Errorf("new-channel endpoint returned non-success code: %s", string(body))
+		}
 
-		api.svc.Logger.WithField("invoice", invoice).Info("New Channel response")
+		var newChannelResponse lsp.NewInstantChannelResponse
+
+		err = json.Unmarshal(body, &newChannelResponse)
+		if err != nil {
+			api.svc.Logger.WithError(err).WithFields(logrus.Fields{
+				"url": selectedLsp.Url,
+			}).Error("Failed to deserialize json")
+			return nil, fmt.Errorf("failed to deserialize json %s %s", selectedLsp.Url, string(body))
+		}
+
+		invoice = newChannelResponse.Invoice
+		fee = newChannelResponse.FeeAmountMsat / 1000
+
+		api.svc.Logger.WithFields(logrus.Fields{
+			"newChannelResponse": newChannelResponse,
+		}).Info("New Channel response")
 	}
 
 	return &models.NewInstantChannelInvoiceResponse{
@@ -747,12 +791,17 @@ func (api *API) GetInfo(ctx context.Context) (*models.InfoResponse, error) {
 	info.AlbyUserIdentifier = api.svc.AlbyOAuthSvc.GetUserIdentifier()
 	info.AlbyAccountConnected = api.svc.AlbyOAuthSvc.IsConnected(ctx)
 	if api.svc.lnClient != nil {
-		channels, err := api.ListChannels(api.svc.ctx)
-		if err != nil {
-			api.svc.Logger.WithError(err).WithFields(logrus.Fields{}).Error("Failed to fetch channels")
-			return nil, err
+		// TODO: is there a better way to do this?
+		if backendType == config.BreezBackendType {
+			info.OnboardingCompleted = true
+		} else {
+			channels, err := api.ListChannels(ctx)
+			if err != nil {
+				api.svc.Logger.WithError(err).WithFields(logrus.Fields{}).Error("Failed to fetch channels")
+				return nil, err
+			}
+			info.OnboardingCompleted = len(channels) > 0
 		}
-		info.OnboardingCompleted = len(channels) > 0
 	}
 
 	if info.BackendType != config.LNDBackendType {
@@ -829,6 +878,61 @@ func (api *API) Setup(ctx context.Context, setupRequest *models.SetupRequest) er
 	}
 
 	return nil
+}
+
+func (api *API) SendPaymentProbes(ctx context.Context, sendPaymentProbesRequest *models.SendPaymentProbesRequest) (*models.SendPaymentProbesResponse, error) {
+	if api.svc.lnClient == nil {
+		return nil, errors.New("LNClient not started")
+	}
+
+	var errMessage string
+	err := api.svc.lnClient.SendPaymentProbes(ctx, sendPaymentProbesRequest.Invoice)
+	if err != nil {
+		errMessage = err.Error()
+	}
+
+	return &models.SendPaymentProbesResponse{Error: errMessage}, nil
+}
+
+func (api *API) SendSpontaneousPaymentProbes(ctx context.Context, sendSpontaneousPaymentProbesRequest *models.SendSpontaneousPaymentProbesRequest) (*models.SendSpontaneousPaymentProbesResponse, error) {
+	if api.svc.lnClient == nil {
+		return nil, errors.New("LNClient not started")
+	}
+
+	var errMessage string
+	err := api.svc.lnClient.SendSpontaneousPaymentProbes(ctx, sendSpontaneousPaymentProbesRequest.Amount, sendSpontaneousPaymentProbesRequest.NodeId)
+	if err != nil {
+		errMessage = err.Error()
+	}
+
+	return &models.SendSpontaneousPaymentProbesResponse{Error: errMessage}, nil
+}
+
+func (api *API) GetLogOutput(ctx context.Context, logType string, getLogRequest *models.GetLogOutputRequest) (*models.GetLogOutputResponse, error) {
+	var err error
+	var logData []byte
+
+	if logType == models.LogTypeNode {
+		if api.svc.lnClient == nil {
+			return nil, errors.New("LNClient not started")
+		}
+
+		logData, err = api.svc.lnClient.GetLogOutput(ctx, getLogRequest.MaxLen)
+		if err != nil {
+			return nil, err
+		}
+	} else if logType == models.LogTypeApp {
+		logFileName := api.svc.LogFilePath()
+
+		logData, err = ReadFileTail(logFileName, getLogRequest.MaxLen)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("invalid log type: '%s'", logType)
+	}
+
+	return &models.GetLogOutputResponse{Log: string(logData)}, nil
 }
 
 func (api *API) parseExpiresAt(expiresAtString string) (*time.Time, error) {
