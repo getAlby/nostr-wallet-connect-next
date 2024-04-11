@@ -181,19 +181,19 @@ function Wallet() {
           sats
         </div>
         <div className="grid grid-cols-4 gap-3">
-          <Button variant="secondary" className="cursor-not-allowed">
+          <Button variant="secondary" disabled>
             <CreditCard className="w-4 h-4 mr-2" />
             Buy
           </Button>
-          <Button variant="secondary" className="cursor-not-allowed">
+          <Button variant="secondary" disabled>
             <Scan className="w-4 h-4 mr-2" />
             Scan
           </Button>
-          <Button className="cursor-not-allowed">
+          <Button disabled>
             <ArrowDown className="w-4 h-4 mr-2" />
             Receive
           </Button>
-          <Button className="cursor-not-allowed">
+          <Button disabled>
             <ArrowUp className="w-4 h-4 mr-2" />
             Send
           </Button>
