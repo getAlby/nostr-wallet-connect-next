@@ -647,3 +647,7 @@ func (gs *GreenlightService) GetBalances(ctx context.Context) (*lnclient.Balance
 	}, nil
 
 }
+
+func (gs *GreenlightService) GetStorageDir() (string, error) {
+	return "", nil
+}

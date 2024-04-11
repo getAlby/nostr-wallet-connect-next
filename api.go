@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -10,6 +11,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
+	"path"
+	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -939,6 +944,98 @@ func (api *API) GetLogOutput(ctx context.Context, logType string, getLogRequest 
 	}
 
 	return &models.GetLogOutputResponse{Log: string(logData)}, nil
+}
+
+func (api *API) BasicBackup(ctx context.Context, w io.Writer) error {
+	// TODO: verify the unlock password
+
+	var err error
+
+	lnStorageDir := ""
+
+	if api.svc.lnClient != nil {
+		lnStorageDir, err = api.svc.lnClient.GetStorageDir()
+		if err != nil {
+			return fmt.Errorf("failed to get storage dir: %w", err)
+		}
+
+		// Stop the client to ensure its storage is in a consistent state.
+		err = api.svc.StopLNClient()
+		if err != nil {
+			return fmt.Errorf("failed to stop LNClient: %w", err)
+		}
+	}
+
+	// Run online backup of the database.
+	now := time.Now()
+	nwcBkpFile := fmt.Sprintf("nwc-backup-%s.db", now.Format("060102150405"))
+	nwcBkpPath := filepath.Join(api.svc.cfg.Env.Workdir, nwcBkpFile)
+	nwcBkpPath, err = filepath.Abs(nwcBkpPath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute NWC backup path: %w", err)
+	}
+
+	if err = api.svc.db.Exec(fmt.Sprintf("VACUUM INTO '%s';", nwcBkpPath)).Error; err != nil {
+		return fmt.Errorf("failed to backup NWC database: %w", err)
+	}
+	// FIXME: make sure it's safe to remove it here
+	defer func() { _ = os.Remove(nwcBkpPath) }()
+
+	var lnFiles []string
+	if lnStorageDir != "" {
+		lnFiles, err = filepath.Glob(filepath.Join(lnStorageDir, "*"))
+		if err != nil {
+			return fmt.Errorf("failed to list files in the LNClient storage directory: %w", err)
+		}
+
+		// Avoid backing up log files.
+		slices.DeleteFunc(lnFiles, func(s string) bool {
+			return filepath.Ext(s) == ".log"
+		})
+	}
+
+	// TODO: encryption
+	zw := zip.NewWriter(w)
+	defer func() { _ = zw.Close() }() // FIXME: handle errors like this
+
+	writeZipFile := func(fsPath, zipPath string) error {
+		inF, err := os.Open(fsPath)
+		if err != nil {
+			return fmt.Errorf("failed to open source file for reading: %w", err)
+		}
+		defer func() { _ = inF.Close() }()
+
+		outW, err := zw.Create(zipPath)
+		if err != nil {
+			return fmt.Errorf("failed to create zip entry: %w", err)
+		}
+
+		_, err = io.Copy(outW, inF)
+		return err
+	}
+
+	err = writeZipFile(nwcBkpPath, "nwc.db")
+	if err != nil {
+		return fmt.Errorf("failed to write NWC backup to zip: %w", err)
+	}
+
+	for _, lnFile := range lnFiles {
+		relPath, err := filepath.Rel(lnStorageDir, lnFile)
+		if err != nil {
+			return fmt.Errorf("failed to get relative path of LNClient file: %w", err)
+		}
+
+		// Notice we use path.Join() instead of filepath.Join()
+		// because the zip format uses forward slashes.
+		outPath := path.Join("lnclient", filepath.ToSlash(relPath))
+
+		err = writeZipFile(lnFile, outPath)
+		if err != nil {
+			return fmt.Errorf("failed to write LNClient file to zip: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (api *API) parseExpiresAt(expiresAtString string) (*time.Time, error) {

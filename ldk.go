@@ -942,6 +942,11 @@ func (ls *LDKService) GetBalances(ctx context.Context) (*lnclient.BalancesRespon
 	}, nil
 }
 
+func (ls *LDKService) GetStorageDir() (string, error) {
+	cfg := ls.node.Config()
+	return cfg.StorageDirPath, nil
+}
+
 func deleteOldLDKLogs(logger *logrus.Logger, ldkLogDir string) {
 	logger.WithField("ldkLogDir", ldkLogDir).Info("Deleting old LDK logs")
 	files, err := os.ReadDir(ldkLogDir)

@@ -64,6 +64,7 @@ type LNClient interface {
 	ListPeers(ctx context.Context) ([]PeerDetails, error)
 	GetLogOutput(ctx context.Context, maxLen int) ([]byte, error)
 	SignMessage(ctx context.Context, message string) (string, error)
+	GetStorageDir() (string, error)
 }
 
 type Channel struct {

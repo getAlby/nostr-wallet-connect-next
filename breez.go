@@ -447,3 +447,7 @@ func (bs *BreezService) GetBalances(ctx context.Context) (*lnclient.BalancesResp
 		},
 	}, nil
 }
+
+func (bs *BreezService) GetStorageDir() (string, error) {
+	return "", nil
+}
