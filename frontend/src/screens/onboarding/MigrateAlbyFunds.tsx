@@ -12,6 +12,7 @@ import {
   ALBY_FEE_RESERVE,
   ALBY_SERVICE_FEE,
   MIN_ALBY_BALANCE,
+  localStorageKeys,
 } from "src/constants";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
@@ -150,21 +151,6 @@ export default function MigrateAlbyFunds() {
     }
   }, [hasOpenedChannel, navigate, refetchInfo, toast]);
 
-  if (!albyMe || !albyBalance || !channels || !instantChannelResponse) {
-    return <Loading />;
-  }
-
-  if (error) {
-    return <p>{error}</p>;
-  }
-
-  /*  TODO: Remove? At least display a link to where to go from here.
-  if (channels.length) {
-    return (
-      <p>You already have a channel.</p>
-    );
-  }*/
-
   return (
     <div className="flex flex-col justify-center gap-5 p-5 max-w-md items-stretch">
       <TwoColumnLayoutHeader
@@ -172,7 +158,17 @@ export default function MigrateAlbyFunds() {
         description="You can use your remaining balance on Alby hosted lightning wallet to
       fund your first lightning channel."
       />
-      {albyBalance.sats >= MIN_ALBY_BALANCE ? (
+      {!albyMe || !albyBalance || !channels || !instantChannelResponse ? (
+        <Loading className="mx-auto" />
+      ) : error ? (
+        <>
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error requesting wrapped invoice</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </>
+      ) : albyBalance.sats >= MIN_ALBY_BALANCE ? (
         <>
           <div className="border rounded-lg">
             <Table>
@@ -239,6 +235,15 @@ export default function MigrateAlbyFunds() {
           </Link>
         </>
       )}
+      <Button
+        variant="link"
+        onClick={() => {
+          localStorage.setItem(localStorageKeys.isOnboardingSkipped, "1");
+          navigate("/");
+        }}
+      >
+        Skip onboarding
+      </Button>
     </div>
   );
 }

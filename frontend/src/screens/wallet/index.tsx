@@ -10,6 +10,7 @@ import {
   Dot,
   ShieldCheckIcon,
   Sparkles,
+  Unplug,
   WalletIcon,
 } from "lucide-react";
 import AppHeader from "src/components/AppHeader";
@@ -162,6 +163,25 @@ function Wallet() {
       />
 
       <BreezRedeem />
+
+      {!info?.onboardingCompleted && (
+        <>
+          <Alert>
+            <Unplug className="h-4 w-4" />
+            <AlertTitle>
+              You are currently not connected to the lightning network!
+            </AlertTitle>
+            <AlertDescription>
+              You can't make any transactions without opening channels
+              <div className="mt-3 flex items-center gap-3">
+                <Link to="/channels/new">
+                  <Button size="sm">Open a Channel</Button>
+                </Link>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </>
+      )}
 
       {info?.showBackupReminder && showBackupPrompt && (
         <>

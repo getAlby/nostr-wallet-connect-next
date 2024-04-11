@@ -1,6 +1,7 @@
 export const localStorageKeys = {
   returnTo: "returnTo",
   onchainAddress: "onchainAddress",
+  isOnboardingSkipped: "isOnboardingSkipped",
 };
 
 export const MIN_0CONF_BALANCE = 30000; // 30,000 for Alby. 20000 works for Olympus and Voltage

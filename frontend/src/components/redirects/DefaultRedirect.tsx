@@ -10,11 +10,14 @@ export function DefaultRedirect() {
   const navigate = useNavigate();
 
   React.useEffect(() => {
+    const isOnboardingSkipped = window.localStorage.getItem(
+      localStorageKeys.isOnboardingSkipped
+    );
     if (
       !info ||
       (info.running &&
         info.unlocked &&
-        info.onboardingCompleted &&
+        (info.onboardingCompleted || isOnboardingSkipped) &&
         info.albyAccountConnected)
     ) {
       return;
