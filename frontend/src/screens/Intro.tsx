@@ -55,11 +55,7 @@ export function Intro() {
                 connecting into apps
               </div>
               <div className="mt-5">
-                <Button
-                  variant="secondary"
-                  onClick={() => api?.scrollNext()}
-                  size="lg"
-                >
+                <Button onClick={() => api?.scrollNext()} size="lg">
                   Get Started
                 </Button>
               </div>
