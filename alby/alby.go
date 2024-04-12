@@ -77,12 +77,6 @@ func NewAlbyOAuthService(logger *logrus.Logger, kvStore config.Config, appConfig
 }
 
 func (svc *AlbyOAuthService) CallbackHandler(ctx context.Context, code string) error {
-	existingAccessToken, err := svc.config.Get(accessTokenKey, "")
-	if err != nil {
-		svc.logger.WithError(err).Error("Failed to get existing access token")
-		return err
-	}
-
 	token, err := svc.oauthConf.Exchange(ctx, code)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to exchange token")
@@ -90,8 +84,14 @@ func (svc *AlbyOAuthService) CallbackHandler(ctx context.Context, code string) e
 	}
 	svc.saveToken(token)
 
+	existingUserIdentifier, err := svc.GetUserIdentifier()
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to get alby user identifier")
+		return err
+	}
+
 	// setup Alby account on first time login
-	if existingAccessToken == "" {
+	if existingUserIdentifier == "" {
 		// fetch and save the user's alby account ID. This cannot be changed.
 		me, err := svc.GetMe(ctx)
 		if err != nil {
@@ -110,13 +110,13 @@ func (svc *AlbyOAuthService) CallbackHandler(ctx context.Context, code string) e
 	return nil
 }
 
-func (svc *AlbyOAuthService) GetUserIdentifier() string {
+func (svc *AlbyOAuthService) GetUserIdentifier() (string, error) {
 	userIdentifier, err := svc.config.Get(userIdentifierKey, "")
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to fetch user identifier from user configs")
-		return ""
+		return "", err
 	}
-	return userIdentifier
+	return userIdentifier, nil
 }
 
 func (svc *AlbyOAuthService) IsConnected(ctx context.Context) bool {
@@ -360,7 +360,7 @@ func (svc *AlbyOAuthService) connectAccount(ctx context.Context) error {
 	app, err := svc.api.CreateApp(&api.CreateAppRequest{
 		Name:           "getalby.com",
 		Pubkey:         connectionPubkey,
-		MaxAmount:      100_000,
+		MaxAmount:      1_000_000,
 		BudgetRenewal:  nip47.BUDGET_RENEWAL_MONTHLY,
 		RequestMethods: nip47.CAPABILITIES,
 	})

@@ -789,7 +789,12 @@ func (api *API) GetInfo(ctx context.Context) (*models.InfoResponse, error) {
 	info.Running = api.svc.lnClient != nil
 	info.BackendType = backendType
 	info.AlbyAuthUrl = api.svc.AlbyOAuthSvc.GetAuthUrl()
-	info.AlbyUserIdentifier = api.svc.AlbyOAuthSvc.GetUserIdentifier()
+	albyUserIdentifier, err := api.svc.AlbyOAuthSvc.GetUserIdentifier()
+	if err != nil {
+		api.svc.Logger.WithError(err).Error("Failed to get alby user identifier")
+		return nil, err
+	}
+	info.AlbyUserIdentifier = albyUserIdentifier
 	info.AlbyAccountConnected = api.svc.AlbyOAuthSvc.IsConnected(ctx)
 	if api.svc.lnClient != nil {
 		// TODO: is there a better way to do this?
