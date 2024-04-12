@@ -21,15 +21,15 @@ export function Intro() {
   }, [info, navigate]);
 
   return (
-    <Carousel className={cn("w-full bg-foreground bg-no-repeat")}
+    <Carousel className={cn("w-full bg-background bg-no-repeat")}
       style={{ backgroundImage: `url(${Cloud})` }}
       setApi={setApi}>
       <CarouselContent className="select-none">
         <CarouselItem>
           <div className="flex flex-col justify-center items-center h-screen p-5">
             <div className="flex flex-col gap-4 text-center max-w-lg">
-              <div className="text-4xl font-extrabold text-background">Welcome to Alby Hub</div>
-              <div className="text-2xl text-muted-foreground font-semibold">A powerful, all-in-one lightning wallet
+              <div className="text-4xl font-extrabold text-foreground">Welcome to Alby Hub</div>
+              <div className="text-2xl text-muted-background font-semibold">A powerful, all-in-one lightning wallet
                 with a superpower of connecting into apps</div>
               <div className="mt-5">
                 <Button variant="secondary" onClick={() => api?.scrollNext()} size="lg">Get Started</Button>
@@ -74,10 +74,10 @@ function Slide({ api, title, description, icon: Icon, button }: { api: EmblaCaro
   }
 
   return <div className="flex flex-col justify-center items-center h-screen gap-8 p-5">
-    <Icon className="w-16 h-16 text-primary-foreground" />
+    <Icon className="w-16 h-16 text-primary-background" />
     <div className="flex flex-col gap-4 text-center items-center max-w-lg">
-      <div className="text-3xl font-semibold text-primary-foreground">{title}</div>
-      <div className="text-lg text-muted-foreground font-semibold">{description}</div>
+      <div className="text-3xl font-semibold text-primary-background">{title}</div>
+      <div className="text-lg text-muted-background font-semibold">{description}</div>
     </div>
     <CarouselDots />
     <Button size="icon" onClick={slideNext} className="mt-5">
