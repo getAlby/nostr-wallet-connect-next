@@ -212,7 +212,7 @@ function Wallet() {
           <CardContent>
             <span className="text-3xl font-semibold">
               {new Intl.NumberFormat().format(
-                balances.lightning.totalSpendable / 1000
+                Math.floor(balances.lightning.totalSpendable / 1000)
               )}{" "}
               sats
             </span>
