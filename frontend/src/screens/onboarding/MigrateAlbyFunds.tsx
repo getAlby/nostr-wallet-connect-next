@@ -9,9 +9,8 @@ import { LoadingButton } from "src/components/ui/loading-button";
 import { Table, TableBody, TableCell, TableRow } from "src/components/ui/table";
 import { useToast } from "src/components/ui/use-toast";
 import {
-  ALBY_FEE_RESERVE,
+  ALBY_MIN_BALANCE,
   ALBY_SERVICE_FEE,
-  MIN_ALBY_BALANCE,
   localStorageKeys,
 } from "src/constants";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance";
@@ -43,7 +42,7 @@ export default function MigrateAlbyFunds() {
   const [hasRequestedInvoice, setRequestedInvoice] = React.useState(false);
   const [isOpeningChannel, setOpeningChannel] = React.useState(false);
   const navigate = useNavigate();
-  const [amount, setAmount] = React.useState(0);
+  const [amount, setAmount] = React.useState<number>(0);
 
   const [instantChannelResponse, setInstantChannelResponse] = React.useState<
     NewInstantChannelInvoiceResponse | undefined
@@ -123,10 +122,11 @@ export default function MigrateAlbyFunds() {
       return;
     }
     setRequestedInvoice(true);
-    const _amount = Math.floor(
-      albyBalance.sats * (1 - ALBY_FEE_RESERVE) * (1 - ALBY_SERVICE_FEE)
-    );
+    const _amount = Math.floor(albyBalance.sats * (1 - ALBY_SERVICE_FEE));
     setAmount(_amount);
+    if (_amount < ALBY_MIN_BALANCE) {
+      return;
+    }
     requestWrappedInvoice(_amount);
   }, [
     hasRequestedInvoice,
@@ -158,7 +158,10 @@ export default function MigrateAlbyFunds() {
         description="You can use your remaining balance on Alby hosted lightning wallet to
       fund your first lightning channel."
       />
-      {!albyMe || !albyBalance || !channels || !instantChannelResponse ? (
+      {!albyMe ||
+      !albyBalance ||
+      !channels ||
+      (amount >= ALBY_MIN_BALANCE && !instantChannelResponse) ? (
         <Loading className="mx-auto" />
       ) : error ? (
         <>
@@ -168,7 +171,7 @@ export default function MigrateAlbyFunds() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         </>
-      ) : albyBalance.sats >= MIN_ALBY_BALANCE ? (
+      ) : amount >= ALBY_MIN_BALANCE && instantChannelResponse ? (
         <>
           <div className="border rounded-lg">
             <Table>
