@@ -13,6 +13,7 @@ export function Success() {
             x: 0.5 + Math.random() * 0.5,
             y: Math.random(),
           },
+          colors: ["#000", "#333", "#666", "#999", "#BBB", "#FFF"],
         });
       }, Math.floor(Math.random() * 1000));
     }
