@@ -21,12 +21,12 @@ export function Intro() {
   }, [info, navigate]);
 
   return (
-    <Carousel className={cn("w-full bg-foreground bg-no-repeat bg-left-top")}
+    <Carousel className={cn("w-full bg-foreground bg-no-repeat")}
       style={{ backgroundImage: `url(${Cloud})` }}
       setApi={setApi}>
       <CarouselContent className="select-none">
         <CarouselItem>
-          <div className="flex flex-col justify-center items-center h-screen">
+          <div className="flex flex-col justify-center items-center h-screen p-5">
             <div className="flex flex-col gap-4 text-center max-w-lg">
               <div className="text-4xl font-extrabold text-background">Welcome to Alby Hub</div>
               <div className="text-2xl text-muted-foreground font-semibold">A powerful, all-in-one lightning wallet
@@ -73,7 +73,7 @@ function Slide({ api, title, description, icon: Icon, button }: { api: EmblaCaro
     }
   }
 
-  return <div className="flex flex-col justify-center items-center h-screen gap-8">
+  return <div className="flex flex-col justify-center items-center h-screen gap-8 p-5">
     <Icon className="w-16 h-16 text-primary-foreground" />
     <div className="flex flex-col gap-4 text-center items-center max-w-lg">
       <div className="text-3xl font-semibold text-primary-foreground">{title}</div>
