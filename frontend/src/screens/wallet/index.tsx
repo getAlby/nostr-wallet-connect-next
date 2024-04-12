@@ -2,8 +2,8 @@ import {
   ArrowDownToDot,
   ArrowUpFromDot,
   CopyIcon,
-  Dot,
   ExternalLink,
+  PlugZap,
   ShieldCheckIcon,
   Sparkles,
   Unplug
@@ -93,11 +93,11 @@ function Wallet() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="default">
-                    <Dot className="mr-2 h-4 w-4 text-primary" />
+                    <PlugZap className="mr-2 h-4 w-4 text-primary" />
                     Connected
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-64">
+                <DropdownMenuContent className="w-64" align="end">
                   <DropdownMenuItem>
                     <div className="flex flex-row gap-10 items-center w-full">
                       <div className="whitespace-nowrap flex flex-row items-center gap-2">
