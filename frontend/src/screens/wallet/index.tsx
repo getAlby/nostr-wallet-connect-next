@@ -1,35 +1,24 @@
-import React from "react";
-import { Link } from "react-router-dom";
-
-import Loading from "src/components/Loading";
-
 import {
-  ArrowDown,
   ArrowDownToDot,
-  ArrowUp,
   ArrowUpFromDot,
-  BitcoinIcon,
   CopyIcon,
-  CreditCard,
   Dot,
-  Scan,
+  ExternalLink,
   ShieldCheckIcon,
   Sparkles,
   Unplug,
-  WalletIcon,
-  ZapIcon,
+  WalletIcon
 } from "lucide-react";
+import React from "react";
+import { Link } from "react-router-dom";
+import AlbyHead from "src/assets/images/alby-head.svg";
 import AppHeader from "src/components/AppHeader";
 import BreezRedeem from "src/components/BreezRedeem";
 import EmptyState from "src/components/EmptyState";
+import Loading from "src/components/Loading";
 import { Alert, AlertDescription, AlertTitle } from "src/components/ui/alert";
 import { Button } from "src/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "src/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -175,6 +164,36 @@ function Wallet() {
         }
       />
 
+      {!info?.onboardingCompleted && (
+        <>
+          {/* TODO: needs to be more visible that you need to act.
+        (e.g. add it to the sidebar, have a global banner, etc) */}
+          <Alert>
+            <Unplug className="h-4 w-4" />
+            <AlertTitle>
+              Your Alby Hub is not connected to the Lightning network!
+            </AlertTitle>
+            <AlertDescription>
+              Action required to send and receive lightning payments
+              <div className="mt-3 flex items-center gap-3">
+                {/* TODO: Find a better place to redirect to. 
+                Onboarding is only correct if they have not migrated Alby funds yet. */}
+                <Link
+                  to="/"
+                  onClick={() => {
+                    localStorage.removeItem(localStorageKeys.onboardingSkipped);
+                  }}
+                >
+                  <Button size="sm">Connect</Button>
+                </Link>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </>
+      )}
+
+      {/* TODO: Enable those cards as we know how to handle different balances 
+      
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5">
         <div className="text-5xl font-semibold">
           {new Intl.NumberFormat().format(
@@ -232,36 +251,63 @@ function Wallet() {
           </CardContent>
         </Card>
       </div>
+      */}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <Link to={`https://www.getalby.com/dashboard`} target="_blank">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-row items-center">
+                <img src={AlbyHead} className="w-12 h-12 rounded-xl p-1 border bg-[#FFDF6F]" />
+                <div>
+                  <CardTitle>
+                    <h2 className="flex-1 leading-5 font-semibold text-xl whitespace-nowrap text-ellipsis overflow-hidden ml-4">
+                      Alby Web
+                    </h2>
+                  </CardTitle>
+                  <CardDescription className="ml-4">
+                    You can use it as Progressive Web App on your mobile
+                  </CardDescription>
+                </div>
+              </div>
+
+            </CardHeader>
+            <CardContent className="text-right">
+              <Button variant="outline">
+                Open Alby Web
+                <ExternalLink className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link to={`https://www.getalby.com`} target="_blank">
+          <Card>
+            <CardHeader>
+              <div className="flex flex-row items-center">
+                <img src={AlbyHead} className="w-12 h-12 rounded-xl p-1 border" />
+                <div>
+                  <CardTitle>
+                    <h2 className="flex-1 leading-5 font-semibold text-xl whitespace-nowrap text-ellipsis overflow-hidden ml-4">
+                      Alby Browser Extension
+                    </h2>
+                  </CardTitle>
+                  <CardDescription className="ml-4">
+                    Best to use when using your favourite Internet browser
+                  </CardDescription>
+                </div>
+              </div>
+
+            </CardHeader>
+            <CardContent className="text-right">
+              <Button variant="outline">Install Alby Extension
+                <ExternalLink className="w-4 h-4 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
 
       <BreezRedeem />
-
-      {!info?.onboardingCompleted && (
-        <>
-          {/* TODO: needs to be more visible that you need to act.
-        (e.g. add it to the sidebar, have a global banner, etc) */}
-          <Alert>
-            <Unplug className="h-4 w-4" />
-            <AlertTitle>
-              You are not connected to the lightning network!
-            </AlertTitle>
-            <AlertDescription>
-              Action required to send and receive lightning payments
-              <div className="mt-3 flex items-center gap-3">
-                {/* TODO: Find a better place to redirect to. 
-                Onboarding is only correct if they have not migrated Alby funds yet. */}
-                <Link
-                  to="/"
-                  onClick={() => {
-                    localStorage.removeItem(localStorageKeys.onboardingSkipped);
-                  }}
-                >
-                  <Button size="sm">Connect</Button>
-                </Link>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </>
-      )}
 
       {info?.onboardingCompleted &&
         info?.showBackupReminder &&
@@ -292,7 +338,7 @@ function Wallet() {
           title="You have no funds, yet"
           description="Topup your wallet and make your first transaction."
           buttonText="Get Started"
-          buttonLink="/channels/first"
+          buttonLink="/channels/new"
         />
       )}
 
