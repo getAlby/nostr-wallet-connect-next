@@ -170,10 +170,10 @@ function Wallet() {
           <Alert>
             <Unplug className="h-4 w-4" />
             <AlertTitle>
-              You are currently not connected to the lightning network!
+              You are not connected to the lightning network!
             </AlertTitle>
             <AlertDescription>
-              You can't make any transactions without opening channels
+              Action required to send and receive lightning payments
               <div className="mt-3 flex items-center gap-3">
                 <Link
                   to="/"
@@ -181,7 +181,7 @@ function Wallet() {
                     localStorage.removeItem(localStorageKeys.onboardingSkipped);
                   }}
                 >
-                  <Button size="sm">Finish Setup</Button>
+                  <Button size="sm">Connect</Button>
                 </Link>
               </div>
             </AlertDescription>
