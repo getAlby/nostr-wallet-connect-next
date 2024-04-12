@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "src/components/ui/dropdown-menu";
 import { useToast } from "src/components/ui/use-toast";
+import { localStorageKeys } from "src/constants";
 import { useBalances } from "src/hooks/useBalances";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
@@ -174,7 +175,12 @@ function Wallet() {
             <AlertDescription>
               You can't make any transactions without opening channels
               <div className="mt-3 flex items-center gap-3">
-                <Link to="/" onClick={() => {}}>
+                <Link
+                  to="/"
+                  onClick={() => {
+                    localStorage.removeItem(localStorageKeys.onboardingSkipped);
+                  }}
+                >
                   <Button size="sm">Finish Setup</Button>
                 </Link>
               </div>
@@ -183,26 +189,28 @@ function Wallet() {
         </>
       )}
 
-      {info?.showBackupReminder && showBackupPrompt && (
-        <>
-          <Alert>
-            <ShieldCheckIcon className="h-4 w-4" />
-            <AlertTitle>Back up your recovery phrase!</AlertTitle>
-            <AlertDescription>
-              Not backing up your key might result in permanently losing access
-              to your funds.
-              <div className="mt-3 flex items-center gap-3">
-                <Button onClick={onSkipBackup} variant="secondary" size="sm">
-                  Skip For Now
-                </Button>
-                <Link to="/backup/mnemonic">
-                  <Button size="sm">Back Up Now</Button>
-                </Link>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </>
-      )}
+      {info?.onboardingCompleted &&
+        info?.showBackupReminder &&
+        showBackupPrompt && (
+          <>
+            <Alert>
+              <ShieldCheckIcon className="h-4 w-4" />
+              <AlertTitle>Back up your recovery phrase!</AlertTitle>
+              <AlertDescription>
+                Not backing up your key might result in permanently losing
+                access to your funds.
+                <div className="mt-3 flex items-center gap-3">
+                  <Button onClick={onSkipBackup} variant="secondary" size="sm">
+                    Skip For Now
+                  </Button>
+                  <Link to="/backup/mnemonic">
+                    <Button size="sm">Back Up Now</Button>
+                  </Link>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </>
+        )}
 
       {!isWalletUsable && (
         <EmptyState
