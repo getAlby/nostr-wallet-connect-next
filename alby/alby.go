@@ -14,6 +14,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/models/api"
 	"github.com/getAlby/nostr-wallet-connect/models/config"
+	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
@@ -76,21 +77,35 @@ func NewAlbyOAuthService(logger *logrus.Logger, kvStore config.Config, appConfig
 }
 
 func (svc *AlbyOAuthService) CallbackHandler(ctx context.Context, code string) error {
+	existingAccessToken, err := svc.config.Get(accessTokenKey, "")
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to get existing access token")
+		return err
+	}
+
 	token, err := svc.oauthConf.Exchange(ctx, code)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to exchange token")
 		return err
 	}
-
 	svc.saveToken(token)
 
-	me, err := svc.GetMe(ctx)
-	if err != nil {
-		svc.logger.WithError(err).Error("Failed to fetch user me")
-		return err
-	}
+	// setup Alby account on first time login
+	if existingAccessToken == "" {
+		// fetch and save the user's alby account ID. This cannot be changed.
+		me, err := svc.GetMe(ctx)
+		if err != nil {
+			svc.logger.WithError(err).Error("Failed to fetch user me")
+			// remove token so user can retry
+			svc.config.SetUpdate(accessTokenKey, me.Identifier, "")
+			return err
+		}
 
-	svc.config.SetUpdate(userIdentifierKey, me.Identifier, "")
+		svc.config.SetUpdate(userIdentifierKey, me.Identifier, "")
+
+		// setup the Alby Account NWC node and connection
+		svc.connectAccount(ctx)
+	}
 
 	return nil
 }
@@ -335,7 +350,7 @@ func (svc *AlbyOAuthService) GetAuthUrl() string {
 	return svc.oauthConf.AuthCodeURL("unused")
 }
 
-func (svc *AlbyOAuthService) ConnectAccount(ctx context.Context) error {
+func (svc *AlbyOAuthService) connectAccount(ctx context.Context) error {
 	connectionPubkey, err := svc.createAlbyAccountNWCNode(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to create alby account nwc node")
@@ -343,13 +358,11 @@ func (svc *AlbyOAuthService) ConnectAccount(ctx context.Context) error {
 	}
 
 	app, err := svc.api.CreateApp(&api.CreateAppRequest{
-		Name:          "getalby.com",
-		Pubkey:        connectionPubkey,
-		MaxAmount:     100_000,
-		BudgetRenewal: "monthly",
-		// TODO: do not hardcode this
-		// copied from NIP_47_CAPABILITIES which is in the main package
-		RequestMethods: "pay_invoice pay_keysend get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice multi_pay_keysend sign_message",
+		Name:           "getalby.com",
+		Pubkey:         connectionPubkey,
+		MaxAmount:      100_000,
+		BudgetRenewal:  nip47.BUDGET_RENEWAL_MONTHLY,
+		RequestMethods: nip47.CAPABILITIES,
 	})
 
 	if err != nil {

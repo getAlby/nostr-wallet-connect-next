@@ -145,7 +145,7 @@ export default function MigrateAlbyFunds() {
       (async () => {
         toast({ title: "Channel opened!" });
         await refetchInfo();
-        navigate("/onboarding/connect-alby-account");
+        navigate("/onboarding/success");
       })();
     }
   }, [hasOpenedChannel, navigate, refetchInfo, toast]);

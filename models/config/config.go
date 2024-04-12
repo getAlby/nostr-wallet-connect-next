@@ -1,3 +1,4 @@
+// TODO: move to config/models.go
 package config
 
 const (

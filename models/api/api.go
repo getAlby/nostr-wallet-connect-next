@@ -1,3 +1,4 @@
+// TODO: move to api/models.go
 package api
 
 import (
