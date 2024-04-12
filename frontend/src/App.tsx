@@ -39,6 +39,7 @@ import { OnboardingRedirect } from "src/components/redirects/OnboardingRedirect"
 import { Toaster } from "src/components/ui/toaster";
 import { Intro } from "src/screens/Intro";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
+import { Success } from "src/screens/onboarding/Success";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 import DebugTools from "src/screens/settings/DebugTools";
 
@@ -122,6 +123,7 @@ function App() {
                   <Route path="migrate-alby" element={<MigrateAlbyFunds />} />
                   <Route path="channels">{newChannelRoutes}</Route>
                 </Route>
+                <Route path="success" element={<Success />} />
               </Route>
             </Route>
             <Route path="/*" element={<NotFound />} />

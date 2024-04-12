@@ -1,3 +1,4 @@
+// TODO: move to api/models.go
 package api
 
 import (
@@ -5,6 +6,10 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 )
+
+type API interface {
+	CreateApp(createAppRequest *CreateAppRequest) (*CreateAppResponse, error)
+}
 
 type App struct {
 	// ID          uint      `json:"id"` // ID unused - pubkey is used as ID
@@ -90,7 +95,7 @@ type User struct {
 type InfoResponse struct {
 	BackendType          string `json:"backendType"`
 	SetupCompleted       bool   `json:"setupCompleted"`
-	OnboardingCompleted  bool   `json:"onboardingCompleted"`
+	OnboardingCompleted  bool   `json:"onboardingCompleted"` // TODO: rename - HasChannel?
 	Running              bool   `json:"running"`
 	Unlocked             bool   `json:"unlocked"`
 	AlbyAuthUrl          string `json:"albyAuthUrl"`
