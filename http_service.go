@@ -101,6 +101,8 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.POST("/api/send-spontaneous-payment-probes", httpSvc.sendSpontaneousPaymentProbesHandler, authMiddleware)
 	e.GET("/api/log/:type", httpSvc.getLogOutputHandler, authMiddleware)
 
+	e.POST("/api/backup", httpSvc.basicBackupHandler, authMiddleware)
+
 	frontend.RegisterHandlers(e)
 }
 
@@ -649,4 +651,23 @@ func (httpSvc *HttpService) getLogOutputHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, getLogResponse)
+}
+
+func (httpSvc *HttpService) basicBackupHandler(c echo.Context) error {
+	var backupRequest api.BasicBackupRequest
+	if err := c.Bind(&backupRequest); err != nil {
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Message: fmt.Sprintf("Bad request: %s", err.Error()),
+		})
+	}
+
+	if !httpSvc.svc.cfg.CheckUnlockPassword(backupRequest.UnlockPassword) {
+		return c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Message: "Invalid password",
+		})
+	}
+
+	c.Response().Header().Set("Content-Type", "application/octet-stream")
+	c.Response().WriteHeader(http.StatusOK)
+	return httpSvc.api.BasicBackup(&backupRequest, c.Response())
 }

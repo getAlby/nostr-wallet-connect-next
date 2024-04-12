@@ -4,6 +4,10 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -20,6 +24,7 @@ import (
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/pbkdf2"
 	"gorm.io/gorm"
 
 	models "github.com/getAlby/nostr-wallet-connect/models/api"
@@ -946,9 +951,7 @@ func (api *API) GetLogOutput(ctx context.Context, logType string, getLogRequest 
 	return &models.GetLogOutputResponse{Log: string(logData)}, nil
 }
 
-func (api *API) BasicBackup(ctx context.Context, w io.Writer) error {
-	// TODO: verify the unlock password
-
+func (api *API) BasicBackup(basicBackupRequest *models.BasicBackupRequest, w io.Writer) error {
 	var err error
 
 	lnStorageDir := ""
@@ -994,8 +997,12 @@ func (api *API) BasicBackup(ctx context.Context, w io.Writer) error {
 		})
 	}
 
-	// TODO: encryption
-	zw := zip.NewWriter(w)
+	cw, err := encryptingWriter(w, basicBackupRequest.UnlockPassword)
+	if err != nil {
+		return fmt.Errorf("failed to create encrypted writer: %w", err)
+	}
+
+	zw := zip.NewWriter(cw)
 	defer func() { _ = zw.Close() }() // FIXME: handle errors like this
 
 	writeZipFile := func(fsPath, zipPath string) error {
@@ -1051,4 +1058,30 @@ func (api *API) parseExpiresAt(expiresAtString string) (*time.Time, error) {
 		expiresAt = &expiresAtValue
 	}
 	return expiresAt, nil
+}
+
+func encryptingWriter(w io.Writer, password string) (io.Writer, error) {
+	salt := make([]byte, 8)
+	if _, err := rand.Read(salt); err != nil {
+		return nil, fmt.Errorf("failed to generate salt: %w", err)
+	}
+
+	encKey := pbkdf2.Key([]byte(password), salt, 4096, 32, sha256.New)
+	block, err := aes.NewCipher(encKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AES cipher: %w", err)
+	}
+
+	iv := make([]byte, aes.BlockSize)
+	if _, err = rand.Read(iv); err != nil {
+		return nil, fmt.Errorf("failed to generate IV: %w", err)
+	}
+
+	stream := cipher.NewOFB(block, iv)
+	cw := &cipher.StreamWriter{
+		S: stream,
+		W: w,
+	}
+
+	return cw, nil
 }

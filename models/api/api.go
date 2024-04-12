@@ -182,3 +182,7 @@ type AlbyBalanceResponse struct {
 type AlbyPayRequest struct {
 	Invoice string `json:"invoice"`
 }
+
+type BasicBackupRequest struct {
+	UnlockPassword string `json:"unlockPassword"`
+}
