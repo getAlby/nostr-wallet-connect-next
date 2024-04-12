@@ -25,6 +25,7 @@ export function Intro() {
   const { data: info } = useInfo();
   const navigate = useNavigate();
   const [api, setApi] = React.useState<CarouselApi>();
+  const [progress, setProgress] = React.useState<number>(0);
   const { theme } = useTheme();
 
   React.useEffect(() => {
@@ -34,12 +35,19 @@ export function Intro() {
     navigate("/");
   }, [info, navigate]);
 
+  React.useEffect(() => {
+    api?.on("scroll", (x) => {
+      setProgress(x.scrollProgress());
+    });
+  }, [api]);
+
   return (
     <Carousel className={cn("w-full bg-background")} setApi={setApi}>
       <div
         className="w-full h-full absolute top-0 left-0 bg-no-repeat"
         style={{
           backgroundImage: `url(${Cloud})`,
+          backgroundPositionX: `${-Math.max(progress, 0) * 40}%`,
           filter: theme === "light" ? "invert(1)" : undefined,
         }}
       />
