@@ -174,8 +174,8 @@ function Wallet() {
             <AlertDescription>
               You can't make any transactions without opening channels
               <div className="mt-3 flex items-center gap-3">
-                <Link to="/channels/new">
-                  <Button size="sm">Open a Channel</Button>
+                <Link to="/" onClick={() => {}}>
+                  <Button size="sm">Finish Setup</Button>
                 </Link>
               </div>
             </AlertDescription>

@@ -158,12 +158,7 @@ export default function MigrateAlbyFunds() {
         description="You can use your remaining balance on Alby hosted lightning wallet to
       fund your first lightning channel."
       />
-      {!albyMe ||
-      !albyBalance ||
-      !channels ||
-      (amount >= ALBY_MIN_BALANCE && !instantChannelResponse) ? (
-        <Loading className="mx-auto" />
-      ) : error ? (
+      {error ? (
         <>
           <Alert>
             <AlertTriangle className="h-4 w-4" />
@@ -171,6 +166,11 @@ export default function MigrateAlbyFunds() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         </>
+      ) : !albyMe ||
+        !albyBalance ||
+        !channels ||
+        (amount >= ALBY_MIN_BALANCE && !instantChannelResponse) ? (
+        <Loading className="mx-auto" />
       ) : amount >= ALBY_MIN_BALANCE && instantChannelResponse ? (
         <>
           <div className="border rounded-lg">
@@ -241,7 +241,7 @@ export default function MigrateAlbyFunds() {
       <Button
         variant="link"
         onClick={() => {
-          localStorage.setItem(localStorageKeys.isOnboardingSkipped, "1");
+          localStorage.setItem(localStorageKeys.onboardingSkipped, "1");
           navigate("/");
         }}
       >
