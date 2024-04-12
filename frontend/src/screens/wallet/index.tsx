@@ -6,8 +6,7 @@ import {
   ExternalLink,
   ShieldCheckIcon,
   Sparkles,
-  Unplug,
-  WalletIcon
+  Unplug
 } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
@@ -331,16 +330,6 @@ function Wallet() {
             </Alert>
           </>
         )}
-
-      {balances.lightning.totalSpendable === 0 && (
-        <EmptyState
-          icon={<WalletIcon />}
-          title="You have no funds, yet"
-          description="Topup your wallet and make your first transaction."
-          buttonText="Get Started"
-          buttonLink="/channels/new"
-        />
-      )}
 
       {isWalletUsable && (
         <>
