@@ -33,7 +33,7 @@ import { useBalances } from "src/hooks/useBalances.ts";
 import { useChannels } from "src/hooks/useChannels";
 import { useInfo } from "src/hooks/useInfo";
 import { useRedeemOnchainFunds } from "src/hooks/useRedeemOnchainFunds.ts";
-import { CloseChannelRequest, CloseChannelResponse, Node } from "src/types";
+import { CloseChannelResponse, Node } from "src/types";
 import { request } from "src/utils/request";
 import { useCSRF } from "../../hooks/useCSRF.ts";
 
@@ -101,9 +101,8 @@ export default function Channels() {
       }
       if (
         !confirm(
-          `Are you sure you want to close the channel with ${
-            nodes.find((node) => node.public_key === nodeId)?.alias ||
-            "Unknown Node"
+          `Are you sure you want to close the channel with ${nodes.find((node) => node.public_key === nodeId)?.alias ||
+          "Unknown Node"
           }?\n\nNode ID: ${nodeId}\n\nChannel ID: ${channelId}`
         )
       ) {
@@ -112,19 +111,14 @@ export default function Channels() {
 
       console.log(`🎬 Closing channel with ${nodeId}`);
 
-      const closeChannelRequest: CloseChannelRequest = {
-        channelId: channelId,
-        nodeId: nodeId,
-      };
       const closeChannelResponse = await request<CloseChannelResponse>(
-        "/api/channels/close",
+        `/api/peers/${nodeId}/channels/${channelId}`,
         {
-          method: "POST",
+          method: "DELETE",
           headers: {
             "X-CSRF-Token": csrf,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(closeChannelRequest),
         }
       );
 
@@ -187,7 +181,7 @@ export default function Channels() {
     <>
       <AppHeader
         title="Channels"
-        description="Manage liquidity on your lightnig node"
+        description="Manage liquidity on your lightnig node."
         contentRight={
           <>
             <DropdownMenu>
@@ -263,7 +257,7 @@ export default function Channels() {
             {!balances && (
               <div>
                 <div className="animate-pulse d-inline ">
-                  <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-12 my-2"></div>
+                  <div className="h-2.5 bg-primary rounded-full w-12 my-2"></div>
                 </div>
               </div>
             )}
@@ -298,7 +292,7 @@ export default function Channels() {
             {!channels && (
               <div>
                 <div className="animate-pulse d-inline ">
-                  <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-12 my-2"></div>
+                  <div className="h-2.5 bg-primary rounded-full w-12 my-2"></div>
                 </div>
               </div>
             )}
@@ -324,18 +318,6 @@ export default function Channels() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {!channels && (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center p-5">
-                <div role="status" className="animate-pulse flex space-between">
-                  <div className="h-2.5 bg-gray-200 rounded-full w-1/3 dark:bg-gray-700 mr-5"></div>
-                  <div className="h-2.5 bg-gray-200 rounded-full w-20 dark:bg-gray-700 mr-5"></div>
-                  <div className="h-2.5 bg-gray-200 rounded-full w-20 dark:bg-gray-700"></div>
-                  <span className="sr-only">Loading...</span>
-                </div>
-              </TableCell>
-            </TableRow>
-          )}
           {channels && channels.length > 0 && (
             <>
               {channels.map((channel) => {
@@ -409,6 +391,11 @@ export default function Channels() {
               })}
             </>
           )}
+          {!channels && <TableRow>
+            <TableCell colSpan={4}>
+              <Loading className="m-2" />
+            </TableCell>
+          </TableRow>}
         </TableBody>
       </Table>
     </>

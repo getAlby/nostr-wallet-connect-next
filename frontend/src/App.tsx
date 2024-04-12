@@ -38,7 +38,9 @@ import TwoColumnFullScreenLayout from "src/components/layouts/TwoColumnFullScree
 import { OnboardingRedirect } from "src/components/redirects/OnboardingRedirect";
 import { Toaster } from "src/components/ui/toaster";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
+import { Success } from "src/screens/onboarding/Success";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
+import DebugTools from "src/screens/settings/DebugTools";
 
 const newChannelRoutes = (
   <Route path="new">
@@ -82,6 +84,9 @@ function App() {
                 <Route path=":pubkey" element={<ShowApp />} />
                 <Route path="created" element={<AppCreated />} />
               </Route>
+              <Route path="debug-tools" element={<DefaultRedirect />}>
+                <Route index element={<DebugTools />} />
+              </Route>
               <Route path="channels" element={<DefaultRedirect />}>
                 <Route index path="" element={<Channels />} />
                 {newChannelRoutes}
@@ -116,6 +121,7 @@ function App() {
                   <Route path="migrate-alby" element={<MigrateAlbyFunds />} />
                   <Route path="channels">{newChannelRoutes}</Route>
                 </Route>
+                <Route path="success" element={<Success />} />
               </Route>
             </Route>
             <Route path="/*" element={<NotFound />} />
