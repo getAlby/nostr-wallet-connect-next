@@ -167,6 +167,8 @@ function Wallet() {
 
       {!info?.onboardingCompleted && (
         <>
+          {/* TODO: needs to be more visible that you need to act.
+        (e.g. add it to the sidebar, have a global banner, etc) */}
           <Alert>
             <Unplug className="h-4 w-4" />
             <AlertTitle>
@@ -175,6 +177,8 @@ function Wallet() {
             <AlertDescription>
               Action required to send and receive lightning payments
               <div className="mt-3 flex items-center gap-3">
+                {/* TODO: Find a better place to redirect to. 
+                Onboarding is only correct if they have not migrated Alby funds yet. */}
                 <Link
                   to="/"
                   onClick={() => {
