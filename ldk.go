@@ -55,10 +55,12 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 	config.TrustedPeers0conf = []string{
 		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
+		lsp.OlympusLSPS1TestnetLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
 	}
 	config.AnchorChannelsConfig.TrustedPeersNoReserve = []string{
 		lsp.OlympusLSP().Pubkey,
+		lsp.OlympusLSPS1TestnetLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
 	}
 

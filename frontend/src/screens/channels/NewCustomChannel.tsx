@@ -52,7 +52,9 @@ export default function NewCustomChannel() {
     if (!nodeDetails && !host) {
       throw new Error("node details not found");
     }
-    const _host = nodeDetails ? nodeDetails.sockets.split(",")[0] : host;
+    const _host = nodeDetails?.sockets
+      ? nodeDetails.sockets.split(",")[0]
+      : host;
     const [address, port] = _host.split(":");
     if (!address || !port) {
       throw new Error("host not found");
@@ -100,7 +102,8 @@ export default function NewCustomChannel() {
 
       if (
         !confirm(
-          `Are you sure you want to open a ${localAmount} sat channel to ${nodeDetails?.alias || pubkey
+          `Are you sure you want to open a ${localAmount} sat channel to ${
+            nodeDetails?.alias || pubkey
           }?`
         )
       ) {
@@ -143,9 +146,8 @@ export default function NewCustomChannel() {
   const description = nodeDetails?.alias ? (
     <>
       Open a channel with{" "}
-      <span style={{ color: `${nodeDetails.color}` }}>⬤</span>
-      {" "}
-      {nodeDetails.alias} (${nodeDetails.active_channel_count} channels)
+      <span style={{ color: `${nodeDetails.color}` }}>⬤</span>{" "}
+      {nodeDetails.alias} ({nodeDetails.active_channel_count} channels)
     </>
   ) : (
     "Connect to other nodes on the lightning network"
@@ -153,10 +155,7 @@ export default function NewCustomChannel() {
 
   return (
     <div className="flex flex-col gap-5">
-      <AppHeader
-        title="Open a channel"
-        description={description}
-      />
+      <AppHeader title="Open a channel" description={description} />
       <Card>
         <CardContent>
           <div className="flex flex-col gap-5">
@@ -175,9 +174,7 @@ export default function NewCustomChannel() {
             </div>
 
             <div className="grid gap-1.5">
-              <Label htmlFor="pubkey">
-                Peer
-              </Label>
+              <Label htmlFor="pubkey">Peer</Label>
               <Input
                 id="pubkey"
                 type="text"
@@ -189,11 +186,9 @@ export default function NewCustomChannel() {
               />
             </div>
 
-            {!nodeDetails && pubkey && (
+            {!nodeDetails?.sockets && pubkey && (
               <div className="grid gap-1.5">
-                <Label htmlFor="host">
-                  Host:Port
-                </Label>
+                <Label htmlFor="host">Host:Port</Label>
                 <Input
                   id="host"
                   type="text"
@@ -206,9 +201,7 @@ export default function NewCustomChannel() {
               </div>
             )}
             <div className="grid gap-1.5">
-              <Label htmlFor="amount">
-                Amount (sats)
-              </Label>
+              <Label htmlFor="amount">Amount (sats)</Label>
               <Input
                 id="amount"
                 type="text"
@@ -235,10 +228,11 @@ export default function NewCustomChannel() {
                 loading={loading}
               >
                 Open Channel
-              </LoadingButton></div>
+              </LoadingButton>
+            </div>
           </div>
         </CardContent>
       </Card>
-    </div >
+    </div>
   );
 }
