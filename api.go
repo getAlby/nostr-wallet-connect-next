@@ -981,8 +981,7 @@ func (api *API) BasicBackup(basicBackupRequest *models.BasicBackupRequest, w io.
 	if err = api.svc.db.Exec(fmt.Sprintf("VACUUM INTO '%s';", nwcBkpPath)).Error; err != nil {
 		return fmt.Errorf("failed to backup NWC database: %w", err)
 	}
-	// FIXME: make sure it's safe to remove it here
-	defer func() { _ = os.Remove(nwcBkpPath) }()
+	defer os.Remove(nwcBkpPath)
 
 	var lnFiles []string
 	if lnStorageDir != "" {
@@ -1003,14 +1002,14 @@ func (api *API) BasicBackup(basicBackupRequest *models.BasicBackupRequest, w io.
 	}
 
 	zw := zip.NewWriter(cw)
-	defer func() { _ = zw.Close() }() // FIXME: handle errors like this
+	defer zw.Close()
 
 	writeZipFile := func(fsPath, zipPath string) error {
 		inF, err := os.Open(fsPath)
 		if err != nil {
 			return fmt.Errorf("failed to open source file for reading: %w", err)
 		}
-		defer func() { _ = inF.Close() }()
+		defer inF.Close()
 
 		outW, err := zw.Create(zipPath)
 		if err != nil {
