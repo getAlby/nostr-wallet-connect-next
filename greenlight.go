@@ -505,9 +505,25 @@ func (gs *GreenlightService) RedeemOnchainFunds(ctx context.Context, toAddress s
 		gs.svc.Logger.WithError(err).Error("Withdraw failed")
 		return "", err
 	}
-	gs.svc.Logger.WithField("txId", txId).Info("Redeeming on chain funds")
+	gs.svc.Logger.WithField("txId", txId).Info("Redeeming on-chain funds")
 
 	return txId.Txid, nil
+}
+
+func (gs *GreenlightService) SendPaymentProbes(ctx context.Context, invoice string) error {
+	return nil
+}
+
+func (gs *GreenlightService) SendSpontaneousPaymentProbes(ctx context.Context, amountMsat uint64, nodeId string) error {
+	return nil
+}
+
+func (gs *GreenlightService) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, error) {
+	return nil, nil
+}
+
+func (gs *GreenlightService) GetLogOutput(ctx context.Context, maxLen int) ([]byte, error) {
+	return []byte{}, nil
 }
 
 func (gs *GreenlightService) SignMessage(ctx context.Context, message string) (string, error) {

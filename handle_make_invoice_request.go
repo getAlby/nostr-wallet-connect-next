@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
@@ -19,22 +20,6 @@ func (svc *Service) HandleMakeInvoiceEvent(ctx context.Context, nip47Request *Ni
 	resp = svc.checkPermission(nip47Request, requestEvent.NostrId, app, 0)
 	if resp != nil {
 		publishResponse(resp, nostr.Tags{})
-		return
-	}
-
-	if makeInvoiceParams.Description != "" && makeInvoiceParams.DescriptionHash != "" {
-		svc.Logger.WithFields(logrus.Fields{
-			"requestEventNostrId": requestEvent.NostrId,
-			"appId":               app.ID,
-		}).Errorf("Only one of description, description_hash can be provided")
-
-		publishResponse(&Nip47Response{
-			ResultType: nip47Request.Method,
-			Error: &Nip47Error{
-				Code:    NIP_47_OTHER,
-				Message: "Only one of description, description_hash can be provided",
-			},
-		}, nostr.Tags{})
 		return
 	}
 
@@ -66,7 +51,7 @@ func (svc *Service) HandleMakeInvoiceEvent(ctx context.Context, nip47Request *Ni
 		publishResponse(&Nip47Response{
 			ResultType: nip47Request.Method,
 			Error: &Nip47Error{
-				Code:    NIP_47_ERROR_INTERNAL,
+				Code:    nip47.ERROR_INTERNAL,
 				Message: err.Error(),
 			},
 		}, nostr.Tags{})

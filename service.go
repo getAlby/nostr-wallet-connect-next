@@ -20,29 +20,37 @@ import (
 	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/sirupsen/logrus"
 
-	alby "github.com/getAlby/nostr-wallet-connect/alby"
-	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/glebarez/sqlite"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/orandin/lumberjackrus"
 	"gorm.io/gorm"
 
+	alby "github.com/getAlby/nostr-wallet-connect/alby"
+	"github.com/getAlby/nostr-wallet-connect/events"
+
 	"github.com/getAlby/nostr-wallet-connect/migrations"
 	"github.com/getAlby/nostr-wallet-connect/models/config"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/nip47"
+)
+
+const (
+	logDir      = "log"
+	logFilename = "nwc.log"
 )
 
 type Service struct {
 	// config from .env only. Fetch dynamic config from db
-	cfg          *Config
-	db           *gorm.DB
-	lnClient     lnclient.LNClient
-	Logger       *logrus.Logger
-	AlbyOAuthSvc *alby.AlbyOAuthService
-	EventLogger  events.EventLogger
-	ctx          context.Context
-	wg           *sync.WaitGroup
+	cfg                    *Config
+	db                     *gorm.DB
+	lnClient               lnclient.LNClient
+	Logger                 *logrus.Logger
+	AlbyOAuthSvc           *alby.AlbyOAuthService
+	EventPublisher         events.EventPublisher
+	ctx                    context.Context
+	wg                     *sync.WaitGroup
+	nip47NotificationQueue nip47.Nip47NotificationQueue
 }
 
 // TODO: move to service.go
@@ -73,17 +81,13 @@ func NewService(ctx context.Context) (*Service, error) {
 
 	fileLoggerHook, err := lumberjackrus.NewHook(
 		&lumberjackrus.LogFile{
-			Filename: path.Join(appConfig.Workdir, "log/nwc-general.log"),
+			Filename:   filepath.Join(appConfig.Workdir, logDir, logFilename),
+			MaxAge:     3,
+			MaxBackups: 3,
 		},
 		logrus.InfoLevel,
 		&logrus.JSONFormatter{},
-		&lumberjackrus.LogFileOpts{
-			logrus.ErrorLevel: &lumberjackrus.LogFile{
-				Filename:   path.Join(appConfig.Workdir, "log/nwc-error.log"),
-				MaxAge:     1,
-				MaxBackups: 2,
-			},
-		},
+		nil,
 	)
 	if err != nil {
 		return nil, err
@@ -122,28 +126,30 @@ func NewService(ctx context.Context) (*Service, error) {
 	cfg := &Config{}
 	cfg.Init(db, appConfig, logger)
 
-	eventLogger := events.NewEventLogger(logger, cfg.Env.LogEvents)
+	eventPublisher := events.NewEventPublisher(logger)
 
-	albyOAuthSvc := alby.NewAlbyOauthService(logger, cfg, cfg.Env, eventLogger)
 	if err != nil {
 		logger.WithError(err).Error("Failed to create Alby OAuth service")
 		return nil, err
 	}
 
-	eventLogger.Subscribe(albyOAuthSvc)
+	nip47NotificationQueue := nip47.NewNip47NotificationQueue(logger)
+	eventPublisher.RegisterSubscriber(nip47NotificationQueue)
 
 	var wg sync.WaitGroup
 	svc := &Service{
-		cfg:          cfg,
-		db:           db,
-		ctx:          ctx,
-		wg:           &wg,
-		Logger:       logger,
-		AlbyOAuthSvc: albyOAuthSvc,
-		EventLogger:  eventLogger,
+		cfg:                    cfg,
+		db:                     db,
+		ctx:                    ctx,
+		wg:                     &wg,
+		Logger:                 logger,
+		EventPublisher:         eventPublisher,
+		nip47NotificationQueue: nip47NotificationQueue,
 	}
+	// FIXME: tangled dependency
+	svc.AlbyOAuthSvc = alby.NewAlbyOAuthService(logger, cfg, cfg.Env, eventPublisher, NewAPI(svc))
 
-	eventLogger.Log(&events.Event{
+	eventPublisher.Publish(&events.Event{
 		Event: "nwc_started",
 	})
 
@@ -155,7 +161,7 @@ func (svc *Service) StopLNClient() error {
 		err := svc.lnClient.Shutdown()
 		if err != nil {
 			svc.Logger.WithError(err).Error("Failed to stop LN backend")
-			svc.EventLogger.Log(&events.Event{
+			svc.EventPublisher.Publish(&events.Event{
 				Event: "nwc_node_stop_failed",
 				Properties: map[string]interface{}{
 					"error": fmt.Sprintf("%v", err),
@@ -164,14 +170,14 @@ func (svc *Service) StopLNClient() error {
 			return err
 		}
 		svc.lnClient = nil
-		svc.EventLogger.Log(&events.Event{
+		svc.EventPublisher.Publish(&events.Event{
 			Event: "nwc_node_stopped",
 		})
 	}
 	return nil
 }
 
-func (svc *Service) launchLNBackend(encryptionKey string) error {
+func (svc *Service) launchLNBackend(ctx context.Context, encryptionKey string) error {
 	err := svc.StopLNClient()
 	if err != nil {
 		return err
@@ -189,12 +195,12 @@ func (svc *Service) launchLNBackend(encryptionKey string) error {
 		LNDAddress, _ := svc.cfg.Get("LNDAddress", encryptionKey)
 		LNDCertHex, _ := svc.cfg.Get("LNDCertHex", encryptionKey)
 		LNDMacaroonHex, _ := svc.cfg.Get("LNDMacaroonHex", encryptionKey)
-		lnClient, err = NewLNDService(svc, LNDAddress, LNDCertHex, LNDMacaroonHex)
+		lnClient, err = NewLNDService(ctx, svc, LNDAddress, LNDCertHex, LNDMacaroonHex)
 	case config.LDKBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		LDKWorkdir := path.Join(svc.cfg.Env.Workdir, "ldk")
 
-		lnClient, err = NewLDKService(svc, Mnemonic, LDKWorkdir, svc.cfg.Env.LDKNetwork, svc.cfg.Env.LDKEsploraServer, svc.cfg.Env.LDKGossipSource)
+		lnClient, err = NewLDKService(ctx, svc, Mnemonic, LDKWorkdir, svc.cfg.Env.LDKNetwork, svc.cfg.Env.LDKEsploraServer, svc.cfg.Env.LDKGossipSource)
 	case config.GreenlightBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
@@ -218,7 +224,7 @@ func (svc *Service) launchLNBackend(encryptionKey string) error {
 		return err
 	}
 
-	svc.EventLogger.Log(&events.Event{
+	svc.EventPublisher.Publish(&events.Event{
 		Event: "nwc_node_started",
 		Properties: map[string]interface{}{
 			"node_type": lnBackend,
@@ -231,7 +237,7 @@ func (svc *Service) launchLNBackend(encryptionKey string) error {
 func (svc *Service) createFilters(identityPubkey string) nostr.Filters {
 	filter := nostr.Filter{
 		Tags:  nostr.TagMap{"p": []string{identityPubkey}},
-		Kinds: []int{NIP_47_REQUEST_KIND},
+		Kinds: []int{nip47.REQUEST_KIND},
 	}
 	return []nostr.Filter{filter}
 }
@@ -241,6 +247,19 @@ func (svc *Service) noticeHandler(notice string) {
 }
 
 func (svc *Service) StartSubscription(ctx context.Context, sub *nostr.Subscription) error {
+	nip47Notifier := NewNip47Notifier(svc, sub.Relay)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				// subscription ended
+				return
+			case event := <-svc.nip47NotificationQueue.Channel():
+				nip47Notifier.ConsumeEvent(ctx, event)
+			}
+		}
+	}()
+
 	go func() {
 		// block till EOS is received
 		<-sub.EndOfStoredEvents
@@ -250,23 +269,20 @@ func (svc *Service) StartSubscription(ctx context.Context, sub *nostr.Subscripti
 		for event := range sub.Events {
 			go svc.HandleEvent(ctx, sub, event)
 		}
+		svc.Logger.Info("Relay subscription events channel ended")
 	}()
 
-	select {
-	case <-sub.Relay.Context().Done():
-		svc.Logger.Errorf("Relay error %v", sub.Relay.ConnectionError)
+	<-ctx.Done()
+
+	if sub.Relay.ConnectionError != nil {
+		svc.Logger.WithField("connectionError", sub.Relay.ConnectionError).Error("Relay error")
 		return sub.Relay.ConnectionError
-	case <-ctx.Done():
-		if ctx.Err() != context.Canceled {
-			svc.Logger.Errorf("Subscription error %v", ctx.Err())
-			return ctx.Err()
-		}
-		svc.Logger.Info("Exiting subscription...")
-		return nil
 	}
+	svc.Logger.Info("Exiting subscription...")
+	return nil
 }
 
-func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, requestEvent *RequestEvent, resp *nostr.Event, app *App, ss []byte) error {
+func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, requestEvent *RequestEvent, resp *nostr.Event, app *App) error {
 	var appId *uint
 	if app != nil {
 		appId = &app.ID
@@ -377,7 +393,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		}).Errorf("Failed to save nostr event: %v", err)
 		nip47Response = &Nip47Response{
 			Error: &Nip47Error{
-				Code:    NIP_47_ERROR_INTERNAL,
+				Code:    nip47.ERROR_INTERNAL,
 				Message: fmt.Sprintf("Failed to save nostr event: %s", err.Error()),
 			},
 		}
@@ -388,7 +404,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 				"eventKind":           event.Kind,
 			}).Errorf("Failed to process event: %v", err)
 		}
-		svc.PublishEvent(ctx, sub, &requestEvent, resp, nil, ss)
+		svc.PublishEvent(ctx, sub, &requestEvent, resp, nil)
 		return
 	}
 
@@ -403,7 +419,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 
 		nip47Response = &Nip47Response{
 			Error: &Nip47Error{
-				Code:    NIP_47_ERROR_UNAUTHORIZED,
+				Code:    nip47.ERROR_UNAUTHORIZED,
 				Message: "The public key does not have a wallet connected.",
 			},
 		}
@@ -414,7 +430,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 				"eventKind":           event.Kind,
 			}).Errorf("Failed to process event: %v", err)
 		}
-		svc.PublishEvent(ctx, sub, &requestEvent, resp, &app, ss)
+		svc.PublishEvent(ctx, sub, &requestEvent, resp, &app)
 
 		requestEvent.State = REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
@@ -435,7 +451,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 
 		nip47Response = &Nip47Response{
 			Error: &Nip47Error{
-				Code:    NIP_47_ERROR_UNAUTHORIZED,
+				Code:    nip47.ERROR_UNAUTHORIZED,
 				Message: fmt.Sprintf("Failed to save app to nostr event: %s", err.Error()),
 			},
 		}
@@ -446,7 +462,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 				"eventKind":           event.Kind,
 			}).Errorf("Failed to process event: %v", err)
 		}
-		svc.PublishEvent(ctx, sub, &requestEvent, resp, &app, ss)
+		svc.PublishEvent(ctx, sub, &requestEvent, resp, &app)
 
 		requestEvent.State = REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
@@ -535,7 +551,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 			}).Errorf("Failed to create response: %v", err)
 			requestEvent.State = REQUEST_EVENT_STATE_HANDLER_ERROR
 		} else {
-			err = svc.PublishEvent(ctx, sub, &requestEvent, resp, &app, ss)
+			err = svc.PublishEvent(ctx, sub, &requestEvent, resp, &app)
 			if err != nil {
 				svc.Logger.WithFields(logrus.Fields{
 					"requestEventNostrId": event.ID,
@@ -555,25 +571,25 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	}
 
 	switch nip47Request.Method {
-	case NIP_47_MULTI_PAY_INVOICE_METHOD:
+	case nip47.MULTI_PAY_INVOICE_METHOD:
 		svc.HandleMultiPayInvoiceEvent(ctx, nip47Request, &requestEvent, &app, publishResponse)
-	case NIP_47_MULTI_PAY_KEYSEND_METHOD:
+	case nip47.MULTI_PAY_KEYSEND_METHOD:
 		svc.HandleMultiPayKeysendEvent(ctx, nip47Request, &requestEvent, &app, publishResponse)
-	case NIP_47_PAY_INVOICE_METHOD:
+	case nip47.PAY_INVOICE_METHOD:
 		svc.HandlePayInvoiceEvent(ctx, nip47Request, &requestEvent, &app, publishResponse)
-	case NIP_47_PAY_KEYSEND_METHOD:
+	case nip47.PAY_KEYSEND_METHOD:
 		svc.HandlePayKeysendEvent(ctx, nip47Request, &requestEvent, &app, publishResponse)
-	case NIP_47_GET_BALANCE_METHOD:
+	case nip47.GET_BALANCE_METHOD:
 		svc.HandleGetBalanceEvent(ctx, nip47Request, &requestEvent, &app, publishResponse)
-	case NIP_47_MAKE_INVOICE_METHOD:
+	case nip47.MAKE_INVOICE_METHOD:
 		svc.HandleMakeInvoiceEvent(ctx, nip47Request, &requestEvent, &app, publishResponse)
-	case NIP_47_LOOKUP_INVOICE_METHOD:
+	case nip47.LOOKUP_INVOICE_METHOD:
 		svc.HandleLookupInvoiceEvent(ctx, nip47Request, &requestEvent, &app, publishResponse)
-	case NIP_47_LIST_TRANSACTIONS_METHOD:
+	case nip47.LIST_TRANSACTIONS_METHOD:
 		svc.HandleListTransactionsEvent(ctx, nip47Request, &requestEvent, &app, publishResponse)
-	case NIP_47_GET_INFO_METHOD:
+	case nip47.GET_INFO_METHOD:
 		svc.HandleGetInfoEvent(ctx, nip47Request, &requestEvent, &app, publishResponse)
-	case NIP_47_SIGN_MESSAGE_METHOD:
+	case nip47.SIGN_MESSAGE_METHOD:
 		svc.HandleSignMessageEvent(ctx, nip47Request, &requestEvent, &app, publishResponse)
 	default:
 		svc.handleUnknownMethod(ctx, nip47Request, publishResponse)
@@ -584,7 +600,7 @@ func (svc *Service) handleUnknownMethod(ctx context.Context, nip47Request *Nip47
 	publishResponse(&Nip47Response{
 		ResultType: nip47Request.Method,
 		Error: &Nip47Error{
-			Code:    NIP_47_ERROR_NOT_IMPLEMENTED,
+			Code:    nip47.ERROR_NOT_IMPLEMENTED,
 			Message: fmt.Sprintf("Unknown method: %s", nip47Request.Method),
 		},
 	}, nostr.Tags{})
@@ -606,7 +622,7 @@ func (svc *Service) createResponse(initialEvent *nostr.Event, content interface{
 	resp := &nostr.Event{
 		PubKey:    svc.cfg.NostrPublicKey,
 		CreatedAt: nostr.Now(),
-		Kind:      NIP_47_RESPONSE_KIND,
+		Kind:      nip47.RESPONSE_KIND,
 		Tags:      allTags,
 		Content:   msg,
 	}
@@ -626,9 +642,9 @@ func (svc *Service) GetMethods(app *App) []string {
 	for _, appPermission := range appPermissions {
 		requestMethods = append(requestMethods, appPermission.RequestMethod)
 	}
-	if slices.Contains(requestMethods, NIP_47_PAY_INVOICE_METHOD) {
+	if slices.Contains(requestMethods, nip47.PAY_INVOICE_METHOD) {
 		// all payment methods are tied to the pay_invoice permission
-		requestMethods = append(requestMethods, NIP_47_PAY_KEYSEND_METHOD, NIP_47_MULTI_PAY_INVOICE_METHOD, NIP_47_MULTI_PAY_KEYSEND_METHOD)
+		requestMethods = append(requestMethods, nip47.PAY_KEYSEND_METHOD, nip47.MULTI_PAY_INVOICE_METHOD, nip47.MULTI_PAY_KEYSEND_METHOD)
 	}
 
 	return requestMethods
@@ -644,7 +660,7 @@ func (svc *Service) decodeNip47Request(nip47Request *Nip47Request, requestEvent 
 		return &Nip47Response{
 			ResultType: nip47Request.Method,
 			Error: &Nip47Error{
-				Code:    NIP_47_ERROR_BAD_REQUEST,
+				Code:    nip47.ERROR_BAD_REQUEST,
 				Message: err.Error(),
 			}}
 	}
@@ -661,6 +677,17 @@ func (svc *Service) checkPermission(nip47Request *Nip47Request, requestNostrEven
 			"message":             message,
 		}).Error("App does not have permission")
 
+		svc.EventPublisher.Publish(&events.Event{
+			Event: "nwc_permission_denied",
+			Properties: map[string]interface{}{
+				"request_method": nip47Request.Method,
+				"app_name":       app.Name,
+				// "app_pubkey":     app.NostrPubkey,
+				"code":    code,
+				"message": message,
+			},
+		})
+
 		return &Nip47Response{
 			ResultType: nip47Request.Method,
 			Error: &Nip47Error{
@@ -674,8 +701,8 @@ func (svc *Service) checkPermission(nip47Request *Nip47Request, requestNostrEven
 
 func (svc *Service) hasPermission(app *App, requestMethod string, amount int64) (result bool, code string, message string) {
 	switch requestMethod {
-	case NIP_47_PAY_INVOICE_METHOD, NIP_47_PAY_KEYSEND_METHOD, NIP_47_MULTI_PAY_INVOICE_METHOD, NIP_47_MULTI_PAY_KEYSEND_METHOD:
-		requestMethod = NIP_47_PAY_INVOICE_METHOD
+	case nip47.PAY_INVOICE_METHOD, nip47.PAY_KEYSEND_METHOD, nip47.MULTI_PAY_INVOICE_METHOD, nip47.MULTI_PAY_KEYSEND_METHOD:
+		requestMethod = nip47.PAY_INVOICE_METHOD
 	}
 
 	appPermission := AppPermission{}
@@ -684,17 +711,8 @@ func (svc *Service) hasPermission(app *App, requestMethod string, amount int64) 
 		RequestMethod: requestMethod,
 	})
 	if findPermissionResult.RowsAffected == 0 {
-		svc.EventLogger.Log(&events.Event{
-			Event: "nwc_permission_missing",
-			Properties: map[string]interface{}{
-				"request_method": requestMethod,
-				"app_name":       app.Name,
-				"app_pubkey":     app.NostrPubkey,
-			},
-		})
-
 		// No permission for this request method
-		return false, NIP_47_ERROR_RESTRICTED, fmt.Sprintf("This app does not have permission to request %s", requestMethod)
+		return false, nip47.ERROR_RESTRICTED, fmt.Sprintf("This app does not have permission to request %s", requestMethod)
 	}
 	expiresAt := appPermission.ExpiresAt
 	if expiresAt != nil && expiresAt.Before(time.Now()) {
@@ -704,35 +722,17 @@ func (svc *Service) hasPermission(app *App, requestMethod string, amount int64) 
 			"appId":         app.ID,
 			"pubkey":        app.NostrPubkey,
 		}).Info("This pubkey is expired")
-		svc.EventLogger.Log(&events.Event{
-			Event: "nwc_permission_expired",
-			Properties: map[string]interface{}{
-				"request_method": requestMethod,
-				"app_name":       app.Name,
-				"app_pubkey":     app.NostrPubkey,
-			},
-		})
-		return false, NIP_47_ERROR_EXPIRED, "This app has expired"
+
+		return false, nip47.ERROR_EXPIRED, "This app has expired"
 	}
 
-	if requestMethod == NIP_47_PAY_INVOICE_METHOD {
+	if requestMethod == nip47.PAY_INVOICE_METHOD {
 		maxAmount := appPermission.MaxAmount
 		if maxAmount != 0 {
 			budgetUsage := svc.GetBudgetUsage(&appPermission)
 
 			if budgetUsage+amount/1000 > int64(maxAmount) {
-				svc.EventLogger.Log(&events.Event{
-					Event: "nwc_permission_budget_exceeded",
-					Properties: map[string]interface{}{
-						"request_method": requestMethod,
-						"app_name":       app.Name,
-						"app_pubkey":     app.NostrPubkey,
-						// "max_amount":     maxAmount,
-						// "budget_usage":   budgetUsage,
-						// "amount":         amount / 1000,
-					},
-				})
-				return false, NIP_47_ERROR_QUOTA_EXCEEDED, "Insufficient budget remaining to make payment"
+				return false, nip47.ERROR_QUOTA_EXCEEDED, "Insufficient budget remaining to make payment"
 			}
 		}
 	}
@@ -749,10 +749,11 @@ func (svc *Service) GetBudgetUsage(appPermission *AppPermission) int64 {
 
 func (svc *Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay) error {
 	ev := &nostr.Event{}
-	ev.Kind = NIP_47_INFO_EVENT_KIND
-	ev.Content = NIP_47_CAPABILITIES
+	ev.Kind = nip47.INFO_EVENT_KIND
+	ev.Content = nip47.CAPABILITIES
 	ev.CreatedAt = nostr.Now()
 	ev.PubKey = svc.cfg.NostrPublicKey
+	ev.Tags = nostr.Tags{[]string{"notifications", nip47.NOTIFICATION_TYPES}}
 	err := ev.Sign(svc.cfg.NostrSecretKey)
 	if err != nil {
 		return err
@@ -762,4 +763,8 @@ func (svc *Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay) er
 		return fmt.Errorf("nostr publish not successful: %s error: %s", status, err)
 	}
 	return nil
+}
+
+func (svc *Service) LogFilePath() string {
+	return filepath.Join(svc.cfg.Env.Workdir, logDir, logFilename)
 }

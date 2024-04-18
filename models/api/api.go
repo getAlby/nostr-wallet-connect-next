@@ -1,3 +1,4 @@
+// TODO: move to api/models.go
 package api
 
 import (
@@ -5,6 +6,10 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 )
+
+type API interface {
+	CreateApp(createAppRequest *CreateAppRequest) (*CreateAppResponse, error)
+}
 
 type App struct {
 	// ID          uint      `json:"id"` // ID unused - pubkey is used as ID
@@ -90,7 +95,7 @@ type User struct {
 type InfoResponse struct {
 	BackendType          string `json:"backendType"`
 	SetupCompleted       bool   `json:"setupCompleted"`
-	OnboardingCompleted  bool   `json:"onboardingCompleted"`
+	OnboardingCompleted  bool   `json:"onboardingCompleted"` // TODO: rename - HasChannel?
 	Running              bool   `json:"running"`
 	Unlocked             bool   `json:"unlocked"`
 	AlbyAuthUrl          string `json:"albyAuthUrl"`
@@ -111,7 +116,6 @@ type ChangeUnlockPasswordRequest struct {
 type ConnectPeerRequest = lnclient.ConnectPeerRequest
 type OpenChannelRequest = lnclient.OpenChannelRequest
 type OpenChannelResponse = lnclient.OpenChannelResponse
-type CloseChannelRequest = lnclient.CloseChannelRequest
 type CloseChannelResponse = lnclient.CloseChannelResponse
 
 type NewInstantChannelInvoiceRequest struct {
@@ -137,6 +141,37 @@ type BalancesResponse = lnclient.BalancesResponse
 
 type NewOnchainAddressResponse struct {
 	Address string `json:"address"`
+}
+
+// debug api
+type SendPaymentProbesRequest struct {
+	Invoice string `json:"invoice"`
+}
+
+type SendPaymentProbesResponse struct {
+	Error string `json:"error"`
+}
+
+type SendSpontaneousPaymentProbesRequest struct {
+	Amount uint64 `json:"amount"`
+	NodeId string `json:"nodeId"`
+}
+
+type SendSpontaneousPaymentProbesResponse struct {
+	Error string `json:"error"`
+}
+
+const (
+	LogTypeNode = "node"
+	LogTypeApp  = "app"
+)
+
+type GetLogOutputRequest struct {
+	MaxLen int `query:"maxLen"`
+}
+
+type GetLogOutputResponse struct {
+	Log string `json:"logs"`
 }
 
 // TODO: move to different file

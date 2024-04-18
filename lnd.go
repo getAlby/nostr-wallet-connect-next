@@ -300,7 +300,7 @@ func makePreimageHex() ([]byte, error) {
 	return bytes, nil
 }
 
-func NewLNDService(svc *Service, lndAddress, lndCertHex, lndMacaroonHex string) (result lnclient.LNClient, err error) {
+func NewLNDService(ctx context.Context, svc *Service, lndAddress, lndCertHex, lndMacaroonHex string) (result lnclient.LNClient, err error) {
 	if lndAddress == "" || lndCertHex == "" || lndMacaroonHex == "" {
 		return nil, errors.New("one or more required LND configuration are missing")
 	}
@@ -314,7 +314,7 @@ func NewLNDService(svc *Service, lndAddress, lndCertHex, lndMacaroonHex string) 
 		svc.Logger.Errorf("Failed to create new LND client %v", err)
 		return nil, err
 	}
-	info, err := lndClient.GetInfo(svc.ctx, &lnrpc.GetInfoRequest{})
+	info, err := lndClient.GetInfo(ctx, &lnrpc.GetInfoRequest{})
 	if err != nil {
 		return nil, err
 	}
@@ -355,6 +355,22 @@ func (svc *LNDService) GetOnchainBalance(ctx context.Context) (*lnclient.Onchain
 
 func (svc *LNDService) RedeemOnchainFunds(ctx context.Context, toAddress string) (txId string, err error) {
 	return "", nil
+}
+
+func (svc *LNDService) SendPaymentProbes(ctx context.Context, invoice string) error {
+	return nil
+}
+
+func (svc *LNDService) SendSpontaneousPaymentProbes(ctx context.Context, amountMsat uint64, nodeId string) error {
+	return nil
+}
+
+func (svc *LNDService) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, error) {
+	return nil, nil
+}
+
+func (svc *LNDService) GetLogOutput(ctx context.Context, maxLen int) ([]byte, error) {
+	return []byte{}, nil
 }
 
 func (svc *LNDService) SignMessage(ctx context.Context, message string) (string, error) {

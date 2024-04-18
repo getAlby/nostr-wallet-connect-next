@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
@@ -63,7 +64,7 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 					"appId":               app.ID,
 					"recipientPubkey":     keysendInfo.Pubkey,
 				}).Infof("Failed to send payment: %v", err)
-				svc.EventLogger.Log(&events.Event{
+				svc.EventPublisher.Publish(&events.Event{
 					Event: "nwc_payment_failed",
 					Properties: map[string]interface{}{
 						// "error":   fmt.Sprintf("%v", err),
@@ -76,7 +77,7 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 				publishResponse(&Nip47Response{
 					ResultType: nip47Request.Method,
 					Error: &Nip47Error{
-						Code:    NIP_47_ERROR_INTERNAL,
+						Code:    nip47.ERROR_INTERNAL,
 						Message: err.Error(),
 					},
 				}, nostr.Tags{dTag})
@@ -86,7 +87,7 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 			mu.Lock()
 			svc.db.Save(&payment)
 			mu.Unlock()
-			svc.EventLogger.Log(&events.Event{
+			svc.EventPublisher.Publish(&events.Event{
 				Event: "nwc_payment_succeeded",
 				Properties: map[string]interface{}{
 					"keysend": true,

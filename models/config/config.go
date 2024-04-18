@@ -1,3 +1,4 @@
+// TODO: move to config/models.go
 package config
 
 const (
@@ -31,12 +32,14 @@ type AppConfig struct {
 	BaseUrl               string `envconfig:"BASE_URL" default:"http://localhost:8080"`
 	FrontendUrl           string `envconfig:"FRONTEND_URL"`
 	LogEvents             bool   `envconfig:"LOG_EVENTS" default:"false"`
+	ConnectAlbyAccount    bool   `envconfig:"CONNECT_ALBY_ACCOUNT" default:"true"`
 	PhoenixdAddress       string `envconfig:"PHOENIXD_ADDRESS" default:"http://127.0.0.1:9740"`
 	PhoenixdAuthorization string `envconfig:"PHOENIXD_AUTHORIZATION"`
 }
 
-type ConfigKVStore interface {
+type Config interface {
 	Get(key string, encryptionKey string) (string, error)
 	SetIgnore(key string, value string, encryptionKey string)
 	SetUpdate(key string, value string, encryptionKey string)
+	GetNostrPublicKey() string
 }

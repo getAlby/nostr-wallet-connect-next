@@ -1,15 +1,17 @@
+import { AlertTriangle } from "lucide-react";
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Loading from "src/components/Loading";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
+import { Alert, AlertDescription, AlertTitle } from "src/components/ui/alert";
 import { Button } from "src/components/ui/button";
 import { LoadingButton } from "src/components/ui/loading-button";
 import { Table, TableBody, TableCell, TableRow } from "src/components/ui/table";
 import { useToast } from "src/components/ui/use-toast";
 import {
-  ALBY_FEE_RESERVE,
+  ALBY_MIN_BALANCE,
   ALBY_SERVICE_FEE,
-  MIN_ALBY_BALANCE,
+  localStorageKeys,
 } from "src/constants";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
@@ -40,9 +42,9 @@ export default function MigrateAlbyFunds() {
   const [hasRequestedInvoice, setRequestedInvoice] = React.useState(false);
   const [isOpeningChannel, setOpeningChannel] = React.useState(false);
   const navigate = useNavigate();
-  const [amount, setAmount] = React.useState(0);
+  const [amount, setAmount] = React.useState<number>(0);
 
-  const [wrappedInvoiceResponse, setWrappedInvoiceResponse] = React.useState<
+  const [instantChannelResponse, setInstantChannelResponse] = React.useState<
     NewInstantChannelInvoiceResponse | undefined
   >();
 
@@ -74,7 +76,7 @@ export default function MigrateAlbyFunds() {
         if (!response?.invoice) {
           throw new Error("No invoice in response");
         }
-        setWrappedInvoiceResponse(response);
+        setInstantChannelResponse(response);
       } catch (error) {
         setError("Failed to connect to request wrapped invoice: " + error);
       }
@@ -86,7 +88,7 @@ export default function MigrateAlbyFunds() {
     async (e: React.FormEvent) => {
       e.preventDefault();
       try {
-        if (!wrappedInvoiceResponse) {
+        if (!instantChannelResponse) {
           throw new Error("No invoice");
         }
         if (!csrf) {
@@ -100,7 +102,7 @@ export default function MigrateAlbyFunds() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            invoice: wrappedInvoiceResponse.invoice,
+            invoice: instantChannelResponse.invoice,
           }),
         });
       } catch (error) {
@@ -112,7 +114,7 @@ export default function MigrateAlbyFunds() {
         setOpeningChannel(false);
       }
     },
-    [csrf, toast, wrappedInvoiceResponse]
+    [csrf, toast, instantChannelResponse]
   );
 
   React.useEffect(() => {
@@ -120,10 +122,11 @@ export default function MigrateAlbyFunds() {
       return;
     }
     setRequestedInvoice(true);
-    const _amount = Math.floor(
-      albyBalance.sats * (1 - ALBY_FEE_RESERVE) * (1 - ALBY_SERVICE_FEE)
-    );
+    const _amount = Math.floor(albyBalance.sats * (1 - ALBY_SERVICE_FEE));
     setAmount(_amount);
+    if (_amount < ALBY_MIN_BALANCE) {
+      return;
+    }
     requestWrappedInvoice(_amount);
   }, [
     hasRequestedInvoice,
@@ -143,31 +146,10 @@ export default function MigrateAlbyFunds() {
       (async () => {
         toast({ title: "Channel opened!" });
         await refetchInfo();
-        navigate("/");
+        navigate("/onboarding/success");
       })();
     }
   }, [hasOpenedChannel, navigate, refetchInfo, toast]);
-
-  if (!albyMe || !albyBalance || !channels || !wrappedInvoiceResponse) {
-    return <Loading />;
-  }
-
-  if (error) {
-    return <p>{error}</p>;
-  }
-
-  if (albyBalance.sats < MIN_ALBY_BALANCE) {
-    return (
-      <p>You don't have enough sats in your Alby account to open a channel.</p>
-    );
-  }
-
-  /*  TODO: Remove? At least display a link to where to go from here.
-  if (channels.length) {
-    return (
-      <p>You already have a channel.</p>
-    );
-  }*/
 
   return (
     <div className="flex flex-col justify-center gap-5 p-5 max-w-md items-stretch">
@@ -176,50 +158,95 @@ export default function MigrateAlbyFunds() {
         description="You can use your remaining balance on Alby hosted lightning wallet to
       fund your first lightning channel."
       />
-      <div className="border rounded-lg">
-        <Table className="">
-          <TableBody>
-            <TableRow className="border-b-0">
-              <TableCell className="font-medium p-3">
-                Current Account balance
-              </TableCell>
-              <TableCell className="text-right p-3">
-                {new Intl.NumberFormat().format(albyBalance.sats)} sats
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-medium p-3 flex flex-row gap-1.5 items-center">
-                Fee
-              </TableCell>
-              <TableCell className="text-right p-3">
-                {new Intl.NumberFormat().format(albyBalance.sats - amount)} sats
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="font-medium p-3">
-                Alby Hub Balance
-              </TableCell>
-              <TableCell className="font-semibold text-right p-3">
-                {new Intl.NumberFormat().format(amount)} sats
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-      <form className="flex flex-col justify-between text-center gap-2">
-        <LoadingButton
-          onClick={payWrappedInvoice}
-          disabled={isOpeningChannel}
-          loading={isOpeningChannel}
-        >
-          Migrate Funds and Open Channel
-        </LoadingButton>
-        <Link to="channels/new" className="cursor-not-allowed">
-          <Button variant="link" disabled>
-            Open a Channel manually
-          </Button>
-        </Link>
-      </form>
+      {error ? (
+        <>
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Error requesting wrapped invoice</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </>
+      ) : !albyMe ||
+        !albyBalance ||
+        !channels ||
+        (amount >= ALBY_MIN_BALANCE && !instantChannelResponse) ? (
+        <Loading className="mx-auto" />
+      ) : amount >= ALBY_MIN_BALANCE && instantChannelResponse ? (
+        <>
+          <div className="border rounded-lg">
+            <Table>
+              <TableBody>
+                <TableRow className="border-b-0">
+                  <TableCell className="font-medium p-3">
+                    Current Account balance
+                  </TableCell>
+                  <TableCell className="text-right p-3">
+                    {new Intl.NumberFormat().format(albyBalance.sats)} sats
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium p-3 flex flex-row gap-1.5 items-center">
+                    Fee
+                  </TableCell>
+                  <TableCell className="text-right p-3">
+                    {new Intl.NumberFormat().format(
+                      albyBalance.sats - amount + instantChannelResponse.fee
+                    )}{" "}
+                    sats
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="font-medium p-3">
+                    Alby Hub Balance
+                  </TableCell>
+                  <TableCell className="font-semibold text-right p-3">
+                    {new Intl.NumberFormat().format(
+                      amount - instantChannelResponse.fee
+                    )}{" "}
+                    sats
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+          <form className="flex flex-col justify-between text-center gap-2">
+            <LoadingButton
+              onClick={payWrappedInvoice}
+              disabled={isOpeningChannel}
+              loading={isOpeningChannel}
+            >
+              Migrate Funds and Open Channel
+            </LoadingButton>
+            <Link to="../channels/new/instant">
+              <Button variant="link">Explore Other Options</Button>
+            </Link>
+          </form>
+        </>
+      ) : (
+        <>
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Not enough funds available!</AlertTitle>
+            <AlertDescription>
+              You don't have enough funds in your Alby account to fund a new
+              channel right now. You can open a channel manually and pay with an
+              external wallet though.
+            </AlertDescription>
+          </Alert>
+          <Link to="../channels/new/instant" className="w-full">
+            <Button className="w-full">Explore Other Options</Button>
+          </Link>
+        </>
+      )}
+      <Button
+        variant="link"
+        onClick={() => {
+          localStorage.setItem(localStorageKeys.onboardingSkipped, "1");
+          navigate("/");
+        }}
+      >
+        Skip For Now
+      </Button>
     </div>
   );
 }

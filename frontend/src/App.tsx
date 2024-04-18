@@ -37,9 +37,11 @@ import SettingsLayout from "src/components/layouts/SettingsLayout";
 import TwoColumnFullScreenLayout from "src/components/layouts/TwoColumnFullScreenLayout";
 import { OnboardingRedirect } from "src/components/redirects/OnboardingRedirect";
 import { Toaster } from "src/components/ui/toaster";
+import { Intro } from "src/screens/Intro";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
-import LightningOnboarding from "src/screens/onboarding/LightningOnboarding";
+import { Success } from "src/screens/onboarding/Success";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
+import DebugTools from "src/screens/settings/DebugTools";
 
 const newChannelRoutes = (
   <Route path="new">
@@ -83,6 +85,9 @@ function App() {
                 <Route path=":pubkey" element={<ShowApp />} />
                 <Route path="created" element={<AppCreated />} />
               </Route>
+              <Route path="debug-tools" element={<DefaultRedirect />}>
+                <Route index element={<DebugTools />} />
+              </Route>
               <Route path="channels" element={<DefaultRedirect />}>
                 <Route index path="" element={<Channels />} />
                 {newChannelRoutes}
@@ -92,6 +97,7 @@ function App() {
                 />
               </Route>
             </Route>
+            <Route path="intro" element={<Intro />} />
             <Route element={<TwoColumnFullScreenLayout />}>
               <Route
                 path="start"
@@ -101,9 +107,9 @@ function App() {
                   </StartRedirect>
                 }
               />
-              <Route path="/alby/auth" element={<AlbyAuthRedirect />}></Route>
+              <Route path="/alby/auth" element={<AlbyAuthRedirect />} />
               <Route path="unlock" element={<Unlock />} />
-              <Route path="welcome" element={<Welcome />}></Route>
+              <Route path="welcome" element={<Welcome />} />
               <Route path="setup" element={<SetupRedirect />}>
                 <Route path="" element={<Navigate to="password" replace />} />
                 <Route path="password" element={<SetupPassword />} />
@@ -114,15 +120,15 @@ function App() {
               </Route>
               <Route path="onboarding" element={<OnboardingRedirect />}>
                 <Route path="lightning">
-                  <Route path="" element={<LightningOnboarding />} />
                   <Route path="migrate-alby" element={<MigrateAlbyFunds />} />
                   <Route path="channels">{newChannelRoutes}</Route>
                 </Route>
+                <Route path="success" element={<Success />} />
               </Route>
             </Route>
             <Route path="/*" element={<NotFound />} />
           </Routes>
-        </HashRouter>{" "}
+        </HashRouter>
       </ThemeProvider>
     </>
   );

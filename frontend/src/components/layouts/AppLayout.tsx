@@ -65,7 +65,7 @@ export default function AppLayout() {
 
     navigate("/", { replace: true });
     toast({ title: "You are now logged out." });
-  }, [csrf]);
+  }, [csrf, navigate, toast]);
 
   function UserMenuContent() {
     return (
@@ -167,7 +167,7 @@ export default function AppLayout() {
                   to="#"
                   className="font-semibold text-lg whitespace-nowrap overflow-hidden text-ellipsis"
                 >
-                  {albyMe?.name || "Satoshi"}
+                  {albyMe?.name ?? albyMe?.email}
                 </Link>
               </div>
               <DropdownMenu>

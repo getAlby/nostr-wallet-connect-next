@@ -1,4 +1,4 @@
-import { Bitcoin, Cable, ChevronDown, CircleX, Zap } from "lucide-react";
+import { Bitcoin, Cable, ChevronDown, CircleX, CopyIcon, Zap } from "lucide-react";
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader.tsx";
@@ -28,17 +28,21 @@ import {
   TableHeader,
   TableRow,
 } from "src/components/ui/table.tsx";
+import { toast } from "src/components/ui/use-toast.ts";
 import { ONCHAIN_DUST_SATS } from "src/constants.ts";
 import { useBalances } from "src/hooks/useBalances.ts";
 import { useChannels } from "src/hooks/useChannels";
 import { useInfo } from "src/hooks/useInfo";
+import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo.ts";
 import { useRedeemOnchainFunds } from "src/hooks/useRedeemOnchainFunds.ts";
-import { CloseChannelRequest, CloseChannelResponse, Node } from "src/types";
+import { copyToClipboard } from "src/lib/clipboard.ts";
+import { CloseChannelResponse, Node } from "src/types";
 import { request } from "src/utils/request";
 import { useCSRF } from "../../hooks/useCSRF.ts";
 
 export default function Channels() {
   const { data: channels, mutate: reloadChannels } = useChannels();
+  const { data: nodeConnectionInfo } = useNodeConnectionInfo();
   const { data: balances } = useBalances();
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const { data: info, mutate: reloadInfo } = useInfo();
@@ -101,9 +105,8 @@ export default function Channels() {
       }
       if (
         !confirm(
-          `Are you sure you want to close the channel with ${
-            nodes.find((node) => node.public_key === nodeId)?.alias ||
-            "Unknown Node"
+          `Are you sure you want to close the channel with ${nodes.find((node) => node.public_key === nodeId)?.alias ||
+          "Unknown Node"
           }?\n\nNode ID: ${nodeId}\n\nChannel ID: ${channelId}`
         )
       ) {
@@ -112,19 +115,14 @@ export default function Channels() {
 
       console.log(`🎬 Closing channel with ${nodeId}`);
 
-      const closeChannelRequest: CloseChannelRequest = {
-        channelId: channelId,
-        nodeId: nodeId,
-      };
       const closeChannelResponse = await request<CloseChannelResponse>(
-        "/api/channels/close",
+        `/api/peers/${nodeId}/channels/${channelId}`,
         {
-          method: "POST",
+          method: "DELETE",
           headers: {
             "X-CSRF-Token": csrf,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(closeChannelRequest),
         }
       );
 
@@ -186,8 +184,8 @@ export default function Channels() {
   return (
     <>
       <AppHeader
-        title={"Channels"}
-        description={"Manage liquidity on your lightnig node."}
+        title="Channels"
+        description="Manage liquidity on your lightnig node."
         contentRight={
           <>
             <DropdownMenu>
@@ -199,6 +197,29 @@ export default function Channels() {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56">
                 <DropdownMenuGroup>
+                  <DropdownMenuItem>
+                    <div className="flex flex-row gap-10 items-center w-full">
+                      <div className="whitespace-nowrap flex flex-row items-center gap-2">
+                        Node
+                      </div>
+                      <div className="overflow-hidden text-ellipsis">
+                        {/* TODO: replace with skeleton loader */}
+                        {nodeConnectionInfo?.pubkey || "Loading..."}
+                      </div>
+                      {nodeConnectionInfo && (
+                        <CopyIcon
+                          className="shrink-0 w-4 h-4"
+                          onClick={() => {
+                            copyToClipboard(nodeConnectionInfo.pubkey);
+                            toast({ title: "Copied to clipboard." });
+                          }}
+                        />
+                      )}
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuGroup>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem>
                     <Link to="/channels/onchain/new-address">
                       Onchain Address
@@ -263,7 +284,7 @@ export default function Channels() {
             {!balances && (
               <div>
                 <div className="animate-pulse d-inline ">
-                  <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-12 my-2"></div>
+                  <div className="h-2.5 bg-primary rounded-full w-12 my-2"></div>
                 </div>
               </div>
             )}
@@ -275,16 +296,6 @@ export default function Channels() {
                 </>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {balances &&
-                balances.onchain.spendable !== balances.onchain.total && (
-                  <span className="text-xs animate-pulse">
-                    &nbsp;(
-                    {balances.onchain.total - balances.onchain.spendable}{" "}
-                    incoming)
-                  </span>
-                )}
-            </p>
           </CardContent>
         </Card>
         <Card>
@@ -298,7 +309,7 @@ export default function Channels() {
             {!channels && (
               <div>
                 <div className="animate-pulse d-inline ">
-                  <div className="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-12 my-2"></div>
+                  <div className="h-2.5 bg-primary rounded-full w-12 my-2"></div>
                 </div>
               </div>
             )}
@@ -324,18 +335,6 @@ export default function Channels() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {!channels && (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center p-5">
-                <div role="status" className="animate-pulse flex space-between">
-                  <div className="h-2.5 bg-gray-200 rounded-full w-1/3 dark:bg-gray-700 mr-5"></div>
-                  <div className="h-2.5 bg-gray-200 rounded-full w-20 dark:bg-gray-700 mr-5"></div>
-                  <div className="h-2.5 bg-gray-200 rounded-full w-20 dark:bg-gray-700"></div>
-                  <span className="sr-only">Loading...</span>
-                </div>
-              </TableCell>
-            </TableRow>
-          )}
           {channels && channels.length > 0 && (
             <>
               {channels.map((channel) => {
@@ -409,6 +408,11 @@ export default function Channels() {
               })}
             </>
           )}
+          {!channels && <TableRow>
+            <TableCell colSpan={4}>
+              <Loading className="m-2" />
+            </TableCell>
+          </TableRow>}
         </TableBody>
       </Table>
     </>
