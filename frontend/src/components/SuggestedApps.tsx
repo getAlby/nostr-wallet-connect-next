@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 import alby from "src/assets/suggested-apps/alby.png";
 import amethyst from "src/assets/suggested-apps/amethyst.png";
 import bc from "src/assets/suggested-apps/bitcoin-connect.png";
@@ -18,6 +16,7 @@ import zapstream from "src/assets/suggested-apps/zap-stream.png";
 import zapplanner from "src/assets/suggested-apps/zapplanner.png";
 import zapplepay from "src/assets/suggested-apps/zapple-pay.png";
 import zappybird from "src/assets/suggested-apps/zappy-bird.png";
+import ExternalLink from "src/components/ExternalLink";
 import {
   Card,
   CardContent,
@@ -145,7 +144,7 @@ const suggestedApps: Props[] = [
 
 function SuggestedAppCard({ to, title, description, logo }: Props) {
   return (
-    <Link to={to} target="_blank">
+    <ExternalLink to={to}>
       <Card>
         <CardContent className="pt-6">
           <div className="flex gap-3 items-center">
@@ -161,7 +160,7 @@ function SuggestedAppCard({ to, title, description, logo }: Props) {
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </ExternalLink>
   );
 }
 

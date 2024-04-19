@@ -37,6 +37,7 @@ import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useCSRF } from "src/hooks/useCSRF";
 import { cn } from "src/lib/utils";
 import { request } from "src/utils/request";
+import ExternalLink from "../ExternalLink";
 
 export default function AppLayout() {
   const { data: albyMe } = useAlbyMe();
@@ -74,14 +75,12 @@ export default function AppLayout() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <a
-              href="https://getalby.com/lightning_addresses/"
-              target="_blank"
-              rel="noreferer noopener"
+            <ExternalLink
+              to="https://getalby.com/lightning_addresses/"
               className="w-full"
             >
               Profile
-            </a>
+            </ExternalLink>
           </DropdownMenuItem>
           <DropdownMenuItem disabled>Billing</DropdownMenuItem>
           <DropdownMenuItem disabled>Keyboard shortcuts</DropdownMenuItem>
