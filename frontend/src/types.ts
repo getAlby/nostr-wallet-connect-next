@@ -250,13 +250,6 @@ export type RedeemOnchainFundsResponse = {
   txId: string;
 };
 
-export type SuggestedApp = {
-  to: string;
-  title: string;
-  description: string;
-  logo?: string;
-};
-
 export type LightningBalanceResponse = {
   totalSpendable: number;
   totalReceivable: number;

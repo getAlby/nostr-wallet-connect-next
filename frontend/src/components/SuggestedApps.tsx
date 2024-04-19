@@ -24,9 +24,15 @@ import {
   CardDescription,
   CardTitle,
 } from "src/components/ui/card";
-import { SuggestedApp } from "src/types";
 
-const suggestedApps: SuggestedApp[] = [
+export type Props = {
+  to: string;
+  title: string;
+  description: string;
+  logo?: string;
+};
+
+const suggestedApps: Props[] = [
   {
     title: "Alby Extension",
     description: "Wallet in your browser",
@@ -137,7 +143,7 @@ const suggestedApps: SuggestedApp[] = [
   },
 ];
 
-function SuggestedAppCard({ to, title, description, logo }: SuggestedApp) {
+function SuggestedAppCard({ to, title, description, logo }: Props) {
   return (
     <Link to={to} target="_blank">
       <Card>
