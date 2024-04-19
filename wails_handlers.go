@@ -20,6 +20,28 @@ type WailsRequestRouterResponse struct {
 func (app *WailsApp) WailsRequestRouter(route string, method string, body string) WailsRequestRouterResponse {
 	ctx := app.ctx
 
+	albyCallbackRegex := regexp.MustCompile(
+		`/api/alby/callback\?code=([^&]+)(&.*)?`,
+	)
+
+	albyMatch := albyCallbackRegex.FindStringSubmatch(route)
+
+	switch {
+	case len(albyMatch) > 1:
+		code := albyMatch[1]
+
+		err := app.svc.AlbyOAuthSvc.CallbackHandler(ctx, code)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: nil, Error: ""}
+	}
+
 	appRegex := regexp.MustCompile(
 		`/api/apps/([0-9a-f]+)`,
 	)
@@ -103,6 +125,46 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 	}
 
 	switch route {
+	case "/api/alby/me":
+		me, err := app.svc.AlbyOAuthSvc.GetMe(ctx)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: me, Error: ""}
+	case "/api/alby/balance":
+		balance, err := app.svc.AlbyOAuthSvc.GetBalance(ctx)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: &api.AlbyBalanceResponse{
+			Sats: balance.Balance,
+		}, Error: ""}
+	case "/api/alby/pay":
+		payRequest := &api.AlbyPayRequest{}
+		err := json.Unmarshal([]byte(body), payRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		err = app.svc.AlbyOAuthSvc.SendPayment(ctx, payRequest.Invoice)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: nil, Error: ""}
 	case "/api/apps":
 		switch method {
 		case "GET":
