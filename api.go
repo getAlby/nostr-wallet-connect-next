@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -954,6 +953,15 @@ func (api *API) GetLogOutput(ctx context.Context, logType string, getLogRequest 
 func (api *API) BasicBackup(basicBackupRequest *models.BasicBackupRequest, w io.Writer) error {
 	var err error
 
+	if !api.svc.cfg.CheckUnlockPassword(basicBackupRequest.UnlockPassword) {
+		return errors.New("invalid unlock password")
+	}
+
+	workDir, err := filepath.Abs(api.svc.cfg.Env.Workdir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute workdir: %w", err)
+	}
+
 	lnStorageDir := ""
 
 	if api.svc.lnClient != nil {
@@ -972,7 +980,7 @@ func (api *API) BasicBackup(basicBackupRequest *models.BasicBackupRequest, w io.
 	// Run online backup of the database.
 	now := time.Now()
 	nwcBkpFile := fmt.Sprintf("nwc-backup-%s.db", now.Format("060102150405"))
-	nwcBkpPath := filepath.Join(api.svc.cfg.Env.Workdir, nwcBkpFile)
+	nwcBkpPath := filepath.Join(workDir, nwcBkpFile)
 	nwcBkpPath, err = filepath.Abs(nwcBkpPath)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute NWC backup path: %w", err)
@@ -1004,7 +1012,7 @@ func (api *API) BasicBackup(basicBackupRequest *models.BasicBackupRequest, w io.
 	zw := zip.NewWriter(cw)
 	defer zw.Close()
 
-	writeZipFile := func(fsPath, zipPath string) error {
+	addFileToZip := func(fsPath, zipPath string) error {
 		inF, err := os.Open(fsPath)
 		if err != nil {
 			return fmt.Errorf("failed to open source file for reading: %w", err)
@@ -1020,22 +1028,21 @@ func (api *API) BasicBackup(basicBackupRequest *models.BasicBackupRequest, w io.
 		return err
 	}
 
-	err = writeZipFile(nwcBkpPath, "nwc.db")
+	err = addFileToZip(nwcBkpPath, "nwc.db")
 	if err != nil {
 		return fmt.Errorf("failed to write NWC backup to zip: %w", err)
 	}
 
 	for _, lnFile := range lnFiles {
-		relPath, err := filepath.Rel(lnStorageDir, lnFile)
+		relPath, err := filepath.Rel(workDir, lnFile)
 		if err != nil {
 			return fmt.Errorf("failed to get relative path of LNClient file: %w", err)
 		}
 
-		// Notice we use path.Join() instead of filepath.Join()
-		// because the zip format uses forward slashes.
-		outPath := path.Join("lnclient", filepath.ToSlash(relPath))
+		// Ensure forward slashes for zip format compatibility.
+		outPath := filepath.ToSlash(relPath)
 
-		err = writeZipFile(lnFile, outPath)
+		err = addFileToZip(lnFile, outPath)
 		if err != nil {
 			return fmt.Errorf("failed to write LNClient file to zip: %w", err)
 		}
