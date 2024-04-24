@@ -132,6 +132,7 @@ export interface AppPermissions {
 export interface InfoResponse {
   backendType: BackendType;
   setupCompleted: boolean;
+  oauthRedirect: boolean;
   onboardingCompleted: boolean;
   albyAccountConnected: boolean;
   running: boolean;

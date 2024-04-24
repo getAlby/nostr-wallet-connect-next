@@ -22,14 +22,12 @@ export default function AlbyAuthRedirect() {
   const [authCode, setAuthCode] = React.useState("");
   const [isOpened, setIsOpened] = React.useState(false);
 
-  const isHttpMode = window.location.protocol.startsWith("http");
-
   React.useEffect(() => {
     if (!info) {
       return;
     }
-    if (isHttpMode) window.location.href = info.albyAuthUrl;
-    if (!isHttpMode) {
+    if (info.oauthRedirect) window.location.href = info.albyAuthUrl;
+    if (!info.oauthRedirect) {
       setIsOpened((isOpened) => {
         if (!isOpened) {
           openLink(info.albyAuthUrl);
@@ -37,7 +35,7 @@ export default function AlbyAuthRedirect() {
         return true;
       });
     }
-  }, [info, isHttpMode, isOpened]);
+  }, [info, isOpened]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,7 +56,7 @@ export default function AlbyAuthRedirect() {
     }
   }
 
-  return isHttpMode ? (
+  return !info || info.oauthRedirect ? (
     <Loading />
   ) : (
     <>
