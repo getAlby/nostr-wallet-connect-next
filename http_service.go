@@ -101,7 +101,8 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.POST("/api/send-spontaneous-payment-probes", httpSvc.sendSpontaneousPaymentProbesHandler, authMiddleware)
 	e.GET("/api/log/:type", httpSvc.getLogOutputHandler, authMiddleware)
 
-	e.POST("/api/backup", httpSvc.basicBackupHandler, authMiddleware)
+	e.POST("/api/backup", httpSvc.createBackupHandler, authMiddleware)
+	e.POST("/api/restore", httpSvc.restoreBackupHandler, authMiddleware)
 
 	frontend.RegisterHandlers(e)
 }
@@ -653,7 +654,7 @@ func (httpSvc *HttpService) getLogOutputHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, getLogResponse)
 }
 
-func (httpSvc *HttpService) basicBackupHandler(c echo.Context) error {
+func (httpSvc *HttpService) createBackupHandler(c echo.Context) error {
 	var backupRequest api.BasicBackupRequest
 	if err := c.Bind(&backupRequest); err != nil {
 		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
@@ -669,5 +670,33 @@ func (httpSvc *HttpService) basicBackupHandler(c echo.Context) error {
 
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
 	c.Response().WriteHeader(http.StatusOK)
-	return httpSvc.api.BasicBackup(&backupRequest, c.Response())
+	return httpSvc.api.CreateBackup(&backupRequest, c.Response())
+}
+
+func (httpSvc *HttpService) restoreBackupHandler(c echo.Context) error {
+	password := c.FormValue("unlockPassword")
+
+	fileHeader, err := c.FormFile("backup")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Message: fmt.Sprintf("Failed to get backup file header: %v", err),
+		})
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: fmt.Sprintf("Failed to open backup file: %v", err),
+		})
+	}
+	defer file.Close()
+
+	err = httpSvc.api.RestoreBackup(password, file)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: fmt.Sprintf("Failed to restore backup: %v", err),
+		})
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }

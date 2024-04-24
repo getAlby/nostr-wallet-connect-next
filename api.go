@@ -950,7 +950,7 @@ func (api *API) GetLogOutput(ctx context.Context, logType string, getLogRequest 
 	return &models.GetLogOutputResponse{Log: string(logData)}, nil
 }
 
-func (api *API) BasicBackup(basicBackupRequest *models.BasicBackupRequest, w io.Writer) error {
+func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io.Writer) error {
 	var err error
 
 	if !api.svc.cfg.CheckUnlockPassword(basicBackupRequest.UnlockPassword) {
@@ -1051,6 +1051,78 @@ func (api *API) BasicBackup(basicBackupRequest *models.BasicBackupRequest, w io.
 	return nil
 }
 
+func (api *API) RestoreBackup(password string, r io.Reader) error {
+	workDir, err := filepath.Abs(api.svc.cfg.Env.Workdir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute workdir: %w", err)
+	}
+
+	cr, err := decryptingReader(r, password)
+	if err != nil {
+		return fmt.Errorf("failed to create decrypted reader: %w", err)
+	}
+
+	tmpF, err := os.CreateTemp("", "nwc-backup-*.zip")
+	if err != nil {
+		return fmt.Errorf("failed to create temporary output file: %w", err)
+	}
+	tmpName := tmpF.Name()
+	defer os.Remove(tmpName)
+	defer tmpF.Close()
+
+	zipSize, err := io.Copy(tmpF, cr)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt backup data into temporary file: %w", err)
+	}
+
+	if err = tmpF.Sync(); err != nil {
+		return fmt.Errorf("failed to flush temporary file: %w", err)
+	}
+
+	if _, err = tmpF.Seek(0, 0); err != nil {
+		return fmt.Errorf("failed to seek to beginning of temporary file: %w", err)
+	}
+
+	zr, err := zip.NewReader(tmpF, zipSize)
+	if err != nil {
+		return fmt.Errorf("failed to create zip reader: %w", err)
+	}
+
+	extractZipEntry := func(zipFile *zip.File) error {
+		fsFilePath := filepath.Join(workDir, filepath.FromSlash(zipFile.Name))
+
+		if err = os.MkdirAll(filepath.Dir(fsFilePath), 0700); err != nil {
+			return fmt.Errorf("failed to create directory for zip entry: %w", err)
+		}
+
+		inF, err := zipFile.Open()
+		if err != nil {
+			return fmt.Errorf("failed to open zip entry for reading: %w", err)
+		}
+		defer inF.Close()
+
+		outF, err := os.OpenFile(fsFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+		if err != nil {
+			return fmt.Errorf("failed to create destination file: %w", err)
+		}
+		defer outF.Close()
+
+		if _, err = io.Copy(outF, inF); err != nil {
+			return fmt.Errorf("failed to write zip entry to destination file: %w", err)
+		}
+
+		return nil
+	}
+
+	for _, f := range zr.File {
+		if err = extractZipEntry(f); err != nil {
+			return fmt.Errorf("failed to extract zip entry: %w", err)
+		}
+	}
+
+	panic("implement me")
+}
+
 func (api *API) parseExpiresAt(expiresAtString string) (*time.Time, error) {
 	var expiresAt *time.Time
 	if expiresAtString != "" {
@@ -1083,6 +1155,16 @@ func encryptingWriter(w io.Writer, password string) (io.Writer, error) {
 		return nil, fmt.Errorf("failed to generate IV: %w", err)
 	}
 
+	_, err = w.Write(salt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write salt: %w", err)
+	}
+
+	_, err = w.Write(iv)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write IV: %w", err)
+	}
+
 	stream := cipher.NewOFB(block, iv)
 	cw := &cipher.StreamWriter{
 		S: stream,
@@ -1090,4 +1172,30 @@ func encryptingWriter(w io.Writer, password string) (io.Writer, error) {
 	}
 
 	return cw, nil
+}
+
+func decryptingReader(r io.Reader, password string) (io.Reader, error) {
+	salt := make([]byte, 8)
+	if _, err := io.ReadFull(r, salt); err != nil {
+		return nil, fmt.Errorf("failed to read salt: %w", err)
+	}
+
+	iv := make([]byte, aes.BlockSize)
+	if _, err := io.ReadFull(r, iv); err != nil {
+		return nil, fmt.Errorf("failed to read IV: %w", err)
+	}
+
+	encKey := pbkdf2.Key([]byte(password), salt, 4096, 32, sha256.New)
+	block, err := aes.NewCipher(encKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AES cipher: %w", err)
+	}
+
+	stream := cipher.NewOFB(block, iv)
+	cr := &cipher.StreamReader{
+		S: stream,
+		R: r,
+	}
+
+	return cr, nil
 }
