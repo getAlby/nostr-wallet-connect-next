@@ -973,24 +973,33 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 
 	// Stop the app to ensure no new requests are processed.
 	api.svc.StopApp()
-
-	// Run online backup of the database.
-	now := time.Now()
-	nwcBkpFile := fmt.Sprintf("nwc-backup-%s.db", now.Format("060102150405"))
-	nwcBkpPath := filepath.Join(workDir, nwcBkpFile)
-	nwcBkpPath, err = filepath.Abs(nwcBkpPath)
+	db, err := api.svc.db.DB()
 	if err != nil {
-		return fmt.Errorf("failed to get absolute NWC backup path: %w", err)
+		return fmt.Errorf("failed to get database connection: %w", err)
 	}
 
-	if err = api.svc.db.Exec(fmt.Sprintf("VACUUM INTO '%s';", nwcBkpPath)).Error; err != nil {
-		return fmt.Errorf("failed to backup NWC database: %w", err)
+	// Closing the database leaves the service in an inconsistent state,
+	// but that should not be a problem since the app is not expected
+	// to be used after its data is exported.
+	err = db.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close database connection: %w", err)
 	}
-	defer os.Remove(nwcBkpPath)
 
-	var lnFiles []string
+	// The list of files to archive.
+	var archivedFiles []string
+
+	// Locate the main database file and all the auxiliary files (journal, etc).
+	dbFilePath := api.svc.cfg.Env.DatabaseUri
+	dbFiles, err := filepath.Glob(dbFilePath + "*")
+	if err != nil {
+		return fmt.Errorf("failed to list database files: %w", err)
+	}
+	archivedFiles = append(archivedFiles, dbFilePath)
+	archivedFiles = append(archivedFiles, dbFiles...)
+
 	if lnStorageDir != "" {
-		lnFiles, err = filepath.Glob(filepath.Join(lnStorageDir, "*"))
+		lnFiles, err := filepath.Glob(filepath.Join(lnStorageDir, "*"))
 		if err != nil {
 			return fmt.Errorf("failed to list files in the LNClient storage directory: %w", err)
 		}
@@ -999,6 +1008,8 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 		slices.DeleteFunc(lnFiles, func(s string) bool {
 			return filepath.Ext(s) == ".log"
 		})
+
+		archivedFiles = append(archivedFiles, lnFiles...)
 	}
 
 	cw, err := encryptingWriter(w, basicBackupRequest.UnlockPassword)
@@ -1025,23 +1036,16 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 		return err
 	}
 
-	err = addFileToZip(nwcBkpPath, "nwc.db")
-	if err != nil {
-		return fmt.Errorf("failed to write NWC backup to zip: %w", err)
-	}
-
-	for _, lnFile := range lnFiles {
-		relPath, err := filepath.Rel(workDir, lnFile)
+	for _, archivedFile := range archivedFiles {
+		relPath, err := filepath.Rel(workDir, archivedFile)
 		if err != nil {
-			return fmt.Errorf("failed to get relative path of LNClient file: %w", err)
+			return fmt.Errorf("failed to get relative path of input file: %w", err)
 		}
 
 		// Ensure forward slashes for zip format compatibility.
-		outPath := filepath.ToSlash(relPath)
-
-		err = addFileToZip(lnFile, outPath)
+		err = addFileToZip(archivedFile, filepath.ToSlash(relPath))
 		if err != nil {
-			return fmt.Errorf("failed to write LNClient file to zip: %w", err)
+			return fmt.Errorf("failed to write input file to zip: %w", err)
 		}
 	}
 
@@ -1117,7 +1121,7 @@ func (api *API) RestoreBackup(password string, r io.Reader) error {
 		}
 	}
 
-	panic("implement me")
+	return nil
 }
 
 func (api *API) parseExpiresAt(expiresAtString string) (*time.Time, error) {
