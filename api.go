@@ -969,13 +969,10 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 		if err != nil {
 			return fmt.Errorf("failed to get storage dir: %w", err)
 		}
-
-		// Stop the client to ensure its storage is in a consistent state.
-		err = api.svc.StopLNClient()
-		if err != nil {
-			return fmt.Errorf("failed to stop LNClient: %w", err)
-		}
 	}
+
+	// Stop the app to ensure no new requests are processed.
+	api.svc.StopApp()
 
 	// Run online backup of the database.
 	now := time.Now()

@@ -51,6 +51,7 @@ type Service struct {
 	ctx                    context.Context
 	wg                     *sync.WaitGroup
 	nip47NotificationQueue nip47.Nip47NotificationQueue
+	appCancelFn            context.CancelFunc
 }
 
 // TODO: move to service.go
