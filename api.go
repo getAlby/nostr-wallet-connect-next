@@ -1058,6 +1058,10 @@ func (api *API) RestoreBackup(password string, r io.Reader) error {
 		return fmt.Errorf("failed to get absolute workdir: %w", err)
 	}
 
+	if !api.isDatabasePathDefault() {
+		return errors.New("cannot restore backup when database path is not default")
+	}
+
 	cr, err := decryptingReader(r, password)
 	if err != nil {
 		return fmt.Errorf("failed to create decrypted reader: %w", err)
@@ -1137,6 +1141,30 @@ func (api *API) parseExpiresAt(expiresAtString string) (*time.Time, error) {
 		expiresAt = &expiresAtValue
 	}
 	return expiresAt, nil
+}
+
+func (api *API) isDatabasePathDefault() bool {
+	workDir, err := filepath.Abs(api.svc.cfg.Env.Workdir)
+	if err != nil {
+		return false
+	}
+
+	databaseURI := api.svc.cfg.Env.DatabaseUri
+	if strings.HasPrefix(databaseURI, "file:") {
+		return false
+	}
+
+	databasePath, err := filepath.Abs(databaseURI)
+	if err != nil {
+		return false
+	}
+
+	expectedDatabasePath := filepath.Join(workDir, "nwc.db")
+	if databasePath != expectedDatabasePath {
+		return false
+	}
+
+	return true
 }
 
 func encryptingWriter(w io.Writer, password string) (io.Writer, error) {
