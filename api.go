@@ -1051,6 +1051,25 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 	return nil
 }
 
+func (api *API) CreateLocalBackup(basicBackupRequest *models.BasicBackupWailsRequest) error {
+	backupFile, err := os.Create(basicBackupRequest.BackupFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create backup file: %w", err)
+	}
+	defer backupFile.Close()
+
+	backupReq := models.BasicBackupRequest{
+		UnlockPassword: basicBackupRequest.UnlockPassword,
+	}
+
+	err = api.CreateBackup(&backupReq, backupFile)
+	if err != nil {
+		return fmt.Errorf("failed to create backup: %w", err)
+	}
+
+	return nil
+}
+
 func (api *API) RestoreBackup(password string, r io.Reader) error {
 	workDir, err := filepath.Abs(api.svc.cfg.Env.Workdir)
 	if err != nil {
@@ -1137,6 +1156,21 @@ func (api *API) RestoreBackup(password string, r io.Reader) error {
 		if err = extractZipEntry(f); err != nil {
 			return fmt.Errorf("failed to extract zip entry: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func (api *API) RestoreLocalBackup(basicRestoreRequest *models.BasicRestoreWailsRequest) error {
+	backupFile, err := os.Open(basicRestoreRequest.BackupFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to open backup file: %w", err)
+	}
+	defer backupFile.Close()
+
+	err = api.RestoreBackup(basicRestoreRequest.UnlockPassword, backupFile)
+	if err != nil {
+		return fmt.Errorf("failed to restore backup: %w", err)
 	}
 
 	return nil

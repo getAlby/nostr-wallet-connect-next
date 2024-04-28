@@ -186,3 +186,13 @@ type AlbyPayRequest struct {
 type BasicBackupRequest struct {
 	UnlockPassword string `json:"unlockPassword"`
 }
+
+type BasicBackupWailsRequest struct {
+	UnlockPassword string `json:"unlockPassword"`
+	BackupFilePath string `json:"backupFilePath"`
+}
+
+type BasicRestoreWailsRequest struct {
+	UnlockPassword string `json:"unlockPassword"`
+	BackupFilePath string `json:"backupFilePath"`
+}
