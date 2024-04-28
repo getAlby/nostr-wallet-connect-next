@@ -958,7 +958,7 @@ func (api *API) requestLSPS1Invoice(selectedLsp *lsp.LSP, amount uint64, pubkey 
 		AnnounceChannel              bool   `json:"announce_channel"`
 	}
 
-	payloadBytes, err := json.Marshal(NewLSPS1ChannelRequest{
+	newLSPS1ChannelRequest := NewLSPS1ChannelRequest{
 		PublicKey:                    pubkey,
 		LSPBalanceSat:                strconv.FormatUint(amount, 10),
 		ClientBalanceSat:             "0",
@@ -968,7 +968,9 @@ func (api *API) requestLSPS1Invoice(selectedLsp *lsp.LSP, amount uint64, pubkey 
 		Token:                        "",
 		RefundOnchainAddress:         "tb1qnwe97sq3ewkta9s48anmsl0sy7wdescullhzdu", // TODO: get from node
 		AnnounceChannel:              false,                                        // TODO: this should be customizable
-	})
+	}
+
+	payloadBytes, err := json.Marshal(newLSPS1ChannelRequest)
 	if err != nil {
 		return "", 0, err
 	}
@@ -1004,10 +1006,11 @@ func (api *API) requestLSPS1Invoice(selectedLsp *lsp.LSP, amount uint64, pubkey 
 
 	if res.StatusCode >= 300 {
 		api.svc.Logger.WithFields(logrus.Fields{
-			"body":       string(body),
-			"statusCode": res.StatusCode,
-		}).Error("new-channel endpoint returned non-success code")
-		return "", 0, fmt.Errorf("new-channel endpoint returned non-success code: %s", string(body))
+			"newLSPS1ChannelRequest": newLSPS1ChannelRequest,
+			"body":                   string(body),
+			"statusCode":             res.StatusCode,
+		}).Error("create_order endpoint returned non-success code")
+		return "", 0, fmt.Errorf("create_order endpoint returned non-success code: %s", string(body))
 	}
 
 	type NewLSPS1ChannelPayment struct {
