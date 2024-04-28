@@ -1,9 +1,9 @@
 import {
   ArrowDownToDot,
   ArrowUpFromDot,
+  CircleDot,
   CopyIcon,
   ExternalLink,
-  PlugZap,
   ShieldCheckIcon,
   Sparkles,
   Unplug
@@ -93,8 +93,8 @@ function Wallet() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="default">
-                    <PlugZap className="mr-2 h-4 w-4 text-primary" />
-                    Connected
+                    <CircleDot className="mr-2 h-4 w-4 text-primary" />
+                    Online
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-64" align="end">
@@ -239,7 +239,7 @@ function Wallet() {
           <Card>
             <CardHeader>
               <div className="flex flex-row items-center">
-                <img src={AlbyHead} className="w-12 h-12 rounded-xl p-1 border bg-[#FFDF6F]" />
+                <img src={AlbyHead} className="w-12 h-12 rounded-xl p-1 border" />
                 <div>
                   <CardTitle>
                     <h2 className="flex-1 leading-5 font-semibold text-xl whitespace-nowrap text-ellipsis overflow-hidden ml-4">
@@ -265,7 +265,7 @@ function Wallet() {
           <Card>
             <CardHeader>
               <div className="flex flex-row items-center">
-                <img src={AlbyHead} className="w-12 h-12 rounded-xl p-1 border" />
+                <img src={AlbyHead} className="w-12 h-12 rounded-xl p-1 border bg-[#FFDF6F]" />
                 <div>
                   <CardTitle>
                     <h2 className="flex-1 leading-5 font-semibold text-xl whitespace-nowrap text-ellipsis overflow-hidden ml-4">

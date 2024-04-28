@@ -1,13 +1,10 @@
 import {
   Cable,
-  CircleHelp,
   Menu,
-  MessageCircle,
   SendToBack,
   Settings,
-  ShieldCheck,
   Store,
-  Wallet,
+  Wallet
 } from "lucide-react";
 import { ModeToggle } from "src/components/ui/mode-toggle";
 
@@ -35,6 +32,7 @@ import { Sheet, SheetContent, SheetTrigger } from "src/components/ui/sheet";
 import { useToast } from "src/components/ui/use-toast";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useCSRF } from "src/hooks/useCSRF";
+import { useInfo } from "src/hooks/useInfo";
 import { cn } from "src/lib/utils";
 import { request } from "src/utils/request";
 
@@ -75,7 +73,7 @@ export default function AppLayout() {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <a
-              href="https://getalby.com/lightning_addresses/"
+              href="https://getalby.com/settings/alby_page"
               target="_blank"
               rel="noreferer noopener"
               className="w-full"
@@ -83,8 +81,6 @@ export default function AppLayout() {
               Profile
             </a>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>Billing</DropdownMenuItem>
-          <DropdownMenuItem disabled>Keyboard shortcuts</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
@@ -101,41 +97,33 @@ export default function AppLayout() {
         </MenuItem>
         <MenuItem to="/apps">
           <Cable className="h-4 w-4" />
-          Apps
+          Connections
         </MenuItem>
         <MenuItem to="/appstore">
           <Store className="h-4 w-4" />
-          Store
-        </MenuItem>
-        <MenuItem to="/permissions" disabled>
-          <ShieldCheck className="h-4 w-4" />
-          Permissions
+          App Store
         </MenuItem>
       </>
     );
   }
 
   function MainNavSecondary() {
+    const { data: info } = useInfo();
     return (
       <nav className="grid items-start p-2 text-sm font-medium lg:px-4">
         <div className="px-3 py-2 mb-5">
           <ModeToggle />
         </div>
-        <MenuItem to="/channels">
-          <SendToBack className="h-4 w-4" />
-          Channels
-        </MenuItem>
+        {(info?.backendType === "LDK" ||
+          info?.backendType === "GREENLIGHT") && (
+            <MenuItem to="/channels">
+              <SendToBack className="h-4 w-4" />
+              Channels
+            </MenuItem>
+          )}
         <MenuItem to="/settings">
           <Settings className="h-4 w-4" />
           Settings
-        </MenuItem>
-        <MenuItem to="/help" disabled>
-          <CircleHelp className="h-4 w-4" />
-          Help
-        </MenuItem>
-        <MenuItem to="feedback" disabled>
-          <MessageCircle className="h-4 w-4" />
-          Leave Feedback
         </MenuItem>
       </nav>
     );

@@ -149,14 +149,37 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 	}
 
 	nodeId := node.NodeId()
-
-	if err != nil {
-		return nil, err
-	}
-
 	svc.Logger.WithFields(logrus.Fields{
 		"nodeId": nodeId,
+		"status": node.Status(),
 	}).Info("Connected to LDK node")
+
+	walletSynced := false
+	for i := 0; i < 10; i++ {
+		svc.Logger.WithFields(logrus.Fields{
+			"nodeId":    nodeId,
+			"status":    node.Status(),
+			"iteration": i,
+		}).Info("Waiting for LDK node to sync")
+		time.Sleep(1 * time.Second)
+
+		if node.Status().LatestOnchainWalletSyncTimestamp != nil {
+			svc.Logger.WithFields(logrus.Fields{
+				"nodeId":    nodeId,
+				"status":    node.Status(),
+				"iteration": i,
+			}).Info("LDK node finished sync")
+			walletSynced = true
+			break
+		}
+	}
+	if !walletSynced {
+		svc.Logger.WithFields(logrus.Fields{
+			"nodeId": nodeId,
+			"status": node.Status(),
+		}).Error("Timed out waiting for LDK node to sync")
+		time.Sleep(1 * time.Second)
+	}
 
 	return &ls, nil
 }
@@ -673,7 +696,7 @@ func (gs *LDKService) GetOnchainBalance(ctx context.Context) (*lnclient.OnchainB
 	}).Debug("Listed Balances")
 	return &lnclient.OnchainBalanceResponse{
 		Spendable: int64(balances.SpendableOnchainBalanceSats),
-		Total:     int64(balances.TotalOnchainBalanceSats),
+		Total:     int64(balances.TotalOnchainBalanceSats - balances.TotalAnchorChannelsReserveSats),
 	}, nil
 }
 
