@@ -26,9 +26,9 @@ type AppConfig struct {
 	MempoolApi         string `envconfig:"MEMPOOL_API" default:"https://mempool.space/api"`
 	AlbyAPIURL         string `envconfig:"ALBY_API_URL" default:"https://api.getalby.com"`
 	AlbyClientId       string `envconfig:"ALBY_OAUTH_CLIENT_ID"`
+	AlbyHubClientId    string `envconfig:"ALBY_HUB_OAUTH_CLIENT_ID"`
 	AlbyClientSecret   string `envconfig:"ALBY_OAUTH_CLIENT_SECRET"`
 	AlbyOAuthAuthUrl   string `envconfig:"ALBY_OAUTH_AUTH_URL" default:"https://getalby.com/oauth"`
-	OAuthRedirect      bool   `envconfig:"OAUTH_REDIRECT" default:"false"`
 	BaseUrl            string `envconfig:"BASE_URL" default:"http://localhost:8080"`
 	FrontendUrl        string `envconfig:"FRONTEND_URL"`
 	LogEvents          bool   `envconfig:"LOG_EVENTS" default:"false"`
