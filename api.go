@@ -995,7 +995,6 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 	if err != nil {
 		return fmt.Errorf("failed to list database files: %w", err)
 	}
-	archivedFiles = append(archivedFiles, dbFilePath)
 	archivedFiles = append(archivedFiles, dbFiles...)
 
 	if lnStorageDir != "" {
@@ -1060,6 +1059,21 @@ func (api *API) RestoreBackup(password string, r io.Reader) error {
 
 	if !api.isDatabasePathDefault() {
 		return errors.New("cannot restore backup when database path is not default")
+	}
+
+	// Stop the app to ensure no new requests are processed.
+	api.svc.StopApp()
+	db, err := api.svc.db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	// Closing the database leaves the service in an inconsistent state,
+	// but that should not be a problem since the app is not expected
+	// to be used after its data is exported.
+	err = db.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close database connection: %w", err)
 	}
 
 	cr, err := decryptingReader(r, password)
