@@ -1,14 +1,4 @@
-import {
-  Cable,
-  CircleHelp,
-  Menu,
-  MessageCircle,
-  SendToBack,
-  Settings,
-  ShieldCheck,
-  Store,
-  Wallet,
-} from "lucide-react";
+import { Cable, Menu, SendToBack, Settings, Store, Wallet } from "lucide-react";
 import { ModeToggle } from "src/components/ui/mode-toggle";
 
 import { CaretUpIcon } from "@radix-ui/react-icons";
@@ -77,14 +67,12 @@ export default function AppLayout() {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <ExternalLink
-              to="https://getalby.com/lightning_addresses/"
+              to="https://getalby.com/settings/alby_page"
               className="w-full"
             >
               Profile
             </ExternalLink>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>Billing</DropdownMenuItem>
-          <DropdownMenuItem disabled>Keyboard shortcuts</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
@@ -101,15 +89,11 @@ export default function AppLayout() {
         </MenuItem>
         <MenuItem to="/apps">
           <Cable className="h-4 w-4" />
-          Apps
+          Connections
         </MenuItem>
         <MenuItem to="/appstore">
           <Store className="h-4 w-4" />
-          Store
-        </MenuItem>
-        <MenuItem to="/permissions" disabled>
-          <ShieldCheck className="h-4 w-4" />
-          Permissions
+          App Store
         </MenuItem>
       </>
     );
@@ -132,14 +116,6 @@ export default function AppLayout() {
         <MenuItem to="/settings">
           <Settings className="h-4 w-4" />
           Settings
-        </MenuItem>
-        <MenuItem to="/help" disabled>
-          <CircleHelp className="h-4 w-4" />
-          Help
-        </MenuItem>
-        <MenuItem to="feedback" disabled>
-          <MessageCircle className="h-4 w-4" />
-          Leave Feedback
         </MenuItem>
       </nav>
     );
