@@ -989,13 +989,8 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 	// The list of files to archive.
 	var archivedFiles []string
 
-	// Locate the main database file and all the auxiliary files (journal, etc).
+	// Locate the main database file.
 	dbFilePath := api.svc.cfg.Env.DatabaseUri
-	dbFiles, err := filepath.Glob(dbFilePath + "*")
-	if err != nil {
-		return fmt.Errorf("failed to list database files: %w", err)
-	}
-	archivedFiles = append(archivedFiles, dbFiles...)
 
 	if lnStorageDir != "" {
 		lnFiles, err := filepath.Glob(filepath.Join(lnStorageDir, "*"))
@@ -1034,6 +1029,9 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 		_, err = io.Copy(outW, inF)
 		return err
 	}
+
+	// Add the database file to the archive.
+	err = addFileToZip(dbFilePath, "nwc.db")
 
 	for _, archivedFile := range archivedFiles {
 		relPath, err := filepath.Rel(workDir, archivedFile)
