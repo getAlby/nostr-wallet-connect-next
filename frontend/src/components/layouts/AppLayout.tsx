@@ -1,7 +1,7 @@
 import {
   Cable,
+  FlaskRound,
   Menu,
-  SendToBack,
   Settings,
   Store,
   Wallet
@@ -117,8 +117,8 @@ export default function AppLayout() {
         {(info?.backendType === "LDK" ||
           info?.backendType === "GREENLIGHT") && (
             <MenuItem to="/channels">
-              <SendToBack className="h-4 w-4" />
-              Channels
+              <FlaskRound className="h-4 w-4" />
+              Liquidity
             </MenuItem>
           )}
         <MenuItem to="/settings">

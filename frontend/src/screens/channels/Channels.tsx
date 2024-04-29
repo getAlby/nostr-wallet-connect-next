@@ -1,10 +1,11 @@
 import {
+  ArrowDown,
+  ArrowUp,
   Bitcoin,
-  Cable,
   ChevronDown,
   CircleX,
   CopyIcon,
-  Zap,
+  Hotel
 } from "lucide-react";
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -15,6 +16,7 @@ import { Button } from "src/components/ui/button.tsx";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "src/components/ui/card.tsx";
@@ -37,6 +39,7 @@ import {
 } from "src/components/ui/table.tsx";
 import { toast } from "src/components/ui/use-toast.ts";
 import { ONCHAIN_DUST_SATS } from "src/constants.ts";
+import { useAlbyBalance } from "src/hooks/useAlbyBalance.ts";
 import { useBalances } from "src/hooks/useBalances.ts";
 import { useChannels } from "src/hooks/useChannels";
 import { useInfo } from "src/hooks/useInfo";
@@ -51,6 +54,7 @@ export default function Channels() {
   const { data: channels, mutate: reloadChannels } = useChannels();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
   const { data: balances } = useBalances();
+  const { data: albyBalance } = useAlbyBalance();
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const { data: info, mutate: reloadInfo } = useInfo();
   const { data: csrf } = useCSRF();
@@ -112,9 +116,8 @@ export default function Channels() {
       }
       if (
         !confirm(
-          `Are you sure you want to close the channel with ${
-            nodes.find((node) => node.public_key === nodeId)?.alias ||
-            "Unknown Node"
+          `Are you sure you want to close the channel with ${nodes.find((node) => node.public_key === nodeId)?.alias ||
+          "Unknown Node"
           }?\n\nNode ID: ${nodeId}\n\nChannel ID: ${channelId}`
         )
       ) {
@@ -192,8 +195,8 @@ export default function Channels() {
   return (
     <>
       <AppHeader
-        title="Channels"
-        description="Manage liquidity on your lightning node."
+        title="Liquidity"
+        description="Manage your lightning node liquidity."
         contentRight={
           <>
             <DropdownMenu>
@@ -267,24 +270,28 @@ export default function Channels() {
           </>
         }
       ></AppHeader>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Number of channels
+              Alby Hosted Balance
             </CardTitle>
-            <Cable className="h-4 w-4 text-muted-foreground" />
+            <Hotel className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {channels && channels.length}
+              {albyBalance?.sats} sats
             </div>
+
           </CardContent>
+          <CardFooter className="flex justify-end">
+            <Button variant="outline">Migrate</Button>
+          </CardFooter>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              On-chain balance
+              Savings Balance
             </CardTitle>
             <Bitcoin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -315,13 +322,16 @@ export default function Channels() {
               )}
             </div>
           </CardContent>
+          <CardFooter className="flex justify-end">
+            <Button variant="outline">Deposit</Button>
+          </CardFooter>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Lightning Balance
+              Spending Balance
             </CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+            <ArrowUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {!channels && (
@@ -340,6 +350,30 @@ export default function Channels() {
               </div>
             )}
           </CardContent>
+          <CardFooter className="flex justify-end">
+            <Button variant="outline">Top Up</Button>
+          </CardFooter>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Receiving Capacity
+            </CardTitle>
+            <ArrowDown className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {balances && new Intl.NumberFormat().format(
+                Math.floor(
+                  balances.lightning.totalReceivable / 1000
+                )
+              )}{" "}
+              sats
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end">
+            <Button variant="outline">Increase</Button>
+          </CardFooter>
         </Card>
       </div>
 
