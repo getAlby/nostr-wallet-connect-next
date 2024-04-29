@@ -17,7 +17,6 @@ import NewApp from "src/screens/apps/NewApp";
 import ShowApp from "src/screens/apps/ShowApp";
 import AppStore from "src/screens/appstore/AppStore";
 import Channels from "src/screens/channels/Channels";
-import NewBlocktankChannel from "src/screens/channels/NewBlocktankChannel";
 import NewChannel from "src/screens/channels/NewChannel";
 import NewCustomChannel from "src/screens/channels/NewCustomChannel";
 import NewInstantChannel from "src/screens/channels/NewInstantChannel";
@@ -47,7 +46,6 @@ const newChannelRoutes = (
   <Route path="new">
     <Route path="" element={<NewChannel />} />
     <Route path="instant" element={<NewInstantChannel />} />
-    <Route path="blocktank" element={<NewBlocktankChannel />} />
     <Route path="recommended" element={<RecommendedChannels />} />
     <Route path="custom" element={<NewCustomChannel />} />
   </Route>
