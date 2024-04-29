@@ -6,7 +6,7 @@ import {
   ExternalLink,
   ShieldCheckIcon,
   Sparkles,
-  Unplug
+  Unplug,
 } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
@@ -17,7 +17,13 @@ import EmptyState from "src/components/EmptyState";
 import Loading from "src/components/Loading";
 import { Alert, AlertDescription, AlertTitle } from "src/components/ui/alert";
 import { Button } from "src/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "src/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +34,6 @@ import {
   DropdownMenuTrigger,
 } from "src/components/ui/dropdown-menu";
 import { useToast } from "src/components/ui/use-toast";
-import { localStorageKeys } from "src/constants";
 import { useBalances } from "src/hooks/useBalances";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
@@ -175,14 +180,7 @@ function Wallet() {
             <AlertDescription>
               Action required to send and receive lightning payments
               <div className="mt-3 flex items-center gap-3">
-                {/* TODO: Find a better place to redirect to. 
-                Onboarding is only correct if they have not migrated Alby funds yet. */}
-                <Link
-                  to="/"
-                  onClick={() => {
-                    localStorage.removeItem(localStorageKeys.onboardingSkipped);
-                  }}
-                >
+                <Link to="/channels/new">
                   <Button size="sm">Connect</Button>
                 </Link>
               </div>
@@ -239,7 +237,10 @@ function Wallet() {
           <Card>
             <CardHeader>
               <div className="flex flex-row items-center">
-                <img src={AlbyHead} className="w-12 h-12 rounded-xl p-1 border" />
+                <img
+                  src={AlbyHead}
+                  className="w-12 h-12 rounded-xl p-1 border"
+                />
                 <div>
                   <CardTitle>
                     <h2 className="flex-1 leading-5 font-semibold text-xl whitespace-nowrap text-ellipsis overflow-hidden ml-4">
@@ -251,7 +252,6 @@ function Wallet() {
                   </CardDescription>
                 </div>
               </div>
-
             </CardHeader>
             <CardContent className="text-right">
               <Button variant="outline">
@@ -265,7 +265,10 @@ function Wallet() {
           <Card>
             <CardHeader>
               <div className="flex flex-row items-center">
-                <img src={AlbyHead} className="w-12 h-12 rounded-xl p-1 border bg-[#FFDF6F]" />
+                <img
+                  src={AlbyHead}
+                  className="w-12 h-12 rounded-xl p-1 border bg-[#FFDF6F]"
+                />
                 <div>
                   <CardTitle>
                     <h2 className="flex-1 leading-5 font-semibold text-xl whitespace-nowrap text-ellipsis overflow-hidden ml-4">
@@ -277,10 +280,10 @@ function Wallet() {
                   </CardDescription>
                 </div>
               </div>
-
             </CardHeader>
             <CardContent className="text-right">
-              <Button variant="outline">Install Alby Extension
+              <Button variant="outline">
+                Install Alby Extension
                 <ExternalLink className="w-4 h-4 ml-2" />
               </Button>
             </CardContent>

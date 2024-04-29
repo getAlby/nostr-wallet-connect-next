@@ -36,7 +36,7 @@ export default function NewInstantChannel() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: channels } = useChannels(true);
-  const [lsp, setLsp] = React.useState<LSPOption | undefined>("ALBY");
+  const [lsp, setLsp] = React.useState<LSPOption | undefined>("OLYMPUS");
   const [amount, setAmount] = React.useState("");
   const [prePurchaseChannelAmount, setPrePurchaseChannelAmount] =
     React.useState<number | undefined>();
