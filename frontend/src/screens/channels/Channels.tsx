@@ -323,7 +323,9 @@ export default function Channels() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button variant="outline">Deposit</Button>
+            <Link to="onchain/new-address">
+              <Button variant="outline">Deposit</Button>
+            </Link>
           </CardFooter>
         </Card>
         <Card>
