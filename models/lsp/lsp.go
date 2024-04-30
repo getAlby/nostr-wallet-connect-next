@@ -27,10 +27,10 @@ func VoltageLSP() LSP {
 	return lsp
 }
 
-func OlympusLSPS1TestnetLSP() LSP {
+func OlympusLSPS1MutinynetLSP() LSP {
 	lsp := LSP{
-		Pubkey:  "03e84a109cd70e57864274932fc87c5e6434c59ebb8e6e7d28532219ba38f7f6df",
-		Url:     "https://testnet-lsps1.lnolymp.us/api/v1",
+		Pubkey:  "032ae843e4d7d177f151d021ac8044b0636ec72b1ce3ffcde5c04748db2517ab03",
+		Url:     "https://mutinynet-lsps1.lnolymp.us/api/v1",
 		LspType: LSP_TYPE_LSPS1,
 	}
 	return lsp

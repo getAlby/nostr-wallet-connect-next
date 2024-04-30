@@ -237,12 +237,12 @@ export type LSPOption =
   | "ALBY"
   | "OLYMPUS"
   | "VOLTAGE"
-  | "OLYMPUS_LSPS1_TESTNET";
+  | "OLYMPUS_LSPS1_MUTINYNET";
 export const LSP_OPTIONS: LSPOption[] = [
   "ALBY",
   "OLYMPUS",
   "VOLTAGE",
-  "OLYMPUS_LSPS1_TESTNET",
+  "OLYMPUS_LSPS1_MUTINYNET",
 ];
 
 export type NewInstantChannelInvoiceRequest = {

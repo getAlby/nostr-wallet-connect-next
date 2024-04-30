@@ -467,8 +467,8 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 		selectedLsp = lsp.VoltageLSP()
 	case "OLYMPUS":
 		selectedLsp = lsp.OlympusLSP()
-	case "OLYMPUS_LSPS1_TESTNET":
-		selectedLsp = lsp.OlympusLSPS1TestnetLSP()
+	case "OLYMPUS_LSPS1_MUTINYNET":
+		selectedLsp = lsp.OlympusLSPS1MutinynetLSP()
 	case "ALBY":
 		selectedLsp = lsp.AlbyPlebsLSP()
 	default:
@@ -493,7 +493,7 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 		lspInfo, err = api.getLSPS1LSPInfo(selectedLsp.Url + "/get_info")
 
 	default:
-		return nil, fmt.Errorf("Unsupported LSP type: %v", selectedLsp.LspType)
+		return nil, fmt.Errorf("unsupported LSP type: %v", selectedLsp.LspType)
 	}
 	if err != nil {
 		api.svc.Logger.WithError(err).Error("Failed to request LSP info")
@@ -535,7 +535,7 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 		invoice, fee, err = api.requestLSPS1Invoice(&selectedLsp, request.Amount, nodeInfo.Pubkey)
 
 	default:
-		return nil, fmt.Errorf("Unsupported LSP type: %v", selectedLsp.LspType)
+		return nil, fmt.Errorf("unsupported LSP type: %v", selectedLsp.LspType)
 	}
 	if err != nil {
 		api.svc.Logger.WithError(err).Error("Failed to request invoice")
@@ -966,7 +966,7 @@ func (api *API) requestLSPS1Invoice(selectedLsp *lsp.LSP, amount uint64, pubkey 
 		FundingConfirmsWithinBlocks:  6,
 		ChannelExpiryBlocks:          13000, // TODO: do not hardcode this
 		Token:                        "",
-		RefundOnchainAddress:         "tb1qnwe97sq3ewkta9s48anmsl0sy7wdescullhzdu", // TODO: get from node
+		RefundOnchainAddress:         "tb1qtz33lpvxl543f4glfe3pecpznn4cked0yhvg78", // TODO: get from node
 		AnnounceChannel:              false,                                        // TODO: this should be customizable
 	}
 

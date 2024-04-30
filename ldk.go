@@ -55,12 +55,11 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 	config.TrustedPeers0conf = []string{
 		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
-		lsp.OlympusLSPS1TestnetLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
 	}
 	config.AnchorChannelsConfig.TrustedPeersNoReserve = []string{
 		lsp.OlympusLSP().Pubkey,
-		lsp.OlympusLSPS1TestnetLSP().Pubkey,
+		lsp.OlympusLSPS1MutinynetLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
 	}
 
@@ -607,7 +606,7 @@ func (gs *LDKService) GetNodeConnectionInfo(ctx context.Context) (nodeConnection
 func (gs *LDKService) ConnectPeer(ctx context.Context, connectPeerRequest *lnclient.ConnectPeerRequest) error {
 	err := gs.node.Connect(connectPeerRequest.Pubkey, connectPeerRequest.Address+":"+strconv.Itoa(int(connectPeerRequest.Port)), true)
 	if err != nil {
-		gs.svc.Logger.WithError(err).Error("ConnectPeer failed")
+		gs.svc.Logger.WithField("request", connectPeerRequest).WithError(err).Error("ConnectPeer failed")
 		return err
 	}
 
