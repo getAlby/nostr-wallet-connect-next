@@ -11,7 +11,7 @@ import { toast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
 import { handleRequestError } from "src/utils/handleRequestError";
-import { openLink } from "src/utils/openBrowser"; // build the project for this to appear
+import { openBrowser } from "src/utils/openBrowser"; // build the project for this to appear
 import { request } from "src/utils/request"; // build the project for this to appear
 
 export default function AlbyAuthRedirect() {
@@ -26,11 +26,15 @@ export default function AlbyAuthRedirect() {
     if (!info) {
       return;
     }
-    if (info.oauthRedirect) window.location.href = info.albyAuthUrl;
-    if (!info.oauthRedirect) {
+    if (info.oauthRedirect) {
+      window.location.href = info.albyAuthUrl;
+    } else {
       setIsOpened((isOpened) => {
         if (!isOpened) {
-          openLink(info.albyAuthUrl);
+          // open in new tab if http protocol
+          if (window.location.protocol.startsWith("http"))
+            window.open(info.albyAuthUrl, "_blank");
+          else openBrowser(info.albyAuthUrl);
         }
         return true;
       });

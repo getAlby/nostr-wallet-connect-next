@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { openLink } from "src/utils/openBrowser";
+import { openBrowser } from "src/utils/openBrowser";
 
 type Props = {
   to: string;
@@ -20,7 +20,7 @@ export default function ExternalLink({ to, className, children }: Props) {
       {children}
     </Link>
   ) : (
-    <div className={className} onClick={() => openLink(to)}>
+    <div className={className} onClick={() => openBrowser(to)}>
       {children}
     </div>
   );

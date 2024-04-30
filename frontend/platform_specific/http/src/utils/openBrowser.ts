@@ -1,4 +1,4 @@
-export const openLink = (url: string) => {
+export const openBrowser = (url: string) => {
   // this is just a placeholder
-  window.location.href = url;
+  throw new Error(`openBrowser is called in http mode with url: ${url}`);
 };

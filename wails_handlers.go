@@ -20,15 +20,16 @@ type WailsRequestRouterResponse struct {
 func (app *WailsApp) WailsRequestRouter(route string, method string, body string) WailsRequestRouterResponse {
 	ctx := app.ctx
 
+	// the grouping is done to avoid other parameters like &unused=true
 	albyCallbackRegex := regexp.MustCompile(
 		`/api/alby/callback\?code=([^&]+)(&.*)?`,
 	)
 
-	albyMatch := albyCallbackRegex.FindStringSubmatch(route)
+	authCodeMatch := albyCallbackRegex.FindStringSubmatch(route)
 
 	switch {
-	case len(albyMatch) > 1:
-		code := albyMatch[1]
+	case len(authCodeMatch) > 1:
+		code := authCodeMatch[1]
 
 		err := app.svc.AlbyOAuthSvc.CallbackHandler(ctx, code)
 		if err != nil {
