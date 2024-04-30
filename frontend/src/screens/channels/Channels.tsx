@@ -11,6 +11,7 @@ import {
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader.tsx";
+import CardButton from "src/components/CardButton.tsx";
 import Loading from "src/components/Loading.tsx";
 import { Badge } from "src/components/ui/badge.tsx";
 import { Button } from "src/components/ui/button.tsx";
@@ -21,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "src/components/ui/card.tsx";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "src/components/ui/dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +32,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "src/components/ui/dropdown-menu.tsx";
+import { Input } from "src/components/ui/input.tsx";
+import { Label } from "src/components/ui/label.tsx";
 import {
   Table,
   TableBody,
@@ -265,12 +269,37 @@ export default function Channels() {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Link to="/channels/new">
-              <Button>Open a channel</Button>
-            </Link>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>Open Channel</Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[640px]">
+                <DialogHeader>
+                  <DialogTitle>Open a channel</DialogTitle>
+                </DialogHeader>
+                <DialogDescription>
+                  Choose how you want to obtain a new channel.
+                </DialogDescription>
+                <div className="grid grid-flow-row gap-4">
+                  <CardButton to="channels/migrate-alby"
+                    title={<>
+                      Migrate your funds from Alby <Badge>Recommended</Badge></>}
+                    description="Use funds from your hosted Alby Account to fund your first channel." />
+                  <CardButton to="/channels/new/instant"
+                    title="Lightning"
+                    description="Pay a lightning invoice to open a channel." />
+                  <CardButton to="channels/new/onchain"
+                    title="Onchain"
+                    description="Send an onchain payment to open a channel." />
+                </div>
+              </DialogContent>
+            </Dialog>
+
           </>
         }
       ></AppHeader>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -379,6 +408,37 @@ export default function Channels() {
           </CardFooter>
         </Card>
       </div>
+
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline">Edit Profile</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit profile</DialogTitle>
+            <DialogDescription>
+              Make changes to your profile here. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input id="name" value="Pedro Duarte" className="col-span-3" />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="username" className="text-right">
+                Username
+              </Label>
+              <Input id="username" value="@peduarte" className="col-span-3" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit">Save changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Table>
         <TableHeader>
