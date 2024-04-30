@@ -3,9 +3,10 @@ import {
   ArrowUp,
   Bitcoin,
   ChevronDown,
-  CircleX,
   CopyIcon,
-  Hotel
+  Hotel,
+  MoreHorizontal,
+  Trash2
 } from "lucide-react";
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -382,9 +383,11 @@ export default function Channels() {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[80px]">Status</TableHead>
             <TableHead>Node</TableHead>
-            <TableHead className="w-[100px]">Capacity</TableHead>
-            <TableHead className="w-[300px]">Local / Remote</TableHead>
+            <TableHead className="w-[150px]">Capacity</TableHead>
+            <TableHead className="w-[150px]">Inbound</TableHead>
+            <TableHead className="w-[150px]">Outbound</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -392,21 +395,17 @@ export default function Channels() {
           {channels && channels.length > 0 && (
             <>
               {channels.map((channel) => {
-                // const localMaxPercentage =
-                //   maxChannelsBalance.local / 100;
-                // const remoteMaxPercentage =
-                //   maxChannelsBalance.remote / 100;
                 const node = nodes.find(
                   (n) => n.public_key === channel.remotePubkey
                 );
                 const alias = node?.alias || "Unknown";
                 const capacity = channel.localBalance + channel.remoteBalance;
-                const localPercentage = (channel.localBalance / capacity) * 100;
-                const remotePercentage =
-                  (channel.remoteBalance / capacity) * 100;
 
                 return (
                   <TableRow key={channel.id}>
+                    <TableCell>
+                      {channel.active ? <Badge>Online</Badge> : <Badge>Offline</Badge>}{" "}
+                    </TableCell>
                     <TableCell className="flex flex-row items-center">
                       <a
                         title={channel.remotePubkey}
@@ -414,8 +413,7 @@ export default function Channels() {
                         target="_blank"
                         rel="noopener noreferer"
                       >
-                        {channel.active ? "🟢" : "🔴"}{" "}
-                        <Button variant="link">
+                        <Button variant="link" className="p-0 mr-2">
                           {alias ||
                             channel.remotePubkey.substring(0, 5) + "..."}
                         </Button>
@@ -424,38 +422,30 @@ export default function Channels() {
                         {channel.public ? "Public" : "Private"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{formatAmount(capacity)}</TableCell>
+                    <TableCell>{formatAmount(capacity)} sats</TableCell>
+                    <TableCell>{formatAmount(channel.localBalance)} sats</TableCell>
+                    <TableCell>{formatAmount(channel.remoteBalance)} sats</TableCell>
                     <TableCell>
-                      <div className="flex justify-between">
-                        <span>{formatAmount(channel.localBalance)}</span>
-                        <span>{formatAmount(channel.remoteBalance)}</span>
-                      </div>
-
-                      <div className="w-full flex justify-center items-center">
-                        <div
-                          className="bg-accent-foreground h-2 rounded-l-lg"
-                          style={{ width: `${localPercentage}%` }}
-                        ></div>
-                        <div
-                          className="bg-muted-foreground h-2 rounded-r-lg"
-                          style={{ width: `${remotePercentage}%` }}
-                        ></div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() =>
-                          closeChannel(
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem className="flex flex-row items-center gap-2" onClick={() => closeChannel(
                             channel.id,
                             channel.remotePubkey,
                             channel.active
-                          )
-                        }
-                      >
-                        <CircleX />
-                      </Button>
+                          )}>
+                            <Trash2 className="text-destructive" />
+                            Close Channel
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );
@@ -464,7 +454,7 @@ export default function Channels() {
           )}
           {!channels && (
             <TableRow>
-              <TableCell colSpan={4}>
+              <TableCell colSpan={6}>
                 <Loading className="m-2" />
               </TableCell>
             </TableRow>
