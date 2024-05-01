@@ -256,34 +256,44 @@ function NewChannelInternal({ network }: { network: Network }) {
                     Channel peer{" "}
                     <img src={selectedPeer.image} className="w-16 h-16" />
                     <p>{selectedPeer.name}</p>
-                    Select another peer
-                    <div className="flex gap-2 items-center">
-                      {recommendedPeers
-                        .filter(
-                          (peer) =>
-                            peer.network === network &&
-                            peer.paymentMethod === order.paymentMethod
-                        )
-                        .map((peer) => (
-                          <Link to="#" onClick={() => setSelectedPeer(peer)}>
-                            <Card
-                              key={peer.name}
-                              className={
-                                peer === selectedPeer
-                                  ? selectedCardStyles
-                                  : undefined
-                              }
-                            >
-                              <CardHeader>
-                                <CardTitle>{peer.name}</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <img src={peer.image} className="w-24 h-24" />
-                              </CardContent>
-                            </Card>
-                          </Link>
-                        ))}
-                    </div>
+                    {showAdvanced && (
+                      <>
+                        Select another peer
+                        <div className="flex gap-2 items-center">
+                          {recommendedPeers
+                            .filter(
+                              (peer) =>
+                                peer.network === network &&
+                                peer.paymentMethod === order.paymentMethod
+                            )
+                            .map((peer) => (
+                              <Link
+                                to="#"
+                                onClick={() => setSelectedPeer(peer)}
+                              >
+                                <Card
+                                  key={peer.name}
+                                  className={
+                                    peer === selectedPeer
+                                      ? selectedCardStyles
+                                      : undefined
+                                  }
+                                >
+                                  <CardHeader>
+                                    <CardTitle>{peer.name}</CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <img
+                                      src={peer.image}
+                                      className="w-24 h-24"
+                                    />
+                                  </CardContent>
+                                </Card>
+                              </Link>
+                            ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <p>No recommended peer found</p>
@@ -498,23 +508,6 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
 
   return (
     <>
-      {!props.showAdvanced && (
-        <div className="flex flex-col gap-5">
-          <div className="grid gap-1.5">
-            {nodeDetails && (
-              <h3 className="font-medium text-2xl">
-                <span style={{ color: `${nodeDetails.color}` }}>⬤</span>
-                {nodeDetails.alias && (
-                  <>
-                    {nodeDetails.alias} ({nodeDetails.active_channel_count}{" "}
-                    channels)
-                  </>
-                )}
-              </h3>
-            )}
-          </div>
-        </div>
-      )}
       {props.showAdvanced && (
         <div className="flex flex-col gap-5">
           <div className="grid gap-1.5">
