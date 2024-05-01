@@ -59,6 +59,7 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 	}
 	config.AnchorChannelsConfig.TrustedPeersNoReserve = []string{
 		lsp.OlympusLSP().Pubkey,
+		lsp.OlympusLSPS1MutinynetLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
 	}
 
@@ -567,12 +568,13 @@ func (gs *LDKService) ListChannels(ctx context.Context) ([]lnclient.Channel, err
 
 	for _, ldkChannel := range ldkChannels {
 		channels = append(channels, lnclient.Channel{
-			LocalBalance:  int64(ldkChannel.OutboundCapacityMsat),
-			RemoteBalance: int64(ldkChannel.InboundCapacityMsat),
-			RemotePubkey:  ldkChannel.CounterpartyNodeId,
-			Id:            ldkChannel.UserChannelId, // CloseChannel takes the UserChannelId
-			Active:        ldkChannel.IsUsable,      // superset of ldkChannel.IsReady
-			Public:        ldkChannel.IsPublic,
+			InternalChannel: ldkChannel,
+			LocalBalance:    int64(ldkChannel.OutboundCapacityMsat),
+			RemoteBalance:   int64(ldkChannel.InboundCapacityMsat),
+			RemotePubkey:    ldkChannel.CounterpartyNodeId,
+			Id:              ldkChannel.UserChannelId, // CloseChannel takes the UserChannelId
+			Active:          ldkChannel.IsUsable,      // superset of ldkChannel.IsReady
+			Public:          ldkChannel.IsPublic,
 		})
 	}
 
@@ -605,7 +607,7 @@ func (gs *LDKService) GetNodeConnectionInfo(ctx context.Context) (nodeConnection
 func (gs *LDKService) ConnectPeer(ctx context.Context, connectPeerRequest *lnclient.ConnectPeerRequest) error {
 	err := gs.node.Connect(connectPeerRequest.Pubkey, connectPeerRequest.Address+":"+strconv.Itoa(int(connectPeerRequest.Port)), true)
 	if err != nil {
-		gs.svc.Logger.WithError(err).Error("ConnectPeer failed")
+		gs.svc.Logger.WithField("request", connectPeerRequest).WithError(err).Error("ConnectPeer failed")
 		return err
 	}
 

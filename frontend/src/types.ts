@@ -233,8 +233,16 @@ export type AlbyBalance = {
 };
 
 // TODO: move to different file
-export type LSPOption = "ALBY" /* migration only */ | "OLYMPUS" | "VOLTAGE";
-export const LSP_OPTIONS: LSPOption[] = ["OLYMPUS", "VOLTAGE"];
+export type LSPOption =
+  | "ALBY" /* migration only */
+  | "OLYMPUS"
+  | "VOLTAGE"
+  | "OLYMPUS_MUTINYNET_LSPS1";
+export const LSP_OPTIONS: LSPOption[] = [
+  "OLYMPUS",
+  "VOLTAGE",
+  "OLYMPUS_MUTINYNET_LSPS1",
+];
 
 export type NewInstantChannelInvoiceRequest = {
   amount: number;
