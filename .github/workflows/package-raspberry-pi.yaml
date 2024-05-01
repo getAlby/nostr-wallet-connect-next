@@ -58,4 +58,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nostr-wallet-connect.zip
-          path: nostr-wallet-connect.zip
+          path: |
+            lib/
+            nostr-wallet-connect
