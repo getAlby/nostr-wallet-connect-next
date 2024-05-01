@@ -54,9 +54,6 @@ jobs:
           arm-linux-gnueabihf-strip ./nostr-wallet-connect
           patchelf --force-rpath --set-rpath '$ORIGIN/lib' ./nostr-wallet-connect
 
-      - name: Zip application and libraries
-        run: zip -9 -r nostr-wallet-connect.zip nostr-wallet-connect lib/
-
       - name: Archive the artifacts
         uses: actions/upload-artifact@v4
         with:
