@@ -1,3 +1,4 @@
+import { Box, Zap } from "lucide-react";
 import React, { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import albyImage from "src/assets/images/peers/alby.svg";
@@ -6,6 +7,7 @@ import olympusImage from "src/assets/images/peers/olympus.svg";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
 import { Alert, AlertDescription, AlertTitle } from "src/components/ui/alert";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "src/components/ui/breadcrumb";
 import { Button } from "src/components/ui/button";
 import {
   Card,
@@ -23,6 +25,7 @@ import {
 } from "src/constants";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance";
 import { useInfo } from "src/hooks/useInfo";
+import { cn } from "src/lib/utils";
 import { Network, NewChannelOrder, Node } from "src/types";
 import { request } from "src/utils/request";
 
@@ -32,16 +35,16 @@ type RecommendedPeer = {
   name: string;
   minimumChannelSize: number;
 } & (
-  | {
+    | {
       paymentMethod: "onchain";
       pubkey: string;
       host: string;
     }
-  | {
+    | {
       paymentMethod: "lightning";
       lsp: string;
     }
-);
+  );
 
 const recommendedPeers: RecommendedPeer[] = [
   {
@@ -166,7 +169,7 @@ function NewChannelInternal({ network }: { network: Network }) {
     }
   }, [order.paymentMethod, selectedPeer, setAmount]);
 
-  const selectedCardStyles = "border-primary border-2";
+  const selectedCardStyles = "border-primary border-2 font-medium";
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -177,12 +180,23 @@ function NewChannelInternal({ network }: { network: Network }) {
 
   return (
     <>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/channels">Liquidity</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Open Channel</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
       <AppHeader
         title="Open a channel"
         description="Funds used to open a channel minus fees will be added to your spending balance"
       />
       {/* TODO: move to somewhere else */}
-      {info?.backendType === "LDK" &&
+      {info?.backendType === "LDK" || true &&
         albyBalance &&
         albyBalance.sats * (1 - ALBY_SERVICE_FEE) > ALBY_MIN_BALANCE && (
           <Alert>
@@ -197,134 +211,125 @@ function NewChannelInternal({ network }: { network: Network }) {
           </Alert>
         )}
 
-      <form onSubmit={onSubmit}>
-        <div className="flex flex-col gap-5">
-          <div className="grid gap-1.5">
-            <Label htmlFor="amount">Amount (sats)</Label>
-            <Input
-              id="amount"
-              type="number"
-              required
-              min={selectedPeer?.minimumChannelSize}
-              value={order.amount}
-              onChange={(e) => {
-                setAmount(e.target.value.trim());
-              }}
-            />
-            <div className="grid gap-1.5">
-              <Label htmlFor="amount">Payment method</Label>
-
-              <div className="flex gap-2 items-center">
-                <Link to="#" onClick={() => setPaymentMethod("onchain")}>
-                  <Card
-                    className={
-                      order.paymentMethod === "onchain"
-                        ? selectedCardStyles
-                        : undefined
-                    }
-                  >
-                    <CardHeader>
-                      <CardTitle>Onchain</CardTitle>
-                    </CardHeader>
-                    <CardContent></CardContent>
-                  </Card>
-                </Link>
-                <Link to="#" onClick={() => setPaymentMethod("lightning")}>
-                  <Card
-                    className={
-                      order.paymentMethod === "lightning"
-                        ? selectedCardStyles
-                        : undefined
-                    }
-                  >
-                    <CardHeader>
-                      <CardTitle>Lightning</CardTitle>
-                    </CardHeader>
-                    <CardContent></CardContent>
-                  </Card>
-                </Link>
-              </div>
-            </div>
-
-            <>
-              <div className="flex items-center gap-5">
-                {selectedPeer &&
-                (selectedPeer.paymentMethod === "lightning" ||
-                  (order.paymentMethod === "onchain" &&
-                    selectedPeer.pubkey === order.pubkey)) ? (
-                  <div>
-                    Channel peer{" "}
-                    <img src={selectedPeer.image} className="w-16 h-16" />
-                    <p>{selectedPeer.name}</p>
-                    {showAdvanced && (
-                      <>
-                        Select another peer
-                        <div className="flex gap-2 items-center">
-                          {recommendedPeers
-                            .filter(
-                              (peer) =>
-                                peer.network === network &&
-                                peer.paymentMethod === order.paymentMethod
-                            )
-                            .map((peer) => (
-                              <Link
-                                to="#"
-                                onClick={() => setSelectedPeer(peer)}
-                              >
-                                <Card
-                                  key={peer.name}
-                                  className={
-                                    peer === selectedPeer
-                                      ? selectedCardStyles
-                                      : undefined
-                                  }
-                                >
-                                  <CardHeader>
-                                    <CardTitle>{peer.name}</CardTitle>
-                                  </CardHeader>
-                                  <CardContent>
-                                    <img
-                                      src={peer.image}
-                                      className="w-24 h-24"
-                                    />
-                                  </CardContent>
-                                </Card>
-                              </Link>
-                            ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <p>No recommended peer found</p>
-                )}
-                {
-                  <div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => setShowAdvanced((current) => !current)}
-                    >
-                      {showAdvanced ? "Hide" : "Show"}&nbsp;Advanced Options
-                    </Button>
-                  </div>
-                }
-              </div>
-            </>
-          </div>
-          {order.paymentMethod === "onchain" && (
-            <NewChannelOnchain
-              order={order}
-              setOrder={setOrder}
-              showAdvanced={showAdvanced}
-            />
-          )}
-          {order.paymentMethod === "lightning" && (
-            <NewChannelLightning order={order} setOrder={setOrder} />
-          )}
+      <form onSubmit={onSubmit} className="max-w-md flex flex-col gap-5">
+        <div className="grid gap-1.5">
+          <Label htmlFor="amount">Channel size (sats)</Label>
+          <Input
+            id="amount"
+            type="number"
+            required
+            min={selectedPeer?.minimumChannelSize}
+            value={order.amount}
+            onChange={(e) => {
+              setAmount(e.target.value.trim());
+            }}
+          />
         </div>
-        <Button>Next</Button>
-      </form>
+        <div className="grid gap-3">
+          <Label htmlFor="amount">Payment method</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <Link to="#" onClick={() => setPaymentMethod("onchain")} className="flex-1">
+              <div
+                className={cn("rounded-xl border bg-card text-card-foreground shadow p-5 flex flex-col items-center gap-3",
+                  order.paymentMethod === "onchain"
+                    ? selectedCardStyles
+                    : undefined)
+                }
+              >
+                <Box className="w-4 h-4" />
+                Onchain
+              </div>
+            </Link>
+            <Link to="#" onClick={() => setPaymentMethod("lightning")}>
+              <div
+                className={cn("rounded-xl border bg-card text-card-foreground shadow p-5 flex flex-col items-center gap-3",
+                  order.paymentMethod === "lightning"
+                    ? selectedCardStyles
+                    : undefined
+                )}
+              >
+                <Zap className="w-4 h-4" />
+                Lightning
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        <>
+          <div className="flex items-center justify-between gap-5">
+            {selectedPeer &&
+              (selectedPeer.paymentMethod === "lightning" ||
+                (order.paymentMethod === "onchain" &&
+                  selectedPeer.pubkey === order.pubkey)) ? (
+              <div>
+                <Label>Channel peer</Label>
+                <div className="text-sm">
+                  <img src={selectedPeer.image} className="w-16 h-16" />
+                  <p>{selectedPeer.name}</p>
+                </div>
+                {showAdvanced && (
+                  <>
+                    Select another peer
+                    <div className="flex gap-2 items-center">
+                      {recommendedPeers
+                        .filter(
+                          (peer) =>
+                            peer.network === network &&
+                            peer.paymentMethod === order.paymentMethod
+                        )
+                        .map((peer) => (
+                          <Link
+                            to="#"
+                            onClick={() => setSelectedPeer(peer)}
+                          >
+                            <Card
+                              key={peer.name}
+                              className={
+                                peer === selectedPeer
+                                  ? selectedCardStyles
+                                  : undefined
+                              }
+                            >
+                              <CardHeader>
+                                <CardTitle>{peer.name}</CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <img
+                                  src={peer.image}
+                                  className="w-24 h-24"
+                                />
+                              </CardContent>
+                            </Card>
+                          </Link>
+                        ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <p>No recommended peer found</p>
+            )}
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowAdvanced((current) => !current)}
+            >
+              {showAdvanced ? "Hide" : "Show"}&nbsp;Advanced Options
+            </Button>
+          </div>
+        </>
+        {order.paymentMethod === "onchain" && (
+          <NewChannelOnchain
+            order={order}
+            setOrder={setOrder}
+            showAdvanced={showAdvanced}
+          />
+        )}
+        {order.paymentMethod === "lightning" && (
+          <NewChannelLightning order={order} setOrder={setOrder} />
+        )}
+        <Button size="lg">Next</Button>
+      </form >
     </>
   );
 }
