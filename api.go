@@ -467,8 +467,10 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 		selectedLsp = lsp.VoltageLSP()
 	case "OLYMPUS":
 		selectedLsp = lsp.OlympusLSP()
+	case "OLYMPUS_MUTINYNET_FLOW_2_0":
+		selectedLsp = lsp.OlympusMutinynetFlowLSP()
 	case "OLYMPUS_MUTINYNET_LSPS1":
-		selectedLsp = lsp.OlympusLSPS1MutinynetLSP()
+		selectedLsp = lsp.OlympusMutinynetLSPS1LSP()
 	case "ALBY":
 		selectedLsp = lsp.AlbyPlebsLSP()
 	default:
@@ -1070,6 +1072,14 @@ func (api *API) GetInfo(ctx context.Context) (*models.InfoResponse, error) {
 			}
 			info.OnboardingCompleted = len(channels) > 0
 		}
+
+		nodeInfo, err := api.svc.lnClient.GetInfo(ctx)
+		if err != nil {
+			api.svc.Logger.WithError(err).Error("Failed to get alby user identifier")
+			return nil, err
+		}
+
+		info.Network = nodeInfo.Network
 	}
 
 	if info.BackendType != config.LNDBackendType {

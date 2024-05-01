@@ -139,7 +139,10 @@ export interface InfoResponse {
   albyAuthUrl: string;
   showBackupReminder: boolean;
   albyUserIdentifier: string;
+  network?: Network;
 }
+
+export type Network = "bitcoin" | "testnet" | "signet";
 
 export interface EncryptedMnemonicResponse {
   mnemonic: string;
@@ -232,21 +235,9 @@ export type AlbyBalance = {
   sats: number;
 };
 
-// TODO: move to different file
-export type LSPOption =
-  | "ALBY" /* migration only */
-  | "OLYMPUS"
-  | "VOLTAGE"
-  | "OLYMPUS_MUTINYNET_LSPS1";
-export const LSP_OPTIONS: LSPOption[] = [
-  "OLYMPUS",
-  "VOLTAGE",
-  "OLYMPUS_MUTINYNET_LSPS1",
-];
-
 export type NewInstantChannelInvoiceRequest = {
   amount: number;
-  lsp: LSPOption;
+  lsp: string;
 };
 
 export type NewInstantChannelInvoiceResponse = {
@@ -278,3 +269,21 @@ export type BalancesResponse = {
   onchain: OnchainBalanceResponse;
   lightning: LightningBalanceResponse;
 };
+
+export type NewChannelOrderStatus = "pay" | "success";
+
+export type NewChannelOrder = {
+  amount: string;
+  isPublic: boolean;
+  status: NewChannelOrderStatus;
+} & (
+  | {
+      paymentMethod: "onchain";
+      pubkey: string;
+      host: string;
+    }
+  | {
+      paymentMethod: "lightning";
+      lsp: string;
+    }
+);

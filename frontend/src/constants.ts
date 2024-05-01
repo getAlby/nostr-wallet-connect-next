@@ -1,6 +1,7 @@
 export const localStorageKeys = {
   returnTo: "returnTo",
   onchainAddress: "onchainAddress",
+  channelOrder: "channelOrder",
 };
 
 export const MIN_0CONF_BALANCE = 100000; // 100,000 for Alby. 20000 works for Olympus and Voltage

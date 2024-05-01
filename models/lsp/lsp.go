@@ -27,7 +27,16 @@ func VoltageLSP() LSP {
 	return lsp
 }
 
-func OlympusLSPS1MutinynetLSP() LSP {
+func OlympusMutinynetFlowLSP() LSP {
+	lsp := LSP{
+		Pubkey:  "032ae843e4d7d177f151d021ac8044b0636ec72b1ce3ffcde5c04748db2517ab03",
+		Url:     "https://mutinynet-flow.lnolymp.us/api/v1",
+		LspType: LSP_TYPE_FLOW_2_0,
+	}
+	return lsp
+}
+
+func OlympusMutinynetLSPS1LSP() LSP {
 	lsp := LSP{
 		Pubkey:  "032ae843e4d7d177f151d021ac8044b0636ec72b1ce3ffcde5c04748db2517ab03",
 		Url:     "https://mutinynet-lsps1.lnolymp.us/api/v1",
