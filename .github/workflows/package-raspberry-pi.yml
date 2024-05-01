@@ -28,7 +28,7 @@ jobs:
         run: npm install --global yarn && cd frontend && yarn install && yarn build:http && cd ..
 
       - name: Get dependencies
-        run: go get -v -t -d ./...
+        run: sudo update-ca-certificates && go get -v -t -d ./...
 
       - name: Install cross-compiler
         run: |
