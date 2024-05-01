@@ -24,11 +24,14 @@ jobs:
         with:
           node-version: 20.x
 
+      - name: Set up further dependencies
+        run: apt-get install ca-certificates
+
       - name: Build the frontend
         run: npm install --global yarn && cd frontend && yarn install && yarn build:http && cd ..
 
       - name: Get dependencies
-        run: update-ca-certificates && go get -v -t -d ./...
+        run: go get -v -t -d ./...
 
       - name: Install cross-compiler
         run: |
