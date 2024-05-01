@@ -31,7 +31,7 @@ jobs:
       - name: Install cross-compiler
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf binutils-arm-linux-gnueabihf patchelf
+          sudo apt-get install -y gcc-10-arm-linux-gnueabihf g++-10-arm-linux-gnueabihf binutils-arm-linux-gnueabihf patchelf
 
       - name: Build
         env:
@@ -39,8 +39,8 @@ jobs:
           GOARCH: arm
           GOARM: 6
           CGO_ENABLED: 1
-          CC: arm-linux-gnueabihf-gcc
-          CXX: arm-linux-gnueabihf-g++
+          CC: arm-linux-gnueabihf-gcc-10
+          CXX: arm-linux-gnueabihf-g++-10
         run: go build -tags skip_breez,netgo -v -o nostr-wallet-connect
 
       - name: Find and copy shared libraries
