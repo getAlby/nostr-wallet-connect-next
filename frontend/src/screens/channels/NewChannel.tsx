@@ -198,23 +198,23 @@ function NewChannelInternal({ network }: { network: Network }) {
         title="Open a channel"
         description="Funds used to open a channel minus fees will be added to your spending balance"
       />
-      {/* TODO: move to somewhere else */}
-      {info?.backendType === "LDK" || true &&
-        albyBalance &&
-        albyBalance.sats * (1 - ALBY_SERVICE_FEE) > ALBY_MIN_BALANCE && (
-          <Alert>
-            <AlertTitle className="mb-4">
-              You have funds on your Alby shared account!
-            </AlertTitle>
-            <AlertDescription>
-              <Link to="/onboarding/lightning/migrate-alby">
-                <Button variant="outline">Migrate Alby Funds</Button>
-              </Link>
-            </AlertDescription>
-          </Alert>
-        )}
-
       <form onSubmit={onSubmit} className="md:max-w-md max-w-full flex flex-col gap-5">
+        {/* TODO: move to somewhere else? */}
+        {info?.backendType === "LDK" &&
+          albyBalance &&
+          albyBalance.sats * (1 - ALBY_SERVICE_FEE) > ALBY_MIN_BALANCE && (
+            <Alert>
+              <AlertTitle className="mb-4">
+                You have funds on your Alby shared account!
+              </AlertTitle>
+              <AlertDescription>
+                <Link to="/onboarding/lightning/migrate-alby">
+                  <Button variant="outline">Migrate Alby Funds</Button>
+                </Link>
+              </AlertDescription>
+            </Alert>
+          )}
+
         <div className="grid gap-1.5">
           <Label htmlFor="amount">Channel size (sats)</Label>
           <Input
@@ -283,7 +283,7 @@ function NewChannelInternal({ network }: { network: Network }) {
                               <div>
                                 {peer.name}
                                 {peer.minimumChannelSize > 0 &&
-                                  <span className="ml-4 text-muted-foreground">Min. {new Intl.NumberFormat().format(peer.minimumChannelSize)} sats</span>
+                                  <span className="ml-4 text-xs text-muted-foreground">Min. {new Intl.NumberFormat().format(peer.minimumChannelSize)} sats</span>
                                 }
                               </div>
                             </div>
