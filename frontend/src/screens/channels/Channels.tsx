@@ -11,7 +11,6 @@ import {
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader.tsx";
-import CardButton from "src/components/CardButton.tsx";
 import Loading from "src/components/Loading.tsx";
 import { Badge } from "src/components/ui/badge.tsx";
 import { Button } from "src/components/ui/button.tsx";
@@ -22,7 +21,6 @@ import {
   CardHeader,
   CardTitle,
 } from "src/components/ui/card.tsx";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "src/components/ui/dialog.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -217,7 +215,6 @@ export default function Channels() {
                         Node
                       </div>
                       <div className="overflow-hidden text-ellipsis">
-                        {/* TODO: replace with skeleton loader */}
                         {nodeConnectionInfo?.pubkey || "Loading..."}
                       </div>
                       {nodeConnectionInfo && (
@@ -267,33 +264,9 @@ export default function Channels() {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button>Open Channel</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[640px]">
-                <DialogHeader>
-                  <DialogTitle>Open a channel</DialogTitle>
-                </DialogHeader>
-                <DialogDescription>
-                  Choose how you want to obtain a new channel.
-                </DialogDescription>
-                <div className="grid grid-flow-row gap-4">
-                  <CardButton to="channels/migrate-alby"
-                    title={<>
-                      Migrate your funds from Alby <Badge>Recommended</Badge></>}
-                    description="Use funds from your hosted Alby Account to fund your first channel." />
-                  <CardButton to="/channels/new/instant"
-                    title="Lightning"
-                    description="Pay a lightning invoice to open a channel." />
-                  <CardButton to="channels/new/onchain"
-                    title="Onchain"
-                    description="Send an onchain payment to open a channel." />
-                </div>
-              </DialogContent>
-            </Dialog>
-
+            <Link to="/channels/new">
+              <Button>Open Channel</Button>
+            </Link>
           </>
         }
       ></AppHeader>
@@ -380,9 +353,6 @@ export default function Channels() {
               </div>
             )}
           </CardContent>
-          <CardFooter className="flex justify-end">
-            <Button variant="outline">Top Up</Button>
-          </CardFooter>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

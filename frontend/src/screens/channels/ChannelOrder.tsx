@@ -13,8 +13,9 @@ import { useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
-import { Card, CardContent } from "src/components/ui/card";
+import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
+import { Separator } from "src/components/ui/separator";
 import { Table, TableBody, TableCell, TableRow } from "src/components/ui/table";
 import { useToast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
@@ -77,6 +78,7 @@ export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
   const [loading, setLoading] = React.useState(false);
   const [nodeDetails, setNodeDetails] = React.useState<Node | undefined>();
   const { data: csrf } = useCSRF();
+  const navigate = useNavigate();
 
   const { pubkey, host } = order;
 
@@ -142,28 +144,10 @@ export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
       ) {
         return;
       }
-      if (
-        !confirm(
-          `Are you sure you want to peer with ${nodeDetails?.alias || pubkey}?`
-        )
-      ) {
-        return;
-      }
 
       setLoading(true);
 
       await connectPeer();
-
-      if (
-        !confirm(
-          `Are you sure you want to open a ${order.amount} sat channel to ${
-            nodeDetails?.alias || pubkey
-          }?`
-        )
-      ) {
-        setLoading(false);
-        return;
-      }
 
       console.log(`🎬 Opening channel with ${pubkey}`);
 
@@ -187,8 +171,9 @@ export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
       if (!openChannelResponse?.fundingTxId) {
         throw new Error("No funding txid in response");
       }
-
+      // TODO: Success screen?
       alert(`🎉 Published tx: ${openChannelResponse.fundingTxId}`);
+      navigate("/channels");
     } catch (error) {
       console.error(error);
       alert("Something went wrong: " + error);
@@ -197,54 +182,51 @@ export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
     }
   }
 
-  const description = nodeDetails?.alias ? (
-    <>
-      Open a channel with{" "}
-      <span style={{ color: `${nodeDetails.color}` }}>⬤</span>{" "}
-      {nodeDetails.alias} ({nodeDetails.active_channel_count} channels)
-    </>
-  ) : (
-    "Connect to other nodes on the lightning network"
-  );
-
   return (
     <div className="flex flex-col gap-5">
-      <AppHeader title="Open a channel" description={description} />
-      <Card>
-        <CardContent>
-          <div className="flex flex-col gap-5">
-            <div className="grid gap-1.5">
-              <h3 className="font-medium text-2xl">
-                <span style={{ color: `${nodeDetails?.color || "#000"}` }}>
-                  ⬤
-                </span>
-                {nodeDetails?.alias ? (
-                  <>
-                    {nodeDetails.alias} ({nodeDetails.active_channel_count}{" "}
-                    channels)
-                  </>
-                ) : (
-                  <>
-                    {pubkey}
-                    &nbsp;(? channels)
-                  </>
-                )}
-              </h3>
-            </div>
+      <AppHeader title="Open a channel" description="Check the configuration and confirm to open the channel" />
 
-            <div className="inline">
-              <LoadingButton
-                disabled={!pubkey || !order.amount || loading}
-                onClick={openChannel}
-                loading={loading}
-              >
-                Open Channel ({new Intl.NumberFormat().format(+order.amount)}{" "}
-                sats)
-              </LoadingButton>
-            </div>
+      <div className="flex flex-col gap-5">
+        <div className="grid gap-1.5">
+          <Label>Channel peer</Label>
+          <div className="flex flex-row items-center">
+            <span style={{ color: `${nodeDetails?.color || "#000"}` }} className="mr-2">
+              ⬤
+            </span>
+            {nodeDetails?.alias ? (
+              <>
+                {nodeDetails.alias}
+                <span className="ml-2 text-sm text-muted-foreground">
+                  ({nodeDetails.active_channel_count}{" "}
+                  channels)
+                </span>
+              </>
+            ) : (
+              <>
+                {pubkey}
+                &nbsp;(? channels)
+              </>
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Channel size</Label>
+          <div className="flex flex-row items-center">
+            {new Intl.NumberFormat().format(+order.amount)}{" "}
+            sats
+          </div>
+        </div>
+        <Separator />
+        <div className="inline">
+          <LoadingButton
+            disabled={!pubkey || !order.amount || loading}
+            onClick={openChannel}
+            loading={loading}
+          >
+            Confirm
+          </LoadingButton>
+        </div>
+      </div>
     </div>
   );
 }

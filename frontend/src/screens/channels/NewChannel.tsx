@@ -9,15 +9,10 @@ import Loading from "src/components/Loading";
 import { Alert, AlertDescription, AlertTitle } from "src/components/ui/alert";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "src/components/ui/breadcrumb";
 import { Button } from "src/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "src/components/ui/card";
 import { Checkbox } from "src/components/ui/checkbox";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "src/components/ui/select";
 import {
   ALBY_MIN_BALANCE,
   ALBY_SERVICE_FEE,
@@ -57,7 +52,6 @@ const recommendedPeers: RecommendedPeer[] = [
     name: "Alby",
     image: albyImage,
   },
-
   {
     network: "testnet",
     paymentMethod: "onchain",
@@ -94,6 +88,16 @@ const recommendedPeers: RecommendedPeer[] = [
     name: "Olympus Mutinynet (Flow 2.0)",
     image: olympusImage,
   },
+
+  {
+    network: "signet",
+    paymentMethod: "onchain",
+    pubkey: "",
+    host: "",
+    minimumChannelSize: 0,
+    name: "Custom",
+    image: albyImage,
+  },
 ];
 
 export default function NewChannel() {
@@ -109,9 +113,7 @@ export default function NewChannel() {
 function NewChannelInternal({ network }: { network: Network }) {
   const { data: info } = useInfo();
   const { data: albyBalance } = useAlbyBalance();
-  const [showAdvanced, setShowAdvanced] = React.useState(false);
   const navigate = useNavigate();
-  // const [loading, setLoading] = React.useState(false);
 
   const [order, setOrder] = React.useState<Partial<NewChannelOrder>>({
     paymentMethod: "onchain",
@@ -128,6 +130,7 @@ function NewChannelInternal({ network }: { network: Network }) {
       paymentMethod,
     });
   }
+
   const setAmount = React.useCallback((amount: string) => {
     setOrder((current) => ({
       ...current,
@@ -211,7 +214,7 @@ function NewChannelInternal({ network }: { network: Network }) {
           </Alert>
         )}
 
-      <form onSubmit={onSubmit} className="max-w-md flex flex-col gap-5">
+      <form onSubmit={onSubmit} className="md:max-w-md max-w-full flex flex-col gap-5">
         <div className="grid gap-1.5">
           <Label htmlFor="amount">Channel size (sats)</Label>
           <Input
@@ -254,75 +257,54 @@ function NewChannelInternal({ network }: { network: Network }) {
             </Link>
           </div>
         </div>
-
-        <>
-          <div className="flex items-center justify-between gap-5">
-            {selectedPeer &&
-              (selectedPeer.paymentMethod === "lightning" ||
-                (order.paymentMethod === "onchain" &&
-                  selectedPeer.pubkey === order.pubkey)) ? (
-              <div>
+        <div className="flex flex-col gap-3">
+          {selectedPeer &&
+            (selectedPeer.paymentMethod === "lightning" ||
+              (order.paymentMethod === "onchain" &&
+                selectedPeer.pubkey === order.pubkey)) && (
+              <div className="grid gap-1.5">
                 <Label>Channel peer</Label>
-                <div className="text-sm">
-                  <img src={selectedPeer.image} className="w-16 h-16" />
-                  <p>{selectedPeer.name}</p>
-                </div>
-                {showAdvanced && (
-                  <>
-                    Select another peer
-                    <div className="flex gap-2 items-center">
-                      {recommendedPeers
-                        .filter(
-                          (peer) =>
-                            peer.network === network &&
-                            peer.paymentMethod === order.paymentMethod
-                        )
-                        .map((peer) => (
-                          <Link
-                            to="#"
-                            onClick={() => setSelectedPeer(peer)}
-                          >
-                            <Card
-                              key={peer.name}
-                              className={
-                                peer === selectedPeer
-                                  ? selectedCardStyles
-                                  : undefined
-                              }
-                            >
-                              <CardHeader>
-                                <CardTitle>{peer.name}</CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <img
-                                  src={peer.image}
-                                  className="w-24 h-24"
-                                />
-                              </CardContent>
-                            </Card>
-                          </Link>
-                        ))}
-                    </div>
-                  </>
-                )}
+                <Select value={selectedPeer.name} onValueChange={(value) => setSelectedPeer(recommendedPeers.find(x => x.name === value))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select channel peer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {recommendedPeers
+                      .filter(
+                        (peer) =>
+                          peer.network === network &&
+                          peer.paymentMethod === order.paymentMethod
+                      )
+                      .map((peer) =>
+                        <SelectItem value={peer.name}>
+                          <div className="flex items-center space-between gap-3 w-full">
+                            <div className="flex items-center gap-3">
+                              <img src={peer.image} className="w-4 h-4" />
+                              <div>
+                                {peer.name}
+                                {peer.minimumChannelSize > 0 &&
+                                  <span className="ml-4 text-muted-foreground">Min. {new Intl.NumberFormat().format(peer.minimumChannelSize)} sats</span>
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      )}
+                  </SelectContent>
+                </Select>
+                {selectedPeer.name === "Custom" && <>
+                  <div className="grid gap-1.5">
+
+                  </div>
+                </>}
               </div>
-            ) : (
-              <p>No recommended peer found</p>
             )}
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setShowAdvanced((current) => !current)}
-            >
-              {showAdvanced ? "Hide" : "Show"}&nbsp;Advanced Options
-            </Button>
-          </div>
-        </>
+        </div>
         {order.paymentMethod === "onchain" && (
           <NewChannelOnchain
             order={order}
             setOrder={setOrder}
-            showAdvanced={showAdvanced}
+            showCustomOptions={selectedPeer?.name === "Custom"}
           />
         )}
         {order.paymentMethod === "lightning" && (
@@ -349,7 +331,7 @@ function NewChannelLightning(props: NewChannelLightningProps) {
 type NewChannelOnchainProps = {
   order: Partial<NewChannelOrder>;
   setOrder(order: Partial<NewChannelOrder>): void;
-  showAdvanced: boolean;
+  showCustomOptions: boolean;
 };
 
 function NewChannelOnchain(props: NewChannelOnchainProps) {
@@ -385,6 +367,7 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
 
   const fetchNodeDetails = React.useCallback(async () => {
     if (!pubkey) {
+      setNodeDetails(undefined);
       return;
     }
     try {
@@ -402,181 +385,62 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
     fetchNodeDetails();
   }, [fetchNodeDetails]);
 
-  /*const connectPeer = React.useCallback(async () => {
-    if (!csrf) {
-      throw new Error("csrf not loaded");
-    }
-    if (!nodeDetails && !host) {
-      throw new Error("node details not found");
-    }
-    const _host = nodeDetails ? nodeDetails.sockets.split(",")[0] : host;
-    if (!_host || !pubkey) {
-      throw new Error("host or pubkey unset");
-    }
-    const [address, port] = _host.split(":");
-    if (!address || !port) {
-      throw new Error("host not found");
-    }
-    console.log(`🔌 Peering with ${pubkey}`);
-    const connectPeerRequest: ConnectPeerRequest = {
-      pubkey,
-      address,
-      port: +port,
-    };
-    await request("/api/peers", {
-      method: "POST",
-      headers: {
-        "X-CSRF-Token": csrf,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(connectPeerRequest),
-    });
-  }, [csrf, nodeDetails, pubkey, host]);*/
-
-  /*async function openChannel() {
-    try {
-      if (!csrf) {
-        throw new Error("csrf not loaded");
-      }
-      if (
-        isPublic &&
-        !confirm(
-          `Are you sure you want to open a public channel? in most cases a private channel is recommended.`
-        )
-      ) {
-        return;
-      }
-      if (
-        !confirm(
-          `Are you sure you want to peer with ${nodeDetails?.alias || pubkey}?`
-        )
-      ) {
-        return;
-      }
-
-      setLoading(true);
-
-      await connectPeer();
-
-      if (
-        !confirm(
-          `Are you sure you want to open a ${localAmount} sat channel to ${
-            nodeDetails?.alias || pubkey
-          }?`
-        )
-      ) {
-        setLoading(false);
-        return;
-      }
-
-      console.log(`🎬 Opening channel with ${pubkey}`);
-
-      const openChannelRequest: OpenChannelRequest = {
-        pubkey,
-        amount: +localAmount,
-        public: isPublic,
-      };
-      const openChannelResponse = await request<OpenChannelResponse>(
-        "/api/channels",
-        {
-          method: "POST",
-          headers: {
-            "X-CSRF-Token": csrf,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(openChannelRequest),
-        }
-      );
-
-      if (!openChannelResponse?.fundingTxId) {
-        throw new Error("No funding txid in response");
-      }
-
-      alert(`🎉 Published tx: ${openChannelResponse.fundingTxId}`);
-    } catch (error) {
-      console.error(error);
-      alert("Something went wrong: " + error);
-    } finally {
-      setLoading(false);
-    }
-  }*/
-
-  /*const description = nodeDetails?.alias ? (
-    <>
-      Open a channel with an onchain payment to{" "}
-      <span style={{ color: `${nodeDetails.color}` }}>⬤</span>{" "}
-      {nodeDetails.alias} (${nodeDetails.active_channel_count} channels)
-    </>
-  ) : (
-    "Open a channel with an onchain payment to a node on the lightning network"
-  );*/
-
   return (
     <>
-      {props.showAdvanced && (
-        <div className="flex flex-col gap-5">
-          <div className="grid gap-1.5">
-            {nodeDetails && (
-              <h3 className="font-medium text-2xl">
-                <span style={{ color: `${nodeDetails.color}` }}>⬤</span>
-                {nodeDetails.alias && (
-                  <>
-                    {nodeDetails.alias} ({nodeDetails.active_channel_count}{" "}
-                    channels)
-                  </>
-                )}
-              </h3>
-            )}
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label htmlFor="pubkey">Peer</Label>
-            <Input
-              id="pubkey"
-              type="text"
-              value={pubkey}
-              placeholder="Pubkey of the peer"
-              onChange={(e) => {
-                setPubkey(e.target.value.trim());
-              }}
-            />
-          </div>
-
-          {!nodeDetails && pubkey && (
+      <div className="flex flex-col gap-5">
+        {props.showCustomOptions && (
+          <>
             <div className="grid gap-1.5">
-              <Label htmlFor="host">Host:Port</Label>
+              <Label htmlFor="pubkey">Peer</Label>
               <Input
-                id="host"
+                id="pubkey"
                 type="text"
-                value={host}
-                placeholder="0.0.0.0:9735"
+                value={pubkey}
+                placeholder="Pubkey of the peer"
                 onChange={(e) => {
-                  setHost(e.target.value.trim());
+                  setPubkey(e.target.value.trim());
                 }}
               />
+              {nodeDetails && (
+                <div className="ml-2 text-muted-foreground text-sm">
+                  <span className="mr-2" style={{ color: `${nodeDetails.color}` }}>⬤</span>
+                  {nodeDetails.alias && (
+                    <>
+                      {nodeDetails.alias} ({nodeDetails.active_channel_count}{" "}
+                      channels)
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-          )}
 
-          <div className="flex w-full items-center">
-            <Checkbox
-              id="public-channel"
-              defaultChecked={isPublic}
-              onCheckedChange={() => setPublic(!isPublic)}
-              className="mr-2"
-            />
-            <Label htmlFor="public-channel">Public Channel</Label>
-          </div>
-          <div className="inline"></div>
+            {!nodeDetails && pubkey && (
+              <div className="grid gap-1.5">
+                <Label htmlFor="host">Host:Port</Label>
+                <Input
+                  id="host"
+                  type="text"
+                  value={host}
+                  placeholder="0.0.0.0:9735"
+                  onChange={(e) => {
+                    setHost(e.target.value.trim());
+                  }}
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="mt-2 flex w-full items-center">
+          <Checkbox
+            id="public-channel"
+            defaultChecked={isPublic}
+            onCheckedChange={() => setPublic(!isPublic)}
+            className="mr-2"
+          />
+          <Label htmlFor="public-channel">Public Channel</Label>
         </div>
-      )}
-
-      {/*<LoadingButton
-        disabled={!pubkey || !localAmount || loading}
-        onClick={openChannel}
-        loading={loading}
-      >
-        Next
-    </LoadingButton>*/}
+      </div>
     </>
   );
 }
