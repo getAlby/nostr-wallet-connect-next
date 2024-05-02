@@ -1,3 +1,4 @@
+import { fiat } from "@getalby/lightning-tools";
 import {
   ArrowDownToDot,
   ArrowUpFromDot,
@@ -8,7 +9,7 @@ import {
   Sparkles,
   Unplug
 } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AlbyHead from "src/assets/images/alby-head.svg";
 import AppHeader from "src/components/AppHeader";
@@ -44,6 +45,8 @@ function Wallet() {
   const { toast } = useToast();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
   const [showBackupPrompt, setShowBackupPrompt] = React.useState(true);
+
+  const [fiatValue, setFiatValue] = useState(0);
 
   if (!info || !balances) {
     return <Loading />;
@@ -81,6 +84,16 @@ function Wallet() {
       setShowBackupPrompt(false);
     }
   }
+
+  useEffect(() => {
+    const init = async function () {
+      const result = await fiat.getFiatValue({ satoshi: balances.lightning.totalSpendable / 1000, currency: "EUR" });
+      setFiatValue(result);
+      console.log(result);
+    };
+
+    init();
+  }, [balances])
 
   return (
     <>
@@ -191,12 +204,17 @@ function Wallet() {
         </>
       )}
 
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5">
+      <div className="flex flex-col gap-2">
         <div className="text-5xl font-semibold">
           {new Intl.NumberFormat().format(
             Math.floor(balances.lightning.totalSpendable / 1000)
           )}{" "}
           sats
+        </div>
+        <div className="text-xl text-muted-foreground font-semibold">
+          {new Intl.NumberFormat().format(
+            fiatValue
+          )}{" "}€
         </div>
       </div>
 
