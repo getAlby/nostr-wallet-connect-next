@@ -1,6 +1,6 @@
 import React from "react";
+import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
-import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
@@ -69,22 +69,20 @@ export default function NewOnchainAddress() {
   }
 
   return (
-    <div className="grid gap-8">
-      <TwoColumnLayoutHeader
+    <div className="grid gap-5">
+      <AppHeader
         title="On-chain Address"
-        description="You can deposit Bitcoin to your wallet address below:"
+        description="Deposit bitcoin int your wallet by sending a transaction"
       />
-      <div className="grid gap-2">
+      <div className="grid gap-1.5 max-w-md">
         <Label htmlFor="text">On-chain Address</Label>
         <Input type="text" value={onchainAddress} />
-        <p className="italic text-sm">
+        <p className="text-sm text-muted-foreground">
           Wait for one block confirmation after depositing.
         </p>
       </div>
-
       <div>
         <LoadingButton
-          size={"sm"}
           onClick={confirmGetNewAddress}
           disabled={isLoading}
           loading={isLoading}
@@ -92,6 +90,7 @@ export default function NewOnchainAddress() {
           Get a new address
         </LoadingButton>
       </div>
+
     </div>
   );
 }

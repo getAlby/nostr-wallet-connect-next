@@ -198,40 +198,6 @@ function Wallet() {
         </div>
       </div>
 
-      {/* TODO: Enable those cards as we know how to handle different balances 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Card>
-          <CardHeader>
-            <div className="flex flex-row justify-between">
-              <CardTitle>Lightning</CardTitle>
-              <ZapIcon className="w-5 h-5 text-[#FFD648]" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <span className="text-3xl font-semibold">
-              {new Intl.NumberFormat().format(
-                Math.floor(balances.lightning.totalSpendable / 1000)
-              )}{" "}
-              sats
-            </span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <div className="flex flex-row justify-between">
-              <CardTitle>Onchain</CardTitle>
-              <BitcoinIcon className="w-5 h-5 text-[#F7931A]" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <span className="text-3xl font-semibold">
-              {new Intl.NumberFormat().format(balances.onchain.total)} sats
-            </span>
-          </CardContent>
-        </Card>
-      </div>
-      */}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <Link to={`https://www.getalby.com/dashboard`} target="_blank">
           <Card>
