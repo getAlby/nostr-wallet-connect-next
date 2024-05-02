@@ -1,6 +1,7 @@
 import { BrowserOpenURL } from "wailsjs/runtime/runtime";
 
-export const openBrowser = (url: string) => {
+export const openLink = (url: string) => {
+  // opens the link in the browser
   try {
     BrowserOpenURL(url);
   } catch (error) {

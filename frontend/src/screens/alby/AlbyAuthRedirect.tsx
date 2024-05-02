@@ -3,7 +3,7 @@ import AuthCodeForm from "src/components/AuthCodeForm";
 
 import Loading from "src/components/Loading";
 import { useInfo } from "src/hooks/useInfo";
-import { openBrowser } from "src/utils/openBrowser"; // build the project for this to appear
+import { openLink } from "src/utils/openLink"; // build the project for this to appear
 
 export default function AlbyAuthRedirect() {
   const { data: info } = useInfo();
@@ -18,12 +18,7 @@ export default function AlbyAuthRedirect() {
       window.location.href = info.albyAuthUrl;
     } else {
       setIsOpened((isOpened) => {
-        if (!isOpened) {
-          // open in new tab if http protocol
-          if (window.location.protocol.startsWith("http"))
-            window.open(info.albyAuthUrl, "_blank");
-          else openBrowser(info.albyAuthUrl);
-        }
+        if (!isOpened) openLink(info.albyAuthUrl);
         return true;
       });
     }
