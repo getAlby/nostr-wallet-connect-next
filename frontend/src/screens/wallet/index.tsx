@@ -4,11 +4,9 @@ import {
   CircleDot,
   CopyIcon,
   ExternalLink,
-  ShieldCheckIcon,
   Sparkles,
-  Unplug,
+  Unplug
 } from "lucide-react";
-import React from "react";
 import { Link } from "react-router-dom";
 import AlbyHead from "src/assets/images/alby-head.svg";
 import AppHeader from "src/components/AppHeader";
@@ -35,20 +33,15 @@ import {
 } from "src/components/ui/dropdown-menu";
 import { useToast } from "src/components/ui/use-toast";
 import { useBalances } from "src/hooks/useBalances";
-import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
 import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo";
 import { copyToClipboard } from "src/lib/clipboard";
-import { handleRequestError } from "src/utils/handleRequestError";
-import { request } from "src/utils/request";
 
 function Wallet() {
   const { data: info } = useInfo();
   const { data: balances } = useBalances();
-  const { data: csrf } = useCSRF();
   const { toast } = useToast();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
-  const [showBackupPrompt, setShowBackupPrompt] = React.useState(true);
 
   if (!info || !balances) {
     return <Loading />;
@@ -57,35 +50,6 @@ function Wallet() {
   const isWalletUsable =
     balances.lightning.totalReceivable > 0 ||
     balances.lightning.totalSpendable > 0;
-
-  async function onSkipBackup(e: React.FormEvent) {
-    e.preventDefault();
-    if (!csrf) {
-      throw new Error("No CSRF token");
-    }
-
-    const currentDate = new Date();
-    const twoWeeksLater = new Date(
-      currentDate.setDate(currentDate.getDate() + 14)
-    );
-
-    try {
-      await request("/api/backup-reminder", {
-        method: "PATCH",
-        headers: {
-          "X-CSRF-Token": csrf,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nextBackupReminder: twoWeeksLater.toISOString(),
-        }),
-      });
-    } catch (error) {
-      handleRequestError(toast, "Failed to skip backup", error);
-    } finally {
-      setShowBackupPrompt(false);
-    }
-  }
 
   return (
     <>
@@ -258,29 +222,6 @@ function Wallet() {
       </div>
 
       <BreezRedeem />
-
-      {info?.onboardingCompleted &&
-        info?.showBackupReminder &&
-        showBackupPrompt && (
-          <>
-            <Alert>
-              <ShieldCheckIcon className="h-4 w-4" />
-              <AlertTitle>Back up your recovery phrase!</AlertTitle>
-              <AlertDescription>
-                Not backing up your key might result in permanently losing
-                access to your funds.
-                <div className="mt-3 flex items-center gap-3">
-                  <Button onClick={onSkipBackup} variant="secondary" size="sm">
-                    Skip For Now
-                  </Button>
-                  <Link to="/settings/backup">
-                    <Button size="sm">Back Up Now</Button>
-                  </Link>
-                </div>
-              </AlertDescription>
-            </Alert>
-          </>
-        )}
 
       {isWalletUsable && (
         <>

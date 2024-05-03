@@ -201,6 +201,7 @@ export default function AppLayout() {
                     <MainMenuContent />
                   </nav>
                   <div className="align-bottom">
+                    <SidebarHint />
                     <MainNavSecondary />
                   </div>
                 </SheetContent>

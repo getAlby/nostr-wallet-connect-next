@@ -59,16 +59,16 @@ type SidebarHintCardProps = {
 };
 function SidebarHintCard({ title, description, icon: Icon, buttonText, buttonLink }: SidebarHintCardProps) {
     return (
-        <div className="p-4">
+        <div className="md:m-4">
             <Card>
-                <CardHeader className="p-2 pt-0 md:p-4">
+                <CardHeader className="p-4">
                     <Icon className="h-8 w-8 mb-4" />
                     <CardTitle>{title}</CardTitle>
                     <CardDescription>
                         {description}
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
+                <CardContent className="p-4 pt-0">
                     <Link to={buttonLink}>
                         <Button size="sm" className="w-full">
                             {buttonText}
