@@ -5,6 +5,7 @@ import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
+import { LoadingButton } from "src/components/ui/loading-button";
 import { toast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
@@ -20,6 +21,7 @@ function AuthCodeForm() {
   const { mutate: refetchInfo } = useInfo();
 
   const [hasRequestedCode, setRequestedCode] = React.useState(false);
+  const [isLoading, setLoading] = React.useState(false);
 
   async function requestAuthCode() {
     setRequestedCode((hasRequestedCode) => {
@@ -35,6 +37,7 @@ function AuthCodeForm() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
     try {
       if (!csrf) {
         throw new Error("info not loaded");
@@ -50,6 +53,7 @@ function AuthCodeForm() {
     } catch (error) {
       handleRequestError(toast, "Failed to connect", error);
     }
+    setLoading(false);
   }
 
   return (
@@ -81,7 +85,7 @@ function AuthCodeForm() {
                   />
                 </div>
               </div>
-              <Button type="submit">Submit</Button>
+              <LoadingButton loading={isLoading}>Submit</LoadingButton>
             </>
           )}
         </div>
