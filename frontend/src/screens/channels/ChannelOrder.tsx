@@ -13,7 +13,6 @@ import { Payment, init } from "@getalby/bitcoin-connect-react";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
-import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
@@ -456,8 +455,8 @@ export function PayLightningChannelOrder({
   }, [channels, csrf, order.amount, order.lsp]);
 
   return (
-    <div className="flex flex-col justify-center items-center gap-5">
-      <TwoColumnLayoutHeader
+    <div className="flex flex-col gap-5">
+      <AppHeader
         title={"Buy an Instant Channel"}
         description={
           wrappedInvoiceResponse
@@ -465,42 +464,43 @@ export function PayLightningChannelOrder({
             : "Please wait, loading..."
         }
       />
-
       {!wrappedInvoiceResponse && <Loading />}
 
       {wrappedInvoiceResponse && (
         <>
-          <div className="border rounded-lg w-96">
-            <Table>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium p-3 flex flex-row gap-1.5 items-center">
-                    Fee
-                  </TableCell>
-                  <TableCell className="text-right p-3">
-                    {new Intl.NumberFormat().format(wrappedInvoiceResponse.fee)}{" "}
-                    sats
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium p-3">
-                    Amount to pay
-                  </TableCell>
-                  <TableCell className="font-semibold text-right p-3">
-                    {new Intl.NumberFormat().format(parseInt(order.amount))}{" "}
-                    sats
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+          <div className="max-w-md flex flex-col gap-5">
+            <div className="border rounded-lg">
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium p-3 flex flex-row gap-1.5 items-center">
+                      Fee
+                    </TableCell>
+                    <TableCell className="text-right p-3">
+                      {new Intl.NumberFormat().format(wrappedInvoiceResponse.fee)}{" "}
+                      sats
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium p-3">
+                      Amount to pay
+                    </TableCell>
+                    <TableCell className="font-semibold text-right p-3">
+                      {new Intl.NumberFormat().format(parseInt(order.amount))}{" "}
+                      sats
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+            <Payment
+              invoice={wrappedInvoiceResponse.invoice}
+              payment={
+                hasOpenedChannel ? { preimage: "dummy preimage" } : undefined
+              }
+              paymentMethods="external"
+            />
           </div>
-          <Payment
-            invoice={wrappedInvoiceResponse.invoice}
-            payment={
-              hasOpenedChannel ? { preimage: "dummy preimage" } : undefined
-            }
-            paymentMethods="external"
-          />
         </>
       )}
     </div>
