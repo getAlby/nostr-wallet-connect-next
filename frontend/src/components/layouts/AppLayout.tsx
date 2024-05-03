@@ -1,5 +1,4 @@
 import { Cable, FlaskRound, Menu, Settings, Store, Wallet } from "lucide-react";
-import { ModeToggle } from "src/components/ui/mode-toggle";
 
 import { CaretUpIcon } from "@radix-ui/react-icons";
 import React from "react";
@@ -104,9 +103,9 @@ export default function AppLayout() {
     const { data: info } = useInfo();
     return (
       <nav className="grid items-start p-2 text-sm font-medium lg:px-4">
-        <div className="px-3 py-2 mb-5">
+        {/* <div className="px-3 py-2 mb-5">
           <ModeToggle />
-        </div>
+        </div> */}
         {(info?.backendType === "LDK" ||
           info?.backendType === "GREENLIGHT") && (
           <MenuItem to="/channels">
