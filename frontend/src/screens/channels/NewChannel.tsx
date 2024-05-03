@@ -49,16 +49,16 @@ type RecommendedPeer = {
   name: string;
   minimumChannelSize: number;
 } & (
-  | {
+    | {
       paymentMethod: "onchain";
       pubkey: string;
       host: string;
     }
-  | {
+    | {
       paymentMethod: "lightning";
       lsp: string;
     }
-);
+  );
 
 const recommendedPeers: RecommendedPeer[] = [
   {
@@ -318,7 +318,7 @@ function NewChannelInternal({ network }: { network: Network }) {
                           peer.paymentMethod === order.paymentMethod
                       )
                       .map((peer) => (
-                        <SelectItem value={peer.name}>
+                        <SelectItem value={peer.name} key={peer.name}>
                           <div className="flex items-center space-between gap-3 w-full">
                             <div className="flex items-center gap-3">
                               <img src={peer.image} className="w-4 h-4" />

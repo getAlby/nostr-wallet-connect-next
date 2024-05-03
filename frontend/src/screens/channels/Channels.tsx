@@ -117,9 +117,8 @@ export default function Channels() {
       }
       if (
         !confirm(
-          `Are you sure you want to close the channel with ${
-            nodes.find((node) => node.public_key === nodeId)?.alias ||
-            "Unknown Node"
+          `Are you sure you want to close the channel with ${nodes.find((node) => node.public_key === nodeId)?.alias ||
+          "Unknown Node"
           }?\n\nNode ID: ${nodeId}\n\nChannel ID: ${channelId}`
         )
       ) {
@@ -266,14 +265,15 @@ export default function Channels() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {localStorage.getItem(localStorageKeys.channelOrder) && (
+              <Link to="/channels/order">
+                <Button variant={"secondary"}>View Current Order</Button>
+              </Link>
+            )}
+
             <Link to="/channels/new">
               <Button>Open Channel</Button>
             </Link>
-            {localStorage.getItem(localStorageKeys.channelOrder) && (
-              <Link to="/channels/order">
-                <Button className="bg-blue-400">View Current Order</Button>
-              </Link>
-            )}
           </>
         }
       ></AppHeader>
