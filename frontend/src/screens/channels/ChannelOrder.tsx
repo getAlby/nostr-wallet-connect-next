@@ -210,6 +210,7 @@ export function PayBitcoinChannelOrderWithSpendableFunds({
   const [loading, setLoading] = React.useState(false);
   const [nodeDetails, setNodeDetails] = React.useState<Node | undefined>();
   const { data: csrf } = useCSRF();
+  const { mutate: refetchInfo } = useInfo();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -504,7 +505,4 @@ export function PayLightningChannelOrder({
       )}
     </div>
   );
-}
-function refetchInfo() {
-  throw new Error("Function not implemented.");
 }
