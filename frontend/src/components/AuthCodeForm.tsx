@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Container from "src/components/Container";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
@@ -9,13 +9,29 @@ import { toast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
 import { handleRequestError } from "src/utils/handleRequestError";
+import { openLink } from "src/utils/openLink";
 import { request } from "src/utils/request"; // build the project for this to appear
 
 function AuthCodeForm() {
   const [authCode, setAuthCode] = useState("");
   const navigate = useNavigate();
   const { data: csrf } = useCSRF();
+  const { data: info } = useInfo();
   const { mutate: refetchInfo } = useInfo();
+
+  const [hasRequestedCode, setRequestedCode] = React.useState(false);
+
+  async function requestAuthCode() {
+    setRequestedCode((hasRequestedCode) => {
+      if (!info) {
+        return false;
+      }
+      if (!hasRequestedCode) {
+        openLink(info.albyAuthUrl);
+      }
+      return true;
+    });
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,21 +60,30 @@ function AuthCodeForm() {
             title="Alby OAuth"
             description="Enter your Auth Code to connect to Alby"
           />
-          <div className="grid gap-4 w-full">
-            <div className="grid gap-1.5">
-              <Label htmlFor="authorization-code">Authorization Code</Label>
-              <Input
-                type="text"
-                name="authorization-code"
-                id="authorization-code"
-                placeholder="Enter code you see in the browser"
-                value={authCode}
-                onChange={(e) => setAuthCode(e.target.value)}
-                required={true}
-              />
-            </div>
-          </div>
-          <Button type="submit">Submit</Button>
+          {!hasRequestedCode && (
+            <>
+              <Button onClick={requestAuthCode}>Request Auth Code</Button>
+            </>
+          )}
+          {hasRequestedCode && (
+            <>
+              <div className="grid gap-4 w-full">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="authorization-code">Authorization Code</Label>
+                  <Input
+                    type="text"
+                    name="authorization-code"
+                    id="authorization-code"
+                    placeholder="Enter code you see in the browser"
+                    value={authCode}
+                    onChange={(e) => setAuthCode(e.target.value)}
+                    required={true}
+                  />
+                </div>
+              </div>
+              <Button type="submit">Submit</Button>
+            </>
+          )}
         </div>
       </form>
     </Container>
