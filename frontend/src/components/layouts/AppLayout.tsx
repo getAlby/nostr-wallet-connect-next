@@ -9,6 +9,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
+import SidebarHint from "src/components/SidebarHint";
 import { Avatar, AvatarFallback, AvatarImage } from "src/components/ui/avatar";
 import { Button } from "src/components/ui/button";
 import {
@@ -108,11 +109,11 @@ export default function AppLayout() {
         </div> */}
         {(info?.backendType === "LDK" ||
           info?.backendType === "GREENLIGHT") && (
-          <MenuItem to="/channels">
-            <FlaskRound className="h-4 w-4" />
-            Liquidity
-          </MenuItem>
-        )}
+            <MenuItem to="/channels">
+              <FlaskRound className="h-4 w-4" />
+              Liquidity
+            </MenuItem>
+          )}
         <MenuItem to="/settings">
           <Settings className="h-4 w-4" />
           Settings
@@ -147,6 +148,7 @@ export default function AppLayout() {
                 </nav>
               </div>
               <div className="flex flex-col">
+                <SidebarHint />
                 <MainNavSecondary />
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6 gap-3 border-t border-border justify-between">
                   <div className="grid grid-flow-col gap-2">
@@ -223,7 +225,7 @@ export default function AppLayout() {
             </div>
           </main>
         </div>
-      </div>
+      </div >
     </>
   );
 }
