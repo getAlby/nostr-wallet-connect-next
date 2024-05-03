@@ -6,7 +6,7 @@ import {
   CopyIcon,
   Hotel,
   MoreHorizontal,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -39,7 +39,7 @@ import {
   TableRow,
 } from "src/components/ui/table.tsx";
 import { toast } from "src/components/ui/use-toast.ts";
-import { ONCHAIN_DUST_SATS } from "src/constants.ts";
+import { ONCHAIN_DUST_SATS, localStorageKeys } from "src/constants.ts";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance.ts";
 import { useBalances } from "src/hooks/useBalances.ts";
 import { useChannels } from "src/hooks/useChannels";
@@ -117,8 +117,9 @@ export default function Channels() {
       }
       if (
         !confirm(
-          `Are you sure you want to close the channel with ${nodes.find((node) => node.public_key === nodeId)?.alias ||
-          "Unknown Node"
+          `Are you sure you want to close the channel with ${
+            nodes.find((node) => node.public_key === nodeId)?.alias ||
+            "Unknown Node"
           }?\n\nNode ID: ${nodeId}\n\nChannel ID: ${channelId}`
         )
       ) {
@@ -264,15 +265,21 @@ export default function Channels() {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+
             <Link to="/channels/new">
               <Button>Open Channel</Button>
             </Link>
+            {localStorage.getItem(localStorageKeys.channelOrder) && (
+              <Link to="/channels/order">
+                <Button className="bg-blue-400">View Current Order</Button>
+              </Link>
+            )}
           </>
         }
       ></AppHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {albyBalance?.sats && albyBalance.sats > 0 &&
+        {albyBalance?.sats && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -281,12 +288,10 @@ export default function Channels() {
               <Hotel className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {albyBalance?.sats} sats
-              </div>
+              <div className="text-2xl font-bold">{albyBalance?.sats} sats</div>
             </CardContent>
           </Card>
-        }
+        )}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -361,11 +366,10 @@ export default function Channels() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {balances && new Intl.NumberFormat().format(
-                Math.floor(
-                  balances.lightning.totalReceivable / 1000
-                )
-              )}{" "}
+              {balances &&
+                new Intl.NumberFormat().format(
+                  Math.floor(balances.lightning.totalReceivable / 1000)
+                )}{" "}
               sats
             </div>
           </CardContent>
@@ -399,7 +403,11 @@ export default function Channels() {
                 return (
                   <TableRow key={channel.id}>
                     <TableCell>
-                      {channel.active ? <Badge>Online</Badge> : <Badge>Offline</Badge>}{" "}
+                      {channel.active ? (
+                        <Badge>Online</Badge>
+                      ) : (
+                        <Badge>Offline</Badge>
+                      )}{" "}
                     </TableCell>
                     <TableCell className="flex flex-row items-center">
                       <a
@@ -418,24 +426,30 @@ export default function Channels() {
                       </Badge>
                     </TableCell>
                     <TableCell>{formatAmount(capacity)} sats</TableCell>
-                    <TableCell>{formatAmount(channel.localBalance)} sats</TableCell>
-                    <TableCell>{formatAmount(channel.remoteBalance)} sats</TableCell>
+                    <TableCell>
+                      {formatAmount(channel.localBalance)} sats
+                    </TableCell>
+                    <TableCell>
+                      {formatAmount(channel.remoteBalance)} sats
+                    </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                          >
+                          <Button size="icon" variant="ghost">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="flex flex-row items-center gap-2" onClick={() => closeChannel(
-                            channel.id,
-                            channel.remotePubkey,
-                            channel.active
-                          )}>
+                          <DropdownMenuItem
+                            className="flex flex-row items-center gap-2"
+                            onClick={() =>
+                              closeChannel(
+                                channel.id,
+                                channel.remotePubkey,
+                                channel.active
+                              )
+                            }
+                          >
                             <Trash2 className="text-destructive" />
                             Close Channel
                           </DropdownMenuItem>

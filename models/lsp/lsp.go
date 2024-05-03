@@ -62,3 +62,11 @@ func AlbyPlebsLSP() LSP {
 	}
 	return lsp
 }
+func AlbyMutinynetPlebsLSP() LSP {
+	lsp := LSP{
+		Pubkey:  "02f7029c14f3d805843e065d42e9bdc57f5f414249f335906bbe282ff99b2be17a",
+		Url:     "https://lsp-mutinynet.albylabs.com",
+		LspType: LSP_TYPE_PMLSP,
+	}
+	return lsp
+}

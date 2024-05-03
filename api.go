@@ -473,6 +473,8 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 		selectedLsp = lsp.OlympusMutinynetLSPS1LSP()
 	case "ALBY":
 		selectedLsp = lsp.AlbyPlebsLSP()
+	case "ALBY_MUTINYNET":
+		selectedLsp = lsp.AlbyMutinynetPlebsLSP()
 	default:
 		return nil, errors.New("unknown LSP")
 	}

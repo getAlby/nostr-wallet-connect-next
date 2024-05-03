@@ -56,6 +56,7 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
+		lsp.AlbyMutinynetPlebsLSP().Pubkey,
 		lsp.OlympusMutinynetFlowLSP().Pubkey,
 	}
 	config.AnchorChannelsConfig.TrustedPeersNoReserve = []string{
@@ -63,6 +64,7 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 		lsp.OlympusMutinynetLSPS1LSP().Pubkey,
 		lsp.OlympusMutinynetFlowLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
+		lsp.AlbyMutinynetPlebsLSP().Pubkey,
 		"0296b2db342fcf87ea94d981757fdf4d3e545bd5cef4919f58b5d38dfdd73bf5c9", // blocktank
 	}
 

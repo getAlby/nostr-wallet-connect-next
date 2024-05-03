@@ -1,4 +1,4 @@
-import { Box, Zap } from "lucide-react";
+import { Box, Info, Zap } from "lucide-react";
 import React, { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import albyImage from "src/assets/images/peers/alby.svg";
@@ -7,12 +7,31 @@ import olympusImage from "src/assets/images/peers/olympus.svg";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
 import { Alert, AlertDescription, AlertTitle } from "src/components/ui/alert";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "src/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "src/components/ui/breadcrumb";
 import { Button } from "src/components/ui/button";
 import { Checkbox } from "src/components/ui/checkbox";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "src/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "src/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "src/components/ui/tooltip";
 import {
   ALBY_MIN_BALANCE,
   ALBY_SERVICE_FEE,
@@ -30,16 +49,16 @@ type RecommendedPeer = {
   name: string;
   minimumChannelSize: number;
 } & (
-    | {
+  | {
       paymentMethod: "onchain";
       pubkey: string;
       host: string;
     }
-    | {
+  | {
       paymentMethod: "lightning";
       lsp: string;
     }
-  );
+);
 
 const recommendedPeers: RecommendedPeer[] = [
   {
@@ -88,7 +107,14 @@ const recommendedPeers: RecommendedPeer[] = [
     name: "Olympus Mutinynet (Flow 2.0)",
     image: olympusImage,
   },
-
+  {
+    paymentMethod: "lightning",
+    network: "signet",
+    lsp: "ALBY_MUTINYNET",
+    minimumChannelSize: 150_000,
+    name: "Alby Mutinynet",
+    image: albyImage,
+  },
   {
     network: "signet",
     paymentMethod: "onchain",
@@ -198,7 +224,10 @@ function NewChannelInternal({ network }: { network: Network }) {
         title="Open a channel"
         description="Funds used to open a channel minus fees will be added to your spending balance"
       />
-      <form onSubmit={onSubmit} className="md:max-w-md max-w-full flex flex-col gap-5">
+      <form
+        onSubmit={onSubmit}
+        className="md:max-w-md max-w-full flex flex-col gap-5"
+      >
         {/* TODO: move to somewhere else? */}
         {info?.backendType === "LDK" &&
           albyBalance &&
@@ -231,13 +260,18 @@ function NewChannelInternal({ network }: { network: Network }) {
         <div className="grid gap-3">
           <Label htmlFor="amount">Payment method</Label>
           <div className="grid grid-cols-2 gap-3">
-            <Link to="#" onClick={() => setPaymentMethod("onchain")} className="flex-1">
+            <Link
+              to="#"
+              onClick={() => setPaymentMethod("onchain")}
+              className="flex-1"
+            >
               <div
-                className={cn("rounded-xl border bg-card text-card-foreground shadow p-5 flex flex-col items-center gap-3",
+                className={cn(
+                  "rounded-xl border bg-card text-card-foreground shadow p-5 flex flex-col items-center gap-3",
                   order.paymentMethod === "onchain"
                     ? selectedCardStyles
-                    : undefined)
-                }
+                    : undefined
+                )}
               >
                 <Box className="w-4 h-4" />
                 Onchain
@@ -245,7 +279,8 @@ function NewChannelInternal({ network }: { network: Network }) {
             </Link>
             <Link to="#" onClick={() => setPaymentMethod("lightning")}>
               <div
-                className={cn("rounded-xl border bg-card text-card-foreground shadow p-5 flex flex-col items-center gap-3",
+                className={cn(
+                  "rounded-xl border bg-card text-card-foreground shadow p-5 flex flex-col items-center gap-3",
                   order.paymentMethod === "lightning"
                     ? selectedCardStyles
                     : undefined
@@ -264,7 +299,14 @@ function NewChannelInternal({ network }: { network: Network }) {
                 selectedPeer.pubkey === order.pubkey)) && (
               <div className="grid gap-1.5">
                 <Label>Channel peer</Label>
-                <Select value={selectedPeer.name} onValueChange={(value) => setSelectedPeer(recommendedPeers.find(x => x.name === value))}>
+                <Select
+                  value={selectedPeer.name}
+                  onValueChange={(value) =>
+                    setSelectedPeer(
+                      recommendedPeers.find((x) => x.name === value)
+                    )
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select channel peer" />
                   </SelectTrigger>
@@ -275,28 +317,34 @@ function NewChannelInternal({ network }: { network: Network }) {
                           peer.network === network &&
                           peer.paymentMethod === order.paymentMethod
                       )
-                      .map((peer) =>
+                      .map((peer) => (
                         <SelectItem value={peer.name}>
                           <div className="flex items-center space-between gap-3 w-full">
                             <div className="flex items-center gap-3">
                               <img src={peer.image} className="w-4 h-4" />
                               <div>
                                 {peer.name}
-                                {peer.minimumChannelSize > 0 &&
-                                  <span className="ml-4 text-xs text-muted-foreground">Min. {new Intl.NumberFormat().format(peer.minimumChannelSize)} sats</span>
-                                }
+                                {peer.minimumChannelSize > 0 && (
+                                  <span className="ml-4 text-xs text-muted-foreground">
+                                    Min.{" "}
+                                    {new Intl.NumberFormat().format(
+                                      peer.minimumChannelSize
+                                    )}{" "}
+                                    sats
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
                         </SelectItem>
-                      )}
+                      ))}
                   </SelectContent>
                 </Select>
-                {selectedPeer.name === "Custom" && <>
-                  <div className="grid gap-1.5">
-
-                  </div>
-                </>}
+                {selectedPeer.name === "Custom" && (
+                  <>
+                    <div className="grid gap-1.5"></div>
+                  </>
+                )}
               </div>
             )}
         </div>
@@ -311,7 +359,7 @@ function NewChannelInternal({ network }: { network: Network }) {
           <NewChannelLightning order={order} setOrder={setOrder} />
         )}
         <Button size="lg">Next</Button>
-      </form >
+      </form>
     </>
   );
 }
@@ -403,7 +451,12 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
               />
               {nodeDetails && (
                 <div className="ml-2 text-muted-foreground text-sm">
-                  <span className="mr-2" style={{ color: `${nodeDetails.color}` }}>⬤</span>
+                  <span
+                    className="mr-2"
+                    style={{ color: `${nodeDetails.color}` }}
+                  >
+                    ⬤
+                  </span>
                   {nodeDetails.alias && (
                     <>
                       {nodeDetails.alias} ({nodeDetails.active_channel_count}{" "}
@@ -438,7 +491,22 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
             onCheckedChange={() => setPublic(!isPublic)}
             className="mr-2"
           />
-          <Label htmlFor="public-channel">Public Channel</Label>
+          <Label
+            htmlFor="public-channel"
+            className="flex items-center justify-center gap-2"
+          >
+            Public Channel{" "}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-4 h-4" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Set to public if you're a podcaster</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </Label>
         </div>
       </div>
     </>

@@ -2,6 +2,7 @@ import React from "react";
 import { localStorageKeys } from "src/constants";
 import {
   ConnectPeerRequest,
+  GetOnchainAddressResponse,
   NewChannelOrder,
   Node,
   OpenChannelRequest,
@@ -13,11 +14,13 @@ import { useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
+import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
 import { Separator } from "src/components/ui/separator";
 import { Table, TableBody, TableCell, TableRow } from "src/components/ui/table";
 import { useToast } from "src/components/ui/use-toast";
+import { useBalances } from "src/hooks/useBalances";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useChannels } from "src/hooks/useChannels";
 import { useInfo } from "src/hooks/useInfo";
@@ -71,7 +74,136 @@ export function ChannelOrderInternal({
 
 // TODO: move these to new files
 export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
-  // TODO: check if enough balance, otherwise topup!
+  if (order.paymentMethod !== "onchain") {
+    throw new Error("incorrect payment method");
+  }
+  const { data: balances } = useBalances(true);
+
+  if (!balances) {
+    return <Loading />;
+  }
+
+  // TODO: do not hardcode the transaction fee
+  const ESTIMATED_TRANSACTION_FEE = 10000;
+  const requiredAmount = +order.amount + ESTIMATED_TRANSACTION_FEE;
+  if (balances.onchain.spendable >= requiredAmount) {
+    return <PayBitcoinChannelOrderWithSpendableFunds order={order} />;
+  }
+  if (balances.onchain.total >= requiredAmount) {
+    return <PayBitcoinChannelOrderWaitingDepositConfirmation />;
+  }
+  return <PayBitcoinChannelOrderTopup order={order} />;
+}
+
+export function PayBitcoinChannelOrderWaitingDepositConfirmation() {
+  const existingAddress = localStorage.getItem(localStorageKeys.onchainAddress);
+
+  return (
+    <>
+      <p>Funds sent to address {existingAddress}</p>
+      <p>
+        <Loading />
+        Waiting for one block confirmation. (estimated time: 10 minutes)
+      </p>
+    </>
+  );
+}
+
+export function PayBitcoinChannelOrderTopup({
+  order,
+}: {
+  order: NewChannelOrder;
+}) {
+  if (order.paymentMethod !== "onchain") {
+    throw new Error("incorrect payment method");
+  }
+
+  const { data: csrf } = useCSRF();
+  const [onchainAddress, setOnchainAddress] = React.useState<string>();
+  const [isLoading, setLoading] = React.useState(false);
+
+  const getNewAddress = React.useCallback(async () => {
+    if (!csrf) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await request<GetOnchainAddressResponse>(
+        "/api/wallet/new-address",
+        {
+          method: "POST",
+          headers: {
+            "X-CSRF-Token": csrf,
+            "Content-Type": "application/json",
+          },
+          //body: JSON.stringify({}),
+        }
+      );
+      if (!response?.address) {
+        throw new Error("No address in response");
+      }
+      localStorage.setItem(localStorageKeys.onchainAddress, response.address);
+      setOnchainAddress(response.address);
+    } catch (error) {
+      alert("Failed to request a new address: " + error);
+    } finally {
+      setLoading(false);
+    }
+  }, [csrf]);
+
+  React.useEffect(() => {
+    const existingAddress = localStorage.getItem(
+      localStorageKeys.onchainAddress
+    );
+    if (existingAddress) {
+      setOnchainAddress(existingAddress);
+      return;
+    }
+    getNewAddress();
+  }, [getNewAddress]);
+
+  function confirmGetNewAddress() {
+    if (confirm("Do you want a fresh address?")) {
+      getNewAddress();
+    }
+  }
+
+  if (!onchainAddress) {
+    return (
+      <div className="flex justify-center">
+        <Loading />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-5">
+      <AppHeader
+        title="On-chain Address"
+        description="Deposit bitcoin int your wallet by sending a transaction"
+      />
+      <div className="grid gap-1.5 max-w-md">
+        <Label htmlFor="text">On-chain Address</Label>
+        <Input type="text" value={onchainAddress} />
+      </div>
+      <div>
+        <LoadingButton
+          onClick={confirmGetNewAddress}
+          disabled={isLoading}
+          loading={isLoading}
+        >
+          Get a new address
+        </LoadingButton>
+      </div>
+    </div>
+  );
+}
+
+export function PayBitcoinChannelOrderWithSpendableFunds({
+  order,
+}: {
+  order: NewChannelOrder;
+}) {
   if (order.paymentMethod !== "onchain") {
     throw new Error("incorrect payment method");
   }
@@ -79,6 +211,7 @@ export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
   const [nodeDetails, setNodeDetails] = React.useState<Node | undefined>();
   const { data: csrf } = useCSRF();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const { pubkey, host } = order;
 
@@ -172,7 +305,14 @@ export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
         throw new Error("No funding txid in response");
       }
       // TODO: Success screen?
-      alert(`🎉 Published tx: ${openChannelResponse.fundingTxId}`);
+      // alert(`🎉 Published tx: ${openChannelResponse.fundingTxId}`);
+      toast({
+        title:
+          "Published channel opening TX: " + openChannelResponse.fundingTxId,
+      });
+      await refetchInfo();
+      // TODO: instead update order
+      localStorage.removeItem(localStorageKeys.channelOrder);
       navigate("/channels");
     } catch (error) {
       console.error(error);
@@ -184,21 +324,26 @@ export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <AppHeader title="Open a channel" description="Check the configuration and confirm to open the channel" />
+      <AppHeader
+        title="Open a channel"
+        description="Check the configuration and confirm to open the channel"
+      />
 
       <div className="flex flex-col gap-5">
         <div className="grid gap-1.5">
           <Label>Channel peer</Label>
           <div className="flex flex-row items-center">
-            <span style={{ color: `${nodeDetails?.color || "#000"}` }} className="mr-2">
+            <span
+              style={{ color: `${nodeDetails?.color || "#000"}` }}
+              className="mr-2"
+            >
               ⬤
             </span>
             {nodeDetails?.alias ? (
               <>
                 {nodeDetails.alias}
                 <span className="ml-2 text-sm text-muted-foreground">
-                  ({nodeDetails.active_channel_count}{" "}
-                  channels)
+                  ({nodeDetails.active_channel_count} channels)
                 </span>
               </>
             ) : (
@@ -212,8 +357,7 @@ export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
         <div className="grid gap-1.5">
           <Label>Channel size</Label>
           <div className="flex flex-row items-center">
-            {new Intl.NumberFormat().format(+order.amount)}{" "}
-            sats
+            {new Intl.NumberFormat().format(+order.amount)} sats
           </div>
         </div>
         <Separator />
@@ -263,7 +407,8 @@ export function PayLightningChannelOrder({
       (async () => {
         toast({ title: "Channel opened!" });
         await refetchInfo();
-        navigate("/");
+        localStorage.removeItem(localStorageKeys.channelOrder);
+        navigate("/channels");
       })();
     }
   }, [hasOpenedChannel, navigate, refetchInfo, toast]);
@@ -359,4 +504,7 @@ export function PayLightningChannelOrder({
       )}
     </div>
   );
+}
+function refetchInfo() {
+  throw new Error("Function not implemented.");
 }
