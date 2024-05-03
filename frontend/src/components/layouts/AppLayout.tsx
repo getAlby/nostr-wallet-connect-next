@@ -34,7 +34,6 @@ export default function AppLayout() {
   const { data: albyMe } = useAlbyMe();
   const { data: csrf } = useCSRF();
   const { toast } = useToast();
-  const { data: info } = useInfo();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -125,15 +124,6 @@ export default function AppLayout() {
   return (
     <>
       <div className="font-sans min-h-screen w-full flex flex-col">
-        {info && !info.onboardingCompleted && (
-          <div className="p-2 font-medium text-sm text-center bg-foreground text-background">
-            To start using Alby Hub, migrate your funds or open your first
-            lightning channel!{" "}
-            <Link to="/channels/new" className="underline hover:no-underline">
-              Start here
-            </Link>
-          </div>
-        )}
         <div className="flex-1 h-full grid md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
           <div className="hidden border-r bg-muted/40 md:block">
             <div className="flex h-full max-h-screen flex-col gap-2">
