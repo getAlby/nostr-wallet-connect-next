@@ -455,9 +455,12 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
   // This is not a good check if user already has enough inbound liquidity
   // - check balance instead or how else to check the invoice is paid?
   const newChannel =
-    channels &&
-    prevChannels &&
-    channels.find((newChannel) => prevChannels.indexOf(newChannel) < 0);
+    channels && prevChannels
+      ? channels.find(
+          (newChannel) =>
+            !prevChannels.some((current) => current.id === newChannel.id)
+        )
+      : undefined;
 
   React.useEffect(() => {
     if (newChannel) {
