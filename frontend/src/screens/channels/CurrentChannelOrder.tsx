@@ -1,6 +1,7 @@
 import React from "react";
 import { localStorageKeys } from "src/constants";
 import {
+  Channel,
   ConnectPeerRequest,
   GetOnchainAddressResponse,
   NewChannelOrder,
@@ -10,9 +11,10 @@ import {
 } from "src/types";
 
 import { Payment, init } from "@getalby/bitcoin-connect-react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
+import QRCode from "src/components/QRCode";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
@@ -22,7 +24,9 @@ import { useToast } from "src/components/ui/use-toast";
 import { useBalances } from "src/hooks/useBalances";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useChannels } from "src/hooks/useChannels";
-import { useInfo } from "src/hooks/useInfo";
+import { useMempoolApi } from "src/hooks/useMempoolApi";
+import { Success } from "src/screens/onboarding/Success";
+import useChannelOrderStore from "src/state/ChannelOrderStore";
 import {
   NewInstantChannelInvoiceRequest,
   NewInstantChannelInvoiceResponse,
@@ -32,21 +36,22 @@ init({
   showBalance: false,
 });
 
-export function ChannelOrder() {
-  const orderJSON = localStorage.getItem(localStorageKeys.channelOrder);
-  if (!orderJSON) {
-    return <p>No pending channel order</p>;
+export function CurrentChannelOrder() {
+  const order = useChannelOrderStore((store) => store.order);
+  if (!order) {
+    return (
+      <p>
+        No pending channel order.{" "}
+        <Link to="/channels" className="underline">
+          Return to channels page
+        </Link>
+      </p>
+    );
   }
-  return <ChannelOrderInternal initialOrder={JSON.parse(orderJSON)} />;
+  return <ChannelOrderInternal order={order} />;
 }
 
-export function ChannelOrderInternal({
-  initialOrder,
-}: {
-  initialOrder: NewChannelOrder;
-}) {
-  const [order] = React.useState<NewChannelOrder>(initialOrder);
-
+function ChannelOrderInternal({ order }: { order: NewChannelOrder }) {
   switch (order.status) {
     case "pay":
       switch (order.paymentMethod) {
@@ -58,8 +63,10 @@ export function ChannelOrderInternal({
           break;
       }
       break;
+    case "opening":
+      return <ChannelOpening fundingTxId={order.fundingTxId} />;
     case "success":
-      return <p>TODO: success page!</p>;
+      return <Success />;
     default:
       break;
   }
@@ -71,8 +78,35 @@ export function ChannelOrderInternal({
   );
 }
 
+function ChannelOpening({ fundingTxId }: { fundingTxId: string | undefined }) {
+  const { data: channels } = useChannels(true);
+  const channel = fundingTxId
+    ? channels?.find((channel) => channel.fundingTxId === fundingTxId)
+    : undefined;
+
+  React.useEffect(() => {
+    if (channel?.active) {
+      useChannelOrderStore.getState().updateOrder({
+        status: "success",
+      });
+    }
+  }, [channel]);
+
+  return (
+    <div>
+      <p>Please wait... your channel is being opened</p>
+      <p>
+        {channel?.confirmations ?? "0"} /{" "}
+        {channel?.confirmationsRequired ?? "unknown"} confirmations required
+      </p>
+    </div>
+  );
+}
+
 // TODO: move these to new files
-export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
+// TODO: do not hardcode the transaction fee
+const ESTIMATED_TRANSACTION_FEE = 10000;
+function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
   if (order.paymentMethod !== "onchain") {
     throw new Error("incorrect payment method");
   }
@@ -82,8 +116,6 @@ export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
     return <Loading />;
   }
 
-  // TODO: do not hardcode the transaction fee
-  const ESTIMATED_TRANSACTION_FEE = 10000;
   const requiredAmount = +order.amount + ESTIMATED_TRANSACTION_FEE;
   if (balances.onchain.spendable >= requiredAmount) {
     return <PayBitcoinChannelOrderWithSpendableFunds order={order} />;
@@ -94,32 +126,33 @@ export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
   return <PayBitcoinChannelOrderTopup order={order} />;
 }
 
-export function PayBitcoinChannelOrderWaitingDepositConfirmation() {
-  const existingAddress = localStorage.getItem(localStorageKeys.onchainAddress);
-
+function PayBitcoinChannelOrderWaitingDepositConfirmation() {
   return (
     <>
-      <p>Funds sent to address {existingAddress}</p>
-      <p>
+      <p>Bitcoin deposited</p>
+      <div className="flex items-center gap-2">
         <Loading />
-        Waiting for one block confirmation. (estimated time: 10 minutes)
-      </p>
+        <p>Waiting for one block confirmation</p>
+      </div>
+
+      <p className="text-muted-foreground">estimated time: 10 minutes</p>
     </>
   );
 }
 
-export function PayBitcoinChannelOrderTopup({
-  order,
-}: {
-  order: NewChannelOrder;
-}) {
+function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
   if (order.paymentMethod !== "onchain") {
     throw new Error("incorrect payment method");
   }
 
   const { data: csrf } = useCSRF();
+  const { data: balances } = useBalances();
   const [onchainAddress, setOnchainAddress] = React.useState<string>();
   const [isLoading, setLoading] = React.useState(false);
+  const { data: mempoolAddressUtxos } = useMempoolApi<{ value: number }[]>(
+    onchainAddress ? `/address/${onchainAddress}/utxo` : undefined,
+    true
+  );
 
   const getNewAddress = React.useCallback(async () => {
     if (!csrf) {
@@ -167,7 +200,7 @@ export function PayBitcoinChannelOrderTopup({
     }
   }
 
-  if (!onchainAddress) {
+  if (!onchainAddress || !balances) {
     return (
       <div className="flex justify-center">
         <Loading />
@@ -175,17 +208,42 @@ export function PayBitcoinChannelOrderTopup({
     );
   }
 
+  const requiredAmount = +order.amount + ESTIMATED_TRANSACTION_FEE;
+  const unspentAmount =
+    (mempoolAddressUtxos
+      ?.map((utxo) => utxo.value)
+      .reduce((a, b) => a + b, 0) || 0) - balances.onchain.reserved;
+
+  if (unspentAmount >= requiredAmount) {
+    return <PayBitcoinChannelOrderWaitingDepositConfirmation />;
+  }
+
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-5 max-w-md">
       <AppHeader
-        title="On-chain Address"
-        description="Deposit bitcoin int your wallet by sending a transaction"
+        title="Deposit bitcoin"
+        description="You don't have enough Bitcoin to open your intended channel"
       />
-      <div className="grid gap-1.5 max-w-md">
+      <p>
+        You currently have {balances.onchain.total} sats. You need to deposit at
+        least another {requiredAmount - balances.onchain.total} sats to cover
+        channel opening fees.
+      </p>
+
+      <div className="flex items-center gap-2">
+        <Loading />
+        <p>Waiting for deposit to appear in mempool...</p>
+      </div>
+
+      {unspentAmount > 0 && <p>{unspentAmount} sats deposited</p>}
+
+      <div className="grid gap-1.5">
         <Label htmlFor="text">On-chain Address</Label>
         <Input type="text" value={onchainAddress} />
       </div>
-      <div>
+
+      <QRCode value={onchainAddress} />
+      <div className="flex justify-center">
         <LoadingButton
           onClick={confirmGetNewAddress}
           disabled={isLoading}
@@ -198,7 +256,7 @@ export function PayBitcoinChannelOrderTopup({
   );
 }
 
-export function PayBitcoinChannelOrderWithSpendableFunds({
+function PayBitcoinChannelOrderWithSpendableFunds({
   order,
 }: {
   order: NewChannelOrder;
@@ -209,8 +267,6 @@ export function PayBitcoinChannelOrderWithSpendableFunds({
   const [loading, setLoading] = React.useState(false);
   const [nodeDetails, setNodeDetails] = React.useState<Node | undefined>();
   const { data: csrf } = useCSRF();
-  const { mutate: refetchInfo } = useInfo();
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const { pubkey, host } = order;
@@ -221,7 +277,7 @@ export function PayBitcoinChannelOrderWithSpendableFunds({
     }
     try {
       const data = await request<Node>(
-        `/api/mempool/lightning/nodes/${pubkey}`
+        `/api/mempool?endpoint=/v1/lightning/nodes/${pubkey}`
       );
       setNodeDetails(data);
     } catch (error) {
@@ -266,6 +322,9 @@ export function PayBitcoinChannelOrderWithSpendableFunds({
 
   async function openChannel() {
     try {
+      if (order.paymentMethod !== "onchain") {
+        throw new Error("incorrect payment method");
+      }
       if (!csrf) {
         throw new Error("csrf not loaded");
       }
@@ -304,16 +363,13 @@ export function PayBitcoinChannelOrderWithSpendableFunds({
       if (!openChannelResponse?.fundingTxId) {
         throw new Error("No funding txid in response");
       }
-      // TODO: Success screen?
-      // alert(`🎉 Published tx: ${openChannelResponse.fundingTxId}`);
       toast({
-        title:
-          "Published channel opening TX: " + openChannelResponse.fundingTxId,
+        title: "Channel opening transaction published!",
       });
-      await refetchInfo();
-      // TODO: instead update order
-      localStorage.removeItem(localStorageKeys.channelOrder);
-      navigate("/channels");
+      useChannelOrderStore.getState().updateOrder({
+        fundingTxId: openChannelResponse.fundingTxId,
+        status: "opening",
+      });
     } catch (error) {
       console.error(error);
       alert("Something went wrong: " + error);
@@ -326,7 +382,7 @@ export function PayBitcoinChannelOrderWithSpendableFunds({
     <div className="flex flex-col gap-5">
       <AppHeader
         title="Open a channel"
-        description="Check the configuration and confirm to open the channel"
+        description="Funds successfully deposited. Check the configuration and confirm to open the channel"
       />
 
       <div className="flex flex-col gap-5">
@@ -360,6 +416,12 @@ export function PayBitcoinChannelOrderWithSpendableFunds({
             {new Intl.NumberFormat().format(+order.amount)} sats
           </div>
         </div>
+        <div className="grid gap-1.5">
+          <Label>Estimated onchain fee</Label>
+          <div className="flex flex-row items-center">
+            {new Intl.NumberFormat().format(ESTIMATED_TRANSACTION_FEE)} sats
+          </div>
+        </div>
         <Separator />
         <div className="inline">
           <LoadingButton
@@ -375,43 +437,41 @@ export function PayBitcoinChannelOrderWithSpendableFunds({
   );
 }
 
-export function PayLightningChannelOrder({
-  order,
-}: {
-  order: NewChannelOrder;
-}) {
+function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
   if (order.paymentMethod !== "lightning") {
     throw new Error("incorrect payment method");
   }
   const { data: csrf } = useCSRF();
-  const { mutate: refetchInfo } = useInfo();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { data: channels } = useChannels(true);
   const [, setRequestedInvoice] = React.useState(false);
-  const [prePurchaseChannelAmount, setPrePurchaseChannelAmount] =
-    React.useState<number | undefined>();
+  const [prevChannels, setPrevChannels] = React.useState<
+    Channel[] | undefined
+  >();
   const [wrappedInvoiceResponse, setWrappedInvoiceResponse] = React.useState<
     NewInstantChannelInvoiceResponse | undefined
   >();
 
   // This is not a good check if user already has enough inbound liquidity
   // - check balance instead or how else to check the invoice is paid?
-  const hasOpenedChannel =
+  const newChannel =
     channels &&
-    prePurchaseChannelAmount !== undefined &&
-    channels.length > prePurchaseChannelAmount;
+    prevChannels &&
+    channels.find((newChannel) => prevChannels.indexOf(newChannel) < 0);
 
   React.useEffect(() => {
-    if (hasOpenedChannel) {
+    if (newChannel) {
       (async () => {
         toast({ title: "Channel opened!" });
-        await refetchInfo();
-        localStorage.removeItem(localStorageKeys.channelOrder);
-        navigate("/channels");
+        setTimeout(() => {
+          useChannelOrderStore.getState().updateOrder({
+            status: "opening",
+            fundingTxId: newChannel.fundingTxId,
+          });
+        }, 3000);
       })();
     }
-  }, [hasOpenedChannel, navigate, refetchInfo, toast]);
+  }, [newChannel, toast]);
 
   React.useEffect(() => {
     // TODO: move fetching to NewChannel page otherwise fee cannot be retrieved
@@ -422,7 +482,7 @@ export function PayLightningChannelOrder({
       if (!current) {
         (async () => {
           try {
-            setPrePurchaseChannelAmount(channels.length);
+            setPrevChannels(channels);
             if (!order.lsp) {
               throw new Error("no lsp selected");
             }
@@ -477,7 +537,9 @@ export function PayLightningChannelOrder({
                       Fee
                     </TableCell>
                     <TableCell className="text-right p-3">
-                      {new Intl.NumberFormat().format(wrappedInvoiceResponse.fee)}{" "}
+                      {new Intl.NumberFormat().format(
+                        wrappedInvoiceResponse.fee
+                      )}{" "}
                       sats
                     </TableCell>
                   </TableRow>
@@ -495,9 +557,7 @@ export function PayLightningChannelOrder({
             </div>
             <Payment
               invoice={wrappedInvoiceResponse.invoice}
-              payment={
-                hasOpenedChannel ? { preimage: "dummy preimage" } : undefined
-              }
+              payment={newChannel ? { preimage: "dummy preimage" } : undefined}
               paymentMethods="external"
             />
           </div>

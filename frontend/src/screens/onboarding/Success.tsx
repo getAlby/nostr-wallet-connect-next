@@ -3,6 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
 import { Button } from "src/components/ui/button";
+import useChannelOrderStore from "src/state/ChannelOrderStore";
 
 export function Success() {
   React.useEffect(() => {
@@ -10,7 +11,7 @@ export function Success() {
       setTimeout(() => {
         confetti({
           origin: {
-            x: 0.5 + Math.random() * 0.5,
+            x: Math.random(),
             y: Math.random(),
           },
           colors: ["#000", "#333", "#666", "#999", "#BBB", "#FFF"],
@@ -31,7 +32,13 @@ export function Success() {
         the lightning network.
       </p>
 
-      <Link to="/" className="flex justify-center mt-8">
+      <Link
+        to="/"
+        className="flex justify-center mt-8"
+        onClick={() => {
+          useChannelOrderStore.getState().removeOrder();
+        }}
+      >
         <Button>Go to your new wallet</Button>
       </Link>
     </div>

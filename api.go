@@ -416,8 +416,8 @@ func (api *API) GetBalances(ctx context.Context) (*models.BalancesResponse, erro
 	return balances, nil
 }
 
-func (api *API) GetMempoolLightningNode(pubkey string) (interface{}, error) {
-	url := api.svc.cfg.Env.MempoolApi + "/v1/lightning/nodes/" + pubkey
+func (api *API) RequestMempoolApi(endpoint string) (interface{}, error) {
+	url := api.svc.cfg.Env.MempoolApi + endpoint
 
 	client := http.Client{
 		Timeout: time.Second * 10,
@@ -449,10 +449,10 @@ func (api *API) GetMempoolLightningNode(pubkey string) (interface{}, error) {
 		return nil, errors.New("failed to read response body")
 	}
 
-	jsonContent := map[string]interface{}{}
+	var jsonContent interface{}
 	jsonErr := json.Unmarshal(body, &jsonContent)
 	if jsonErr != nil {
-		api.svc.Logger.WithError(err).WithFields(logrus.Fields{
+		api.svc.Logger.WithError(jsonErr).WithFields(logrus.Fields{
 			"url": url,
 		}).Error("Failed to deserialize json")
 		return nil, fmt.Errorf("failed to deserialize json %s %s", url, string(body))

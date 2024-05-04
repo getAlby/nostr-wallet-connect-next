@@ -573,13 +573,16 @@ func (gs *LDKService) ListChannels(ctx context.Context) ([]lnclient.Channel, err
 
 	for _, ldkChannel := range ldkChannels {
 		channels = append(channels, lnclient.Channel{
-			InternalChannel: ldkChannel,
-			LocalBalance:    int64(ldkChannel.OutboundCapacityMsat),
-			RemoteBalance:   int64(ldkChannel.InboundCapacityMsat),
-			RemotePubkey:    ldkChannel.CounterpartyNodeId,
-			Id:              ldkChannel.UserChannelId, // CloseChannel takes the UserChannelId
-			Active:          ldkChannel.IsUsable,      // superset of ldkChannel.IsReady
-			Public:          ldkChannel.IsPublic,
+			InternalChannel:       ldkChannel,
+			LocalBalance:          int64(ldkChannel.OutboundCapacityMsat),
+			RemoteBalance:         int64(ldkChannel.InboundCapacityMsat),
+			RemotePubkey:          ldkChannel.CounterpartyNodeId,
+			Id:                    ldkChannel.UserChannelId, // CloseChannel takes the UserChannelId
+			Active:                ldkChannel.IsUsable,      // superset of ldkChannel.IsReady
+			Public:                ldkChannel.IsPublic,
+			FundingTxId:           ldkChannel.FundingTxo.Txid,
+			Confirmations:         ldkChannel.Confirmations,
+			ConfirmationsRequired: ldkChannel.ConfirmationsRequired,
 		})
 	}
 
@@ -702,6 +705,7 @@ func (gs *LDKService) GetOnchainBalance(ctx context.Context) (*lnclient.OnchainB
 	return &lnclient.OnchainBalanceResponse{
 		Spendable: int64(balances.SpendableOnchainBalanceSats),
 		Total:     int64(balances.TotalOnchainBalanceSats - balances.TotalAnchorChannelsReserveSats),
+		Reserved:  int64(balances.TotalAnchorChannelsReserveSats),
 	}, nil
 }
 

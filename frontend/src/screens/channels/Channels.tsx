@@ -39,7 +39,7 @@ import {
   TableRow,
 } from "src/components/ui/table.tsx";
 import { toast } from "src/components/ui/use-toast.ts";
-import { ONCHAIN_DUST_SATS, localStorageKeys } from "src/constants.ts";
+import { ONCHAIN_DUST_SATS } from "src/constants.ts";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance.ts";
 import { useBalances } from "src/hooks/useBalances.ts";
 import { useChannels } from "src/hooks/useChannels";
@@ -47,6 +47,7 @@ import { useInfo } from "src/hooks/useInfo";
 import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo.ts";
 import { useRedeemOnchainFunds } from "src/hooks/useRedeemOnchainFunds.ts";
 import { copyToClipboard } from "src/lib/clipboard.ts";
+import useChannelOrderStore from "src/state/ChannelOrderStore.ts";
 import { CloseChannelResponse, Node } from "src/types";
 import { request } from "src/utils/request";
 import { useCSRF } from "../../hooks/useCSRF.ts";
@@ -59,6 +60,7 @@ export default function Channels() {
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const { data: info, mutate: reloadInfo } = useInfo();
   const { data: csrf } = useCSRF();
+  const { order } = useChannelOrderStore();
   const navigate = useNavigate();
   const redeemOnchainFunds = useRedeemOnchainFunds();
 
@@ -77,7 +79,7 @@ export default function Channels() {
       channels?.map(async (channel): Promise<Node | undefined> => {
         try {
           const response = await request<Node>(
-            `/api/mempool/lightning/nodes/${channel.remotePubkey}`
+            `/api/mempool?endpoint=/v1/lightning/nodes/${channel.remotePubkey}`
           );
           return response;
         } catch (error) {
@@ -117,8 +119,9 @@ export default function Channels() {
       }
       if (
         !confirm(
-          `Are you sure you want to close the channel with ${nodes.find((node) => node.public_key === nodeId)?.alias ||
-          "Unknown Node"
+          `Are you sure you want to close the channel with ${
+            nodes.find((node) => node.public_key === nodeId)?.alias ||
+            "Unknown Node"
           }?\n\nNode ID: ${nodeId}\n\nChannel ID: ${channelId}`
         )
       ) {
@@ -265,7 +268,7 @@ export default function Channels() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {localStorage.getItem(localStorageKeys.channelOrder) && (
+            {order && (
               <Link to="/channels/order">
                 <Button variant={"secondary"}>View Current Order</Button>
               </Link>

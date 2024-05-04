@@ -162,8 +162,11 @@ export type Channel = {
   remoteBalance: number;
   remotePubkey: string;
   id: string;
+  fundingTxId: string;
   active: boolean;
   public: boolean;
+  confirmations?: number;
+  confirmationsRequired?: number;
 };
 
 export type NodeConnectionInfo = {
@@ -198,6 +201,7 @@ export type GetOnchainAddressResponse = {
 export type OnchainBalanceResponse = {
   spendable: number;
   total: number;
+  reserved: number;
 };
 
 // from https://mempool.space/docs/api/rest#get-node-stats
@@ -264,12 +268,13 @@ export type BalancesResponse = {
   lightning: LightningBalanceResponse;
 };
 
-export type NewChannelOrderStatus = "pay" | "success";
+export type NewChannelOrderStatus = "pay" | "success" | "opening";
 
 export type NewChannelOrder = {
   amount: string;
   isPublic: boolean;
   status: NewChannelOrderStatus;
+  fundingTxId?: string;
 } & (
   | {
       paymentMethod: "onchain";

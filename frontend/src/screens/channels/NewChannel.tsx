@@ -32,14 +32,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "src/components/ui/tooltip";
-import {
-  ALBY_MIN_BALANCE,
-  ALBY_SERVICE_FEE,
-  localStorageKeys,
-} from "src/constants";
+import { ALBY_MIN_BALANCE, ALBY_SERVICE_FEE } from "src/constants";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance";
 import { useInfo } from "src/hooks/useInfo";
 import { cn } from "src/lib/utils";
+import useChannelOrderStore from "src/state/ChannelOrderStore";
 import { Network, NewChannelOrder, Node } from "src/types";
 import { request } from "src/utils/request";
 
@@ -49,16 +46,16 @@ type RecommendedPeer = {
   name: string;
   minimumChannelSize: number;
 } & (
-    | {
+  | {
       paymentMethod: "onchain";
       pubkey: string;
       host: string;
     }
-    | {
+  | {
       paymentMethod: "lightning";
       lsp: string;
     }
-  );
+);
 
 const recommendedPeers: RecommendedPeer[] = [
   {
@@ -203,7 +200,7 @@ function NewChannelInternal({ network }: { network: Network }) {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
 
-    localStorage.setItem(localStorageKeys.channelOrder, JSON.stringify(order));
+    useChannelOrderStore.getState().setOrder(order as NewChannelOrder);
     navigate("/channels/order");
   }
 
@@ -420,7 +417,7 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
     }
     try {
       const data = await request<Node>(
-        `/api/mempool/lightning/nodes/${pubkey}`
+        `/api/mempool?endpoint=/v1/lightning/nodes/${pubkey}`
       );
       setNodeDetails(data);
     } catch (error) {

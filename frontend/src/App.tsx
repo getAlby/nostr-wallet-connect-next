@@ -35,7 +35,7 @@ import { OnboardingRedirect } from "src/components/redirects/OnboardingRedirect"
 import { Toaster } from "src/components/ui/toaster";
 import { Intro } from "src/screens/Intro";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
-import { ChannelOrder } from "src/screens/channels/ChannelOrder";
+import { CurrentChannelOrder } from "src/screens/channels/CurrentChannelOrder";
 import { Success } from "src/screens/onboarding/Success";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 import DebugTools from "src/screens/settings/DebugTools";
@@ -78,7 +78,7 @@ function App() {
               <Route path="channels" element={<DefaultRedirect />}>
                 <Route index path="" element={<Channels />} />
                 <Route path="new" element={<NewChannel />} />
-                <Route path="order" element={<ChannelOrder />} />
+                <Route path="order" element={<CurrentChannelOrder />} />
                 <Route
                   path="onchain/new-address"
                   element={<NewOnchainAddress />}

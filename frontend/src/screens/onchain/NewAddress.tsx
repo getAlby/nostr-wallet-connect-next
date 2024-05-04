@@ -72,7 +72,7 @@ export default function NewOnchainAddress() {
     <div className="grid gap-5">
       <AppHeader
         title="On-chain Address"
-        description="Deposit bitcoin int your wallet by sending a transaction"
+        description="Deposit bitcoin into your wallet by sending a transaction"
       />
       <div className="grid gap-1.5 max-w-md">
         <Label htmlFor="text">On-chain Address</Label>
@@ -90,7 +90,6 @@ export default function NewOnchainAddress() {
           Get a new address
         </LoadingButton>
       </div>
-
     </div>
   );
 }
