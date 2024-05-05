@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: debian:bullseye
+      image: dockcross:linux-armv6
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -36,7 +36,7 @@ jobs:
       - name: Install cross-compiler
         run: |
           apt-get update
-          apt-get install -y zip unzip gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf binutils-arm-linux-gnueabi patchelf
+          apt-get install -y zip unzip patchelf
 
       - name: Build
         env:
