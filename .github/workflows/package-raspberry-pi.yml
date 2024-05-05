@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: dockcross:linux-armv6
+      image: dockcross/linux-armv6:latest
     steps:
       - name: Check out code
         uses: actions/checkout@v2
