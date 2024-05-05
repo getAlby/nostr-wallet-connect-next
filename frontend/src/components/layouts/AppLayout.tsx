@@ -29,6 +29,7 @@ import { useInfo } from "src/hooks/useInfo";
 import { cn } from "src/lib/utils";
 import { request } from "src/utils/request";
 import ExternalLink from "../ExternalLink";
+import { openLink } from "src/utils/openLink";
 
 export default function AppLayout() {
   const { data: albyMe } = useAlbyMe();
@@ -119,8 +120,11 @@ export default function AppLayout() {
           Settings
         </MenuItem>
         <MenuItem to="/" onClick={() => {
-          //window.$chatwoot.toggleBubbleVisibility("show");
-          window.$chatwoot.toggle("open");
+          if (window.$chatwoot) {
+            window.$chatwoot.toggle("open");
+          } else {
+            openLink("https://getalby.com/help")
+          }
         }}>
           <MessageCircleQuestion className="h-4 w-4" />
           Live Support
