@@ -1,4 +1,4 @@
-import { Cable, ExternalLinkIcon, Menu, SendToBack, Settings, Store, Wallet } from "lucide-react";
+import { Cable, ExternalLinkIcon, Menu, SendToBack, Settings, Store, Wallet, MessageCircleQuestion } from "lucide-react";
 import { ModeToggle } from "src/components/ui/mode-toggle";
 
 import { CaretUpIcon } from "@radix-ui/react-icons";
@@ -118,7 +118,14 @@ export default function AppLayout() {
           <Settings className="h-4 w-4" />
           Settings
         </MenuItem>
-      </nav>
+        <MenuItem to="/" onClick={() => {
+          //window.$chatwoot.toggleBubbleVisibility("show");
+          window.$chatwoot.toggle("open");
+        }}>
+          <MessageCircleQuestion className="h-4 w-4" />
+          Live Support
+        </MenuItem>
+      </nav >
     );
   }
 
@@ -220,15 +227,18 @@ const MenuItem = ({
   to,
   children,
   disabled = false,
+  onClick,
 }: {
   to: string;
   children: React.ReactNode | string;
   disabled?: boolean;
+  onClick?: () => void;
 }) => (
   <NavLink
     to={to}
     onClick={(e) => {
       if (disabled) e.preventDefault();
+      if (onClick) onClick();
     }}
     className={({ isActive }) =>
       cn(
