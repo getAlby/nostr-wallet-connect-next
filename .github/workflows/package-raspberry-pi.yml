@@ -32,7 +32,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y patchelf
-          wget https://github.com/rdmitr/gcc-arm-linux-gnueabihf/releases/download/v1.0.0/armv6-unknown-linux-gnueabihf.tar.bz2
+          wget -nv https://github.com/rdmitr/gcc-arm-linux-gnueabihf/releases/download/v1.0.0/armv6-unknown-linux-gnueabihf.tar.bz2
           tar -xf armv6-unknown-linux-gnueabihf.tar.bz2
 
       - name: Build
@@ -41,7 +41,7 @@ jobs:
           GOARCH: arm
           GOARM: 6
           CGO_ENABLED: 1
-          CC: ${GITHUB_WORKSPACE}/armv6-unknown-linux-gnueabihf/bin/armv6-unknown-linux-gnueabihf-gcc
+          CC: $(pwd)/armv6-unknown-linux-gnueabihf/bin/armv6-unknown-linux-gnueabihf-gcc
         run: go build -tags skip_breez,netgo -v -o nostr-wallet-connect
 
       - name: Find and copy shared libraries
