@@ -47,7 +47,6 @@ import { useInfo } from "src/hooks/useInfo";
 import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo.ts";
 import { useRedeemOnchainFunds } from "src/hooks/useRedeemOnchainFunds.ts";
 import { copyToClipboard } from "src/lib/clipboard.ts";
-import useChannelOrderStore from "src/state/ChannelOrderStore.ts";
 import { CloseChannelResponse, Node } from "src/types";
 import { request } from "src/utils/request";
 import { useCSRF } from "../../hooks/useCSRF.ts";
@@ -60,7 +59,6 @@ export default function Channels() {
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const { data: info, mutate: reloadInfo } = useInfo();
   const { data: csrf } = useCSRF();
-  const { order } = useChannelOrderStore();
   const navigate = useNavigate();
   const redeemOnchainFunds = useRedeemOnchainFunds();
 
@@ -267,13 +265,6 @@ export default function Channels() {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {order && (
-              <Link to="/channels/order">
-                <Button variant={"secondary"}>View Current Order</Button>
-              </Link>
-            )}
-
             <Link to="/channels/new">
               <Button>Open Channel</Button>
             </Link>
@@ -282,7 +273,7 @@ export default function Channels() {
       ></AppHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {albyBalance?.sats && (
+        {(albyBalance?.sats || 0) >= 100 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">

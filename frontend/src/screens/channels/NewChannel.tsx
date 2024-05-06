@@ -5,6 +5,7 @@ import albyImage from "src/assets/images/peers/alby.svg";
 import mutinynetImage from "src/assets/images/peers/mutinynet.jpeg";
 import olympusImage from "src/assets/images/peers/olympus.svg";
 import AppHeader from "src/components/AppHeader";
+import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
 import { Alert, AlertDescription, AlertTitle } from "src/components/ui/alert";
 import {
@@ -253,6 +254,17 @@ function NewChannelInternal({ network }: { network: Network }) {
               setAmount(e.target.value.trim());
             }}
           />
+          {order.amount && +order.amount < 200_000 && (
+            <p className="text-destructive text-xs">
+              Channels smaller than 200K sats are not recommended.{" "}
+              <ExternalLink
+                to="https://guides.getalby.com/user-guide/v/alby-account-and-browser-extension/alby-lightning-account/faqs-alby-account"
+                className="underline"
+              >
+                Learn more
+              </ExternalLink>
+            </p>
+          )}
         </div>
         <div className="grid gap-3">
           <Label htmlFor="amount">Payment method</Label>
