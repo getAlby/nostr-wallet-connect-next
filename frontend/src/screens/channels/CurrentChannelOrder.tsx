@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
 import QRCode from "src/components/QRCode";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
@@ -92,12 +93,20 @@ function ChannelOpening({ fundingTxId }: { fundingTxId: string | undefined }) {
   }, [channel]);
 
   return (
-    <div>
-      <p>Please wait... your channel is being opened</p>
-      <p>
-        {channel?.confirmations ?? "0"} /{" "}
-        {channel?.confirmationsRequired ?? "unknown"} confirmations required
-      </p>
+    <div className="flex flex-col justify-center gap-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Your channel is being opened</CardTitle>
+          <CardDescription>Waiting for {channel?.confirmationsRequired ?? "unknown"} confirmations</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-row gap-2">
+            <Loading />
+            {channel?.confirmations ?? "0"} /{" "}
+            {channel?.confirmationsRequired ?? "unknown"} confirmations
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

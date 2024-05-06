@@ -178,7 +178,7 @@ function Wallet() {
                     </div>
                   </CardTitle>
                   <CardDescription className="ml-4">
-                    You can use it as Progressive Web App on your mobile
+                    Install Alby Web on your phone and use your Hub on the go.
                   </CardDescription>
                 </div>
               </div>

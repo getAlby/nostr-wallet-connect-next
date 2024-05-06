@@ -1,4 +1,4 @@
-import { Box, Info, Zap } from "lucide-react";
+import { Box, Zap } from "lucide-react";
 import React, { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import albyImage from "src/assets/images/peers/alby.svg";
@@ -27,12 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "src/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "src/components/ui/tooltip";
 import { ALBY_MIN_BALANCE, ALBY_SERVICE_FEE } from "src/constants";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance";
 import { useInfo } from "src/hooks/useInfo";
@@ -492,29 +486,22 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
           </>
         )}
 
-        <div className="mt-2 flex w-full items-center">
+        <div className="mt-2 flex items-top space-x-2">
           <Checkbox
             id="public-channel"
             defaultChecked={isPublic}
             onCheckedChange={() => setPublic(!isPublic)}
-            className="mr-2"
-          />
-          <Label
-            htmlFor="public-channel"
-            className="flex items-center justify-center gap-2"
-          >
-            Public Channel{" "}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="w-4 h-4" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Set to public if you're a podcaster</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </Label>
+            className="mr-2" />
+          <div className="grid gap-1.5 leading-none">
+            <Label
+              htmlFor="public-channel"
+              className="flex items-center gap-2"            >
+              Public Channel
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Enable if you want to receive keysend payments. (e.g. for podcasting).
+            </p>
+          </div>
         </div>
       </div>
     </>
