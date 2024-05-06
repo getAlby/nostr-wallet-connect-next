@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import ExternalLink from "src/components/ExternalLink";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
 import { Button } from "src/components/ui/button";
-import useChannelOrderStore from "src/state/ChannelOrderStore";
 
 export function Success() {
   React.useEffect(() => {
@@ -19,9 +18,6 @@ export function Success() {
         });
       }, Math.floor(Math.random() * 1000));
     }
-    return () => {
-      useChannelOrderStore.getState().removeOrder();
-    };
   });
 
   return (

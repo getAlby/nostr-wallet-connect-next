@@ -34,6 +34,7 @@ import { useToast } from "src/components/ui/use-toast";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
+import { useRemoveSuccessfulChannelOrder } from "src/hooks/useRemoveSuccessfulChannelOrder";
 import { cn } from "src/lib/utils";
 import { request } from "src/utils/request";
 import ExternalLink from "../ExternalLink";
@@ -45,6 +46,7 @@ export default function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  useRemoveSuccessfulChannelOrder();
 
   React.useEffect(() => {
     setMobileMenuOpen(false);
