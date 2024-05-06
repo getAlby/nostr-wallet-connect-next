@@ -7,7 +7,6 @@ import olympusImage from "src/assets/images/peers/olympus.svg";
 import AppHeader from "src/components/AppHeader";
 import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
-import { Alert, AlertDescription, AlertTitle } from "src/components/ui/alert";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -27,8 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "src/components/ui/select";
-import { ALBY_MIN_BALANCE, ALBY_SERVICE_FEE } from "src/constants";
-import { useAlbyBalance } from "src/hooks/useAlbyBalance";
 import { useInfo } from "src/hooks/useInfo";
 import { cn, formatAmount } from "src/lib/utils";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
@@ -41,16 +38,16 @@ type RecommendedPeer = {
   name: string;
   minimumChannelSize: number;
 } & (
-    | {
+  | {
       paymentMethod: "onchain";
       pubkey: string;
       host: string;
     }
-    | {
+  | {
       paymentMethod: "lightning";
       lsp: string;
     }
-  );
+);
 
 const recommendedPeers: RecommendedPeer[] = [
   {
@@ -129,8 +126,6 @@ export default function NewChannel() {
 }
 
 function NewChannelInternal({ network }: { network: Network }) {
-  const { data: info } = useInfo();
-  const { data: albyBalance } = useAlbyBalance();
   const navigate = useNavigate();
 
   const [order, setOrder] = React.useState<Partial<NewChannelOrder>>({
@@ -220,22 +215,6 @@ function NewChannelInternal({ network }: { network: Network }) {
         onSubmit={onSubmit}
         className="md:max-w-md max-w-full flex flex-col gap-5"
       >
-        {/* TODO: move to somewhere else? */}
-        {info?.backendType === "LDK" &&
-          albyBalance &&
-          albyBalance.sats * (1 - ALBY_SERVICE_FEE) > ALBY_MIN_BALANCE && (
-            <Alert>
-              <AlertTitle className="mb-4">
-                You have funds on your Alby shared account!
-              </AlertTitle>
-              <AlertDescription>
-                <Link to="/onboarding/lightning/migrate-alby">
-                  <Button variant="outline">Migrate Alby Funds</Button>
-                </Link>
-              </AlertDescription>
-            </Alert>
-          )}
-
         <div className="grid gap-1.5">
           <Label htmlFor="amount">Channel size (sats)</Label>
           {order.amount && +order.amount < 200_000 && (
@@ -260,15 +239,15 @@ function NewChannelInternal({ network }: { network: Network }) {
             }}
           />
           <div className="grid grid-cols-3 gap-1.5 text-muted-foreground text-xs">
-            {presetAmounts.map((amount) =>
+            {presetAmounts.map((amount) => (
               <div
                 className="text-center border rounded p-2 cursor-pointer hover:border-muted-foreground"
-                onClick={() => setAmount(amount.toString())}>
+                onClick={() => setAmount(amount.toString())}
+              >
                 {formatAmount(amount * 1000, 0)}
               </div>
-            )}
+            ))}
           </div>
-
         </div>
         <div className="grid gap-3">
           <Label htmlFor="amount">Payment method</Label>
@@ -502,15 +481,15 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
             id="public-channel"
             defaultChecked={isPublic}
             onCheckedChange={() => setPublic(!isPublic)}
-            className="mr-2" />
+            className="mr-2"
+          />
           <div className="grid gap-1.5 leading-none">
-            <Label
-              htmlFor="public-channel"
-              className="flex items-center gap-2"            >
+            <Label htmlFor="public-channel" className="flex items-center gap-2">
               Public Channel
             </Label>
             <p className="text-sm text-muted-foreground">
-              Enable if you want to receive keysend payments. (e.g. for podcasting).
+              Enable if you want to receive keysend payments. (e.g. for
+              podcasting).
             </p>
           </div>
         </div>

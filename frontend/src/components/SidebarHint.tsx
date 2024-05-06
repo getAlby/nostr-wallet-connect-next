@@ -1,4 +1,4 @@
-import { LucideIcon, ShieldAlert, Zap } from "lucide-react";
+import { LucideIcon, Plane, ShieldAlert, Zap } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "src/components/ui/button";
 import {
@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "src/components/ui/card";
+import { ALBY_MIN_BALANCE, ALBY_SERVICE_FEE } from "src/constants";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance";
 import { useChannels } from "src/hooks/useChannels";
 import { useInfo } from "src/hooks/useInfo";
@@ -15,7 +16,7 @@ import useChannelOrderStore from "src/state/ChannelOrderStore";
 
 function SidebarHint() {
   const { data: channels } = useChannels();
-  const { data: balance } = useAlbyBalance();
+  const { data: albyBalance } = useAlbyBalance();
   const { data: info } = useInfo();
   const { order } = useChannelOrderStore();
   const location = useLocation();
@@ -37,8 +38,26 @@ function SidebarHint() {
       />
     );
   }
+
+  // User has funds to migrate
+  if (
+    info?.backendType === "LDK" &&
+    albyBalance &&
+    albyBalance.sats * (1 - ALBY_SERVICE_FEE) > ALBY_MIN_BALANCE
+  ) {
+    return (
+      <SidebarHintCard
+        icon={Plane}
+        title="Migrate Alby Funds"
+        description="You have funds on your Alby shared account ready to migrate to your new node"
+        buttonText="Migrate Now"
+        buttonLink="/onboarding/lightning/migrate-alby"
+      />
+    );
+  }
+
   // User has no channels yet
-  if (channels?.length === 0 && balance) {
+  if (channels?.length === 0) {
     return (
       <SidebarHintCard
         icon={Zap}
@@ -48,22 +67,19 @@ function SidebarHint() {
         buttonLink="/channels/new"
       />
     );
-  } else {
-    // TODO: Show hint to migrate Alby balance to new wallet
-    // if (balance && balance.sats > 0) {
+  }
 
-    if (info?.showBackupReminder) {
-      return (
-        <SidebarHintCard
-          icon={ShieldAlert}
-          title="Backup Your Keys"
-          description=" Not backing up your key might result in permanently losing
-                access to your funds."
-          buttonText="Backup Now"
-          buttonLink="/settings/backup"
-        />
-      );
-    }
+  if (info?.showBackupReminder) {
+    return (
+      <SidebarHintCard
+        icon={ShieldAlert}
+        title="Backup Your Keys"
+        description=" Not backing up your key might result in permanently losing
+              access to your funds."
+        buttonText="Backup Now"
+        buttonLink="/settings/backup"
+      />
+    );
   }
 }
 
