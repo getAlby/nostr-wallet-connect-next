@@ -218,38 +218,40 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
   }
 
   return (
-    <div className="grid gap-5 max-w-md">
+    <div className="grid gap-5">
       <AppHeader
         title="Deposit bitcoin"
         description="You don't have enough Bitcoin to open your intended channel"
       />
-      <p>
-        You currently have {balances.onchain.total} sats. You need to deposit at
-        least another {requiredAmount - balances.onchain.total} sats to cover
-        channel opening fees.
-      </p>
+      <div className="grid gap-5 max-w-md">
+        <p>
+          You currently have {balances.onchain.total} sats. You need to deposit at
+          least another {requiredAmount - balances.onchain.total} sats to cover
+          channel opening fees.
+        </p>
 
-      <div className="flex items-center gap-2">
-        <Loading />
-        <p>Waiting for deposit to appear in mempool...</p>
-      </div>
+        <div className="flex items-center gap-2">
+          <Loading />
+          <p>Waiting for transaction to appear in mempool...</p>
+        </div>
 
-      {unspentAmount > 0 && <p>{unspentAmount} sats deposited</p>}
+        {unspentAmount > 0 && <p>{unspentAmount} sats deposited</p>}
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="text">On-chain Address</Label>
-        <Input type="text" value={onchainAddress} />
-      </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="text">On-chain Address</Label>
+          <Input type="text" value={onchainAddress} />
+        </div>
 
-      <QRCode value={onchainAddress} />
-      <div className="flex justify-center">
-        <LoadingButton
-          onClick={confirmGetNewAddress}
-          disabled={isLoading}
-          loading={isLoading}
-        >
-          Get a new address
-        </LoadingButton>
+        <QRCode value={onchainAddress} />
+        <div className="flex justify-center">
+          <LoadingButton
+            onClick={confirmGetNewAddress}
+            disabled={isLoading}
+            loading={isLoading}
+          >
+            Get a new address
+          </LoadingButton>
+        </div>
       </div>
     </div>
   );
@@ -409,9 +411,9 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
   const newChannel =
     channels && prevChannels
       ? channels.find(
-          (newChannel) =>
-            !prevChannels.some((current) => current.id === newChannel.id)
-        )
+        (newChannel) =>
+          !prevChannels.some((current) => current.id === newChannel.id)
+      )
       : undefined;
 
   React.useEffect(() => {
