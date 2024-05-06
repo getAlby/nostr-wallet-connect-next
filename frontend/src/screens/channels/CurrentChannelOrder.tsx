@@ -11,10 +11,12 @@ import {
 } from "src/types";
 
 import { Payment, init } from "@getalby/bitcoin-connect-react";
+import { Copy, QrCode, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
 import QRCode from "src/components/QRCode";
+import { Button } from "src/components/ui/button";
 import {
   Card,
   CardContent,
@@ -22,15 +24,18 @@ import {
   CardHeader,
   CardTitle,
 } from "src/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "src/components/ui/dialog";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
 import { Table, TableBody, TableCell, TableRow } from "src/components/ui/table";
-import { useToast } from "src/components/ui/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "src/components/ui/tooltip";
+import { toast, useToast } from "src/components/ui/use-toast";
 import { useBalances } from "src/hooks/useBalances";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useChannels } from "src/hooks/useChannels";
 import { useMempoolApi } from "src/hooks/useMempoolApi";
+import { copyToClipboard } from "src/lib/clipboard";
 import { Success } from "src/screens/onboarding/Success";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 import {
@@ -246,35 +251,80 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
         title="Deposit bitcoin"
         description="You don't have enough Bitcoin to open your intended channel"
       />
-      <div className="grid gap-5 max-w-md">
-        <p>
-          You currently have {balances.onchain.total} sats. You need to deposit
-          at least another {requiredAmount - balances.onchain.total} sats to
-          cover channel opening fees.
-        </p>
-
-        <div className="flex items-center gap-2">
-          <Loading />
-          <p>Waiting for transaction to appear in mempool...</p>
-        </div>
-
+      <div className="grid gap-5 max-w-lg">
         {unspentAmount > 0 && <p>{unspentAmount} sats deposited</p>}
 
         <div className="grid gap-1.5">
           <Label htmlFor="text">On-Chain Address</Label>
-          <Input type="text" value={onchainAddress} />
+          <p className="text-xs text-muted-foreground">
+            You currently have {balances.onchain.total} sats. You need to deposit at
+            least another {requiredAmount - balances.onchain.total} sats to cover
+            channel opening fees.
+          </p>
+          <div className="flex flex-row gap-2">
+            <Input type="text" value={onchainAddress} className="flex-1" />
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={() => { copyToClipboard(onchainAddress); toast({ title: "Copied to clipboard." }) }}>
+              <Copy className="w-4 h-4" />
+            </Button>
+            <Dialog>
+              <DialogTrigger>
+                <Button variant="secondary" size="icon">
+                  <QrCode className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    Deposit bitcoin
+                  </DialogTitle>
+                  <DialogDescription>
+                    Scan this QR code with your wallet to send funds.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-row justify-center p-3">
+                  <a
+                    href={`bitcoin:${onchainAddress}`}
+                    target="_blank"
+                  >
+                    <QRCode value={onchainAddress} />
+                  </a>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <LoadingButton
+                    variant="secondary"
+                    size="icon"
+                    onClick={getNewAddress}
+                    loading={isLoading}>
+                    <RefreshCw className="w-4 h-4" />
+                  </LoadingButton>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Generate a new address
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
 
-        <QRCode value={onchainAddress} />
-        <div className="flex justify-center">
-          <LoadingButton
-            onClick={getNewAddress}
-            disabled={isLoading}
-            loading={isLoading}
-          >
-            Get a new address
-          </LoadingButton>
-        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex flex-row items-center gap-2">
+              <Loading /> Waiting for your transaction
+            </CardTitle>
+            <CardDescription>
+              Send a bitcoin transaction to the address provided above. You'll be redirected as soon as the transaction is seen in the mempool.
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     </div>
   );
@@ -434,9 +484,9 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
   const newChannel =
     channels && prevChannels
       ? channels.find(
-          (newChannel) =>
-            !prevChannels.some((current) => current.id === newChannel.id)
-        )
+        (newChannel) =>
+          !prevChannels.some((current) => current.id === newChannel.id)
+      )
       : undefined;
 
   React.useEffect(() => {

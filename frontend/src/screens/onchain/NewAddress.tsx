@@ -1,11 +1,14 @@
+import { Copy } from "lucide-react";
 import React from "react";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
+import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
 import { localStorageKeys } from "src/constants";
 import { useCSRF } from "src/hooks/useCSRF";
+import { copyToClipboard } from "src/lib/clipboard";
 import { GetOnchainAddressResponse } from "src/types";
 import { request } from "src/utils/request";
 
@@ -72,6 +75,10 @@ export default function NewOnchainAddress() {
       <div className="grid gap-1.5 max-w-md">
         <Label htmlFor="text">On-Chain Address</Label>
         <Input type="text" value={onchainAddress} />
+        <Button onClick={() => copyToClipboard(onchainAddress)}>
+          <Copy className="w-4 h-4 ml-2" />
+          Copy
+        </Button>
         <p className="text-sm text-muted-foreground">
           Wait for one block confirmation after depositing.
         </p>
