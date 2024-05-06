@@ -261,8 +261,8 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
             least another {requiredAmount - balances.onchain.total} sats to cover
             channel opening fees.
           </p>
-          <div className="flex flex-row gap-2">
-            <Input type="text" value={onchainAddress} className="flex-1" />
+          <div className="flex flex-row gap-2 items-center">
+            <Input type="text" value={onchainAddress} readOnly className="flex-1" />
             <Button
               variant="secondary"
               size="icon"
