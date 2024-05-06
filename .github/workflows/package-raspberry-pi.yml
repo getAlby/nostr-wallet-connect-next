@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -28,10 +28,12 @@ jobs:
       - name: Get dependencies
         run: go get -v -t -d ./...
 
-      - name: Install cross-compiler
+      - name: Install cross-compiler and utilities
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-10-arm-linux-gnueabihf g++-10-arm-linux-gnueabihf binutils-arm-linux-gnueabihf patchelf
+          sudo apt-get install -y patchelf
+          wget https://github.com/rdmitr/gcc-arm-linux-gnueabihf/releases/download/v1.0.0/armv6-unknown-linux-gnueabihf.tar.bz2
+          tar -xf armv6-unknown-linux-gnueabihf.tar.bz2
 
       - name: Build
         env:
@@ -39,9 +41,7 @@ jobs:
           GOARCH: arm
           GOARM: 6
           CGO_ENABLED: 1
-          CC: arm-linux-gnueabihf-gcc-10
-          CGO_CFLAGS: -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard
-          CGO_LDFLAGS: -marm -march=armv6 -mfpu=vfp -mfloat-abi=hard
+          CC: ~/armv6-unknown-linux-gnueabihf/bin/armv6-unknown-linux-gnueabihf-gcc
         run: go build -tags skip_breez,netgo -v -o nostr-wallet-connect
 
       - name: Find and copy shared libraries
