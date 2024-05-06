@@ -90,7 +90,7 @@ export default function NewOnchainAddress() {
             <Copy className="w-4 h-4" />
           </Button>
           <Dialog>
-            <DialogTrigger>
+            <DialogTrigger asChild>
               <Button variant="secondary" size="icon">
                 <QrCode className="w-4 h-4" />
               </Button>
@@ -117,7 +117,7 @@ export default function NewOnchainAddress() {
           </Dialog>
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <LoadingButton
                   variant="secondary"
                   size="icon"

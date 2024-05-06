@@ -270,7 +270,7 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
               <Copy className="w-4 h-4" />
             </Button>
             <Dialog>
-              <DialogTrigger>
+              <DialogTrigger asChild>
                 <Button variant="secondary" size="icon">
                   <QrCode className="w-4 h-4" />
                 </Button>
@@ -297,7 +297,7 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
             </Dialog>
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <LoadingButton
                     variant="secondary"
                     size="icon"
