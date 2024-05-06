@@ -39,16 +39,16 @@ type RecommendedPeer = {
   name: string;
   minimumChannelSize: number;
 } & (
-  | {
+    | {
       paymentMethod: "onchain";
       pubkey: string;
       host: string;
     }
-  | {
+    | {
       paymentMethod: "lightning";
       lsp: string;
     }
-);
+  );
 
 const recommendedPeers: RecommendedPeer[] = [
   {
@@ -257,11 +257,10 @@ function NewChannelInternal({ network }: { network: Network }) {
           />
           <div className="grid grid-cols-3 gap-1.5 text-muted-foreground text-xs">
             {presetAmounts.map((amount) => (
-              <div
-                className={`text-center border rounded p-2 cursor-pointer hover:border-muted-foreground ${
-                  +(order.amount || "0") === amount &&
+              <div key={amount}
+                className={`text-center border rounded p-2 cursor-pointer hover:border-muted-foreground ${+(order.amount || "0") === amount &&
                   "bg-primary text-primary-foreground"
-                }`}
+                  }`}
                 onClick={() => setAmount(amount.toString())}
               >
                 {formatAmount(amount * 1000, 0)}
