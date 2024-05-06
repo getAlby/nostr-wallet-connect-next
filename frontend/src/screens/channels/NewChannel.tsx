@@ -1,4 +1,4 @@
-import { Box, Info, Zap } from "lucide-react";
+import { Box, Zap } from "lucide-react";
 import React, { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import albyImage from "src/assets/images/peers/alby.svg";
@@ -27,12 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "src/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "src/components/ui/tooltip";
 import { ALBY_MIN_BALANCE, ALBY_SERVICE_FEE } from "src/constants";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance";
 import { useInfo } from "src/hooks/useInfo";
@@ -47,16 +41,16 @@ type RecommendedPeer = {
   name: string;
   minimumChannelSize: number;
 } & (
-  | {
+    | {
       paymentMethod: "onchain";
       pubkey: string;
       host: string;
     }
-  | {
+    | {
       paymentMethod: "lightning";
       lsp: string;
     }
-);
+  );
 
 const recommendedPeers: RecommendedPeer[] = [
   {
@@ -200,16 +194,6 @@ function NewChannelInternal({ network }: { network: Network }) {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-
-    if (
-      order.isPublic &&
-      !confirm(
-        `Are you sure you want to open a public channel? in most cases a private channel is recommended.`
-      )
-    ) {
-      return;
-    }
-
     useChannelOrderStore.getState().setOrder(order as NewChannelOrder);
     navigate("/channels/order");
   }
@@ -264,7 +248,7 @@ function NewChannelInternal({ network }: { network: Network }) {
             }}
           />
           {order.amount && +order.amount < 200_000 && (
-            <p className="text-destructive text-xs">
+            <p className="text-muted-foreground text-xs">
               Channels smaller than 200K sats are not recommended.{" "}
               <ExternalLink
                 to="https://guides.getalby.com/user-guide/v/alby-account-and-browser-extension/alby-lightning-account/faqs-alby-account"
@@ -502,29 +486,22 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
           </>
         )}
 
-        <div className="mt-2 flex w-full items-center">
+        <div className="mt-2 flex items-top space-x-2">
           <Checkbox
             id="public-channel"
             defaultChecked={isPublic}
             onCheckedChange={() => setPublic(!isPublic)}
-            className="mr-2"
-          />
-          <Label
-            htmlFor="public-channel"
-            className="flex items-center justify-center gap-2"
-          >
-            Public Channel{" "}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="w-4 h-4" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Set to public if you're a podcaster</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </Label>
+            className="mr-2" />
+          <div className="grid gap-1.5 leading-none">
+            <Label
+              htmlFor="public-channel"
+              className="flex items-center gap-2"            >
+              Public Channel
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Enable if you want to receive keysend payments. (e.g. for podcasting).
+            </p>
+          </div>
         </div>
       </div>
     </>

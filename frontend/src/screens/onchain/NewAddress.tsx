@@ -75,7 +75,7 @@ export default function NewOnchainAddress() {
         description="Deposit bitcoin into your wallet by sending a transaction"
       />
       <div className="grid gap-1.5 max-w-md">
-        <Label htmlFor="text">On-chain Address</Label>
+        <Label htmlFor="text">On-Chain Address</Label>
         <Input type="text" value={onchainAddress} />
         <p className="text-sm text-muted-foreground">
           Wait for one block confirmation after depositing.

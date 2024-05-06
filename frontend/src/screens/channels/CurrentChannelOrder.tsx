@@ -15,10 +15,10 @@ import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
 import QRCode from "src/components/QRCode";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
-import { Separator } from "src/components/ui/separator";
 import { Table, TableBody, TableCell, TableRow } from "src/components/ui/table";
 import { useToast } from "src/components/ui/use-toast";
 import { useBalances } from "src/hooks/useBalances";
@@ -93,12 +93,20 @@ function ChannelOpening({ fundingTxId }: { fundingTxId: string | undefined }) {
   }, [channel]);
 
   return (
-    <div>
-      <p>Please wait... your channel is being opened</p>
-      <p>
-        {channel?.confirmations ?? "0"} /{" "}
-        {channel?.confirmationsRequired ?? "unknown"} confirmations required
-      </p>
+    <div className="flex flex-col justify-center gap-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Your channel is being opened</CardTitle>
+          <CardDescription>Waiting for {channel?.confirmationsRequired ?? "unknown"} confirmations</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-row gap-2">
+            <Loading />
+            {channel?.confirmations ?? "0"} /{" "}
+            {channel?.confirmationsRequired ?? "unknown"} confirmations
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -219,38 +227,40 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
   }
 
   return (
-    <div className="grid gap-5 max-w-md">
+    <div className="grid gap-5">
       <AppHeader
         title="Deposit bitcoin"
         description="You don't have enough Bitcoin to open your intended channel"
       />
-      <p>
-        You currently have {balances.onchain.total} sats. You need to deposit at
-        least another {requiredAmount - balances.onchain.total} sats to cover
-        channel opening fees.
-      </p>
+      <div className="grid gap-5 max-w-md">
+        <p>
+          You currently have {balances.onchain.total} sats. You need to deposit at
+          least another {requiredAmount - balances.onchain.total} sats to cover
+          channel opening fees.
+        </p>
 
-      <div className="flex items-center gap-2">
-        <Loading />
-        <p>Waiting for deposit to appear in mempool...</p>
-      </div>
+        <div className="flex items-center gap-2">
+          <Loading />
+          <p>Waiting for transaction to appear in mempool...</p>
+        </div>
 
-      {unspentAmount > 0 && <p>{unspentAmount} sats deposited</p>}
+        {unspentAmount > 0 && <p>{unspentAmount} sats deposited</p>}
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="text">On-chain Address</Label>
-        <Input type="text" value={onchainAddress} />
-      </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="text">On-Chain Address</Label>
+          <Input type="text" value={onchainAddress} />
+        </div>
 
-      <QRCode value={onchainAddress} />
-      <div className="flex justify-center">
-        <LoadingButton
-          onClick={confirmGetNewAddress}
-          disabled={isLoading}
-          loading={isLoading}
-        >
-          Get a new address
-        </LoadingButton>
+        <QRCode value={onchainAddress} />
+        <div className="flex justify-center">
+          <LoadingButton
+            onClick={confirmGetNewAddress}
+            disabled={isLoading}
+            loading={isLoading}
+          >
+            Get a new address
+          </LoadingButton>
+        </div>
       </div>
     </div>
   );
@@ -264,10 +274,10 @@ function PayBitcoinChannelOrderWithSpendableFunds({
   if (order.paymentMethod !== "onchain") {
     throw new Error("incorrect payment method");
   }
-  const [loading, setLoading] = React.useState(false);
   const [nodeDetails, setNodeDetails] = React.useState<Node | undefined>();
   const { data: csrf } = useCSRF();
   const { toast } = useToast();
+  const [, setHasCalledOpenChannel] = React.useState(false);
 
   const { pubkey, host } = order;
 
@@ -320,7 +330,7 @@ function PayBitcoinChannelOrderWithSpendableFunds({
     });
   }, [csrf, nodeDetails, pubkey, host]);
 
-  async function openChannel() {
+  const openChannel = React.useCallback(async () => {
     try {
       if (order.paymentMethod !== "onchain") {
         throw new Error("incorrect payment method");
@@ -328,16 +338,6 @@ function PayBitcoinChannelOrderWithSpendableFunds({
       if (!csrf) {
         throw new Error("csrf not loaded");
       }
-      if (
-        order.isPublic &&
-        !confirm(
-          `Are you sure you want to open a public channel? in most cases a private channel is recommended.`
-        )
-      ) {
-        return;
-      }
-
-      setLoading(true);
 
       await connectPeer();
 
@@ -373,65 +373,28 @@ function PayBitcoinChannelOrderWithSpendableFunds({
     } catch (error) {
       console.error(error);
       alert("Something went wrong: " + error);
-    } finally {
-      setLoading(false);
     }
-  }
+  }, [connectPeer, csrf, order, pubkey, toast]);
+
+  React.useEffect(() => {
+    setHasCalledOpenChannel((hasCalledOpenChannel) => {
+      if (!hasCalledOpenChannel) {
+        openChannel();
+      }
+      return true;
+    });
+  }, [openChannel, order.amount, pubkey]);
 
   return (
     <div className="flex flex-col gap-5">
       <AppHeader
-        title="Open a channel"
-        description="Funds successfully deposited. Check the configuration and confirm to open the channel"
+        title="Opening channel"
+        description="Your funds have been successfully deposited"
       />
 
       <div className="flex flex-col gap-5">
-        <div className="grid gap-1.5">
-          <Label>Channel peer</Label>
-          <div className="flex flex-row items-center">
-            <span
-              style={{ color: `${nodeDetails?.color || "#000"}` }}
-              className="mr-2"
-            >
-              ⬤
-            </span>
-            {nodeDetails?.alias ? (
-              <>
-                {nodeDetails.alias}
-                <span className="ml-2 text-sm text-muted-foreground">
-                  ({nodeDetails.active_channel_count} channels)
-                </span>
-              </>
-            ) : (
-              <>
-                {pubkey}
-                &nbsp;(? channels)
-              </>
-            )}
-          </div>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Channel size</Label>
-          <div className="flex flex-row items-center">
-            {new Intl.NumberFormat().format(+order.amount)} sats
-          </div>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Estimated onchain fee</Label>
-          <div className="flex flex-row items-center">
-            {new Intl.NumberFormat().format(ESTIMATED_TRANSACTION_FEE)} sats
-          </div>
-        </div>
-        <Separator />
-        <div className="inline">
-          <LoadingButton
-            disabled={!pubkey || !order.amount || loading}
-            onClick={openChannel}
-            loading={loading}
-          >
-            Confirm
-          </LoadingButton>
-        </div>
+        <Loading />
+        <p>Please wait...</p>
       </div>
     </div>
   );
@@ -457,9 +420,9 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
   const newChannel =
     channels && prevChannels
       ? channels.find(
-          (newChannel) =>
-            !prevChannels.some((current) => current.id === newChannel.id)
-        )
+        (newChannel) =>
+          !prevChannels.some((current) => current.id === newChannel.id)
+      )
       : undefined;
 
   React.useEffect(() => {
