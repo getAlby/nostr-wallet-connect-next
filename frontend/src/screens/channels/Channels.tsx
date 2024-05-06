@@ -117,9 +117,8 @@ export default function Channels() {
       }
       if (
         !confirm(
-          `Are you sure you want to close the channel with ${
-            nodes.find((node) => node.public_key === nodeId)?.alias ||
-            "Unknown Node"
+          `Are you sure you want to close the channel with ${nodes.find((node) => node.public_key === nodeId)?.alias ||
+          "Unknown Node"
           }?\n\nNode ID: ${nodeId}\n\nChannel ID: ${channelId}`
         )
       ) {
@@ -272,7 +271,7 @@ export default function Channels() {
         }
       ></AppHeader>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {(albyBalance?.sats || 0) >= 100 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
