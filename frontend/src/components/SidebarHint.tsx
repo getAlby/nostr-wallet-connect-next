@@ -22,7 +22,10 @@ function SidebarHint() {
   const location = useLocation();
 
   // Don't distract with hints while opening a channel
-  if (location.pathname.endsWith("/channels/order")) {
+  if (
+    location.pathname.endsWith("/channels/order") ||
+    location.pathname.endsWith("/channels/new")
+  ) {
     return null;
   }
 

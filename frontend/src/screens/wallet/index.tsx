@@ -5,7 +5,7 @@ import {
   CopyIcon,
   ExternalLink,
   Sparkles,
-  Unplug
+  Unplug,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AlbyHead from "src/assets/images/alby-head.svg";
@@ -13,7 +13,7 @@ import AppHeader from "src/components/AppHeader";
 import BreezRedeem from "src/components/BreezRedeem";
 import EmptyState from "src/components/EmptyState";
 import Loading from "src/components/Loading";
-import { Alert, AlertDescription, AlertTitle } from "src/components/ui/alert";
+import { Alert, AlertTitle } from "src/components/ui/alert";
 import { Button } from "src/components/ui/button";
 import {
   Card,
@@ -134,21 +134,11 @@ function Wallet() {
 
       {!info?.onboardingCompleted && (
         <>
-          {/* TODO: needs to be more visible that you need to act.
-        (e.g. add it to the sidebar, have a global banner, etc) */}
           <Alert>
             <Unplug className="h-4 w-4" />
             <AlertTitle>
               Your Alby Hub is not connected to the Lightning network!
             </AlertTitle>
-            <AlertDescription>
-              Action required to send and receive lightning payments
-              <div className="mt-3 flex items-center gap-3">
-                <Link to="/channels/new">
-                  <Button size="sm">Connect</Button>
-                </Link>
-              </div>
-            </AlertDescription>
           </Alert>
         </>
       )}
