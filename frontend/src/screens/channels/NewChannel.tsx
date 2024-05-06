@@ -510,8 +510,7 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
               Public Channel
             </Label>
             <p className="text-xs text-muted-foreground">
-              Enable if you want to receive keysend payments. (e.g. for
-              podcasting)
+              Enable if you want to receive keysend payments. (e.g. podcasting)
             </p>
           </div>
         </div>
