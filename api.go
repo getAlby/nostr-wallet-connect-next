@@ -469,7 +469,7 @@ func (api *API) NewInstantChannelInvoice(ctx context.Context, request *models.Ne
 	switch request.LSP {
 	case "VOLTAGE":
 		selectedLsp = lsp.VoltageLSP()
-	case "OLYMPUS":
+	case "OLYMPUS_FLOW_2_0":
 		selectedLsp = lsp.OlympusLSP()
 	case "OLYMPUS_MUTINYNET_FLOW_2_0":
 		selectedLsp = lsp.OlympusMutinynetFlowLSP()

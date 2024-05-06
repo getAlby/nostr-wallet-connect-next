@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import albyImage from "src/assets/images/peers/alby.svg";
 import mutinynetImage from "src/assets/images/peers/mutinynet.jpeg";
 import olympusImage from "src/assets/images/peers/olympus.svg";
+import voltageImage from "src/assets/images/peers/voltage.webp";
 import AppHeader from "src/components/AppHeader";
 import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
@@ -51,8 +52,8 @@ type RecommendedPeer = {
 
 const recommendedPeers: RecommendedPeer[] = [
   {
-    network: "bitcoin",
     paymentMethod: "onchain",
+    network: "bitcoin",
     pubkey:
       "029ca15ad2ea3077f5f0524c4c9bc266854c14b9fc81b9cc3d6b48e2460af13f65",
     host: "141.95.84.44:9735",
@@ -61,8 +62,8 @@ const recommendedPeers: RecommendedPeer[] = [
     image: albyImage,
   },
   {
-    network: "testnet",
     paymentMethod: "onchain",
+    network: "testnet",
     pubkey:
       "030f8fcc69816d90445f450e59304171fd805f4395a0f4950a5956ce3300463f5a",
     host: "209.38.178.74:9735",
@@ -87,6 +88,22 @@ const recommendedPeers: RecommendedPeer[] = [
     minimumChannelSize: 1_000_000,
     name: "Olympus Mutinynet (LSPS1)",
     image: olympusImage,
+  },
+  {
+    paymentMethod: "lightning",
+    network: "bitcoin",
+    lsp: "OLYMPUS_FLOW_2_0",
+    minimumChannelSize: 10_000,
+    name: "Olympus (Flow 2.0)",
+    image: olympusImage,
+  },
+  {
+    paymentMethod: "lightning",
+    network: "bitcoin",
+    lsp: "VOLTAGE",
+    minimumChannelSize: 10_000,
+    name: "Voltage (Flow 2.0)",
+    image: voltageImage,
   },
   {
     paymentMethod: "lightning",
@@ -316,7 +333,10 @@ function NewChannelInternal({ network }: { network: Network }) {
                         <SelectItem value={peer.name} key={peer.name}>
                           <div className="flex items-center space-between gap-3 w-full">
                             <div className="flex items-center gap-3">
-                              <img src={peer.image} className="w-4 h-4" />
+                              <img
+                                src={peer.image}
+                                className="w-12 h-12 object-contain"
+                              />
                               <div>
                                 {peer.name}
                                 {peer.minimumChannelSize > 0 && (
