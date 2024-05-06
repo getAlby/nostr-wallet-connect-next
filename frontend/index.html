@@ -11,7 +11,8 @@
   <script type="module" src="/src/main.tsx"></script>
   <script>
     window.chatwootSettings = {
-      hideMessageBubble: true
+      hideMessageBubble: true,
+      darkMode: "auto"
     };
     (function (d, t) {
       var BASE_URL = "https://app.chatwoot.com";
@@ -23,8 +24,7 @@
       g.onload = function () {
         window.chatwootSDK.run({
           websiteToken: 'hXUVDZ3CQKbW4doB7dd5EcWm',
-          baseUrl: BASE_URL,
-          darkMode: "auto",
+          baseUrl: BASE_URL
         });
       }
     })(document, "script");
