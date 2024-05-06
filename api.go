@@ -263,8 +263,6 @@ func (api *API) ListApps() ([]models.App, error) {
 		permissionsMap[perm.AppId] = append(permissionsMap[perm.AppId], perm)
 	}
 
-	// Can also fetch last events but is unused
-
 	apiApps := []models.App{}
 	for _, userApp := range apps {
 		apiApp := models.App{
@@ -286,6 +284,12 @@ func (api *API) ListApps() ([]models.App, error) {
 					apiApp.BudgetUsage = api.svc.GetBudgetUsage(&permission)
 				}
 			}
+		}
+
+		var lastEvent RequestEvent
+		lastEventResult := api.svc.db.Where("app_id = ?", userApp.ID).Order("id desc").Limit(1).Find(&lastEvent)
+		if lastEventResult.RowsAffected > 0 {
+			apiApp.LastEventAt = &lastEvent.CreatedAt
 		}
 
 		apiApps = append(apiApps, apiApp)
