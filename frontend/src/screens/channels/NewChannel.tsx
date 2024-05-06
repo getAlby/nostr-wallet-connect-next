@@ -201,6 +201,15 @@ function NewChannelInternal({ network }: { network: Network }) {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
 
+    if (
+      order.isPublic &&
+      !confirm(
+        `Are you sure you want to open a public channel? in most cases a private channel is recommended.`
+      )
+    ) {
+      return;
+    }
+
     useChannelOrderStore.getState().setOrder(order as NewChannelOrder);
     navigate("/channels/order");
   }
