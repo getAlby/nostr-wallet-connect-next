@@ -421,10 +421,10 @@ export default function Channels() {
                     </TableCell>
                     <TableCell>{formatAmount(capacity)} sats</TableCell>
                     <TableCell>
-                      {formatAmount(channel.localBalance)} sats
+                      {formatAmount(channel.remoteBalance)} sats
                     </TableCell>
                     <TableCell>
-                      {formatAmount(channel.remoteBalance)} sats
+                      {formatAmount(channel.localBalance)} sats
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
