@@ -15,7 +15,13 @@ import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
 import QRCode from "src/components/QRCode";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "src/components/ui/card";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
@@ -97,7 +103,10 @@ function ChannelOpening({ fundingTxId }: { fundingTxId: string | undefined }) {
       <Card>
         <CardHeader>
           <CardTitle>Your channel is being opened</CardTitle>
-          <CardDescription>Waiting for {channel?.confirmationsRequired ?? "unknown"} confirmations</CardDescription>
+          <CardDescription>
+            Waiting for {channel?.confirmationsRequired ?? "unknown"}{" "}
+            confirmations
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-row gap-2">
@@ -111,20 +120,30 @@ function ChannelOpening({ fundingTxId }: { fundingTxId: string | undefined }) {
   );
 }
 
+function useEstimatedTransactionFee() {
+  const { data: recommendedFees } = useMempoolApi<{ fastestFee: number }>(
+    "/v1/fees/recommended",
+    true
+  );
+  if (recommendedFees?.fastestFee) {
+    // estimated transaction size: 200 vbytes
+    return 200 * recommendedFees.fastestFee;
+  }
+}
+
 // TODO: move these to new files
-// TODO: do not hardcode the transaction fee
-const ESTIMATED_TRANSACTION_FEE = 10000;
 function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
   if (order.paymentMethod !== "onchain") {
     throw new Error("incorrect payment method");
   }
   const { data: balances } = useBalances(true);
+  const estimatedTransactionFee = useEstimatedTransactionFee();
 
-  if (!balances) {
+  if (!balances || !estimatedTransactionFee) {
     return <Loading />;
   }
 
-  const requiredAmount = +order.amount + ESTIMATED_TRANSACTION_FEE;
+  const requiredAmount = +order.amount + estimatedTransactionFee;
   if (balances.onchain.spendable >= requiredAmount) {
     return <PayBitcoinChannelOrderWithSpendableFunds order={order} />;
   }
@@ -161,6 +180,7 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
     onchainAddress ? `/address/${onchainAddress}/utxo` : undefined,
     true
   );
+  const estimatedTransactionFee = useEstimatedTransactionFee();
 
   const getNewAddress = React.useCallback(async () => {
     if (!csrf) {
@@ -202,7 +222,7 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
     getNewAddress();
   }, [getNewAddress]);
 
-  if (!onchainAddress || !balances) {
+  if (!onchainAddress || !balances || !estimatedTransactionFee) {
     return (
       <div className="flex justify-center">
         <Loading />
@@ -210,7 +230,7 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
     );
   }
 
-  const requiredAmount = +order.amount + ESTIMATED_TRANSACTION_FEE;
+  const requiredAmount = +order.amount + estimatedTransactionFee;
   const unspentAmount =
     (mempoolAddressUtxos
       ?.map((utxo) => utxo.value)
@@ -228,9 +248,9 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
       />
       <div className="grid gap-5 max-w-md">
         <p>
-          You currently have {balances.onchain.total} sats. You need to deposit at
-          least another {requiredAmount - balances.onchain.total} sats to cover
-          channel opening fees.
+          You currently have {balances.onchain.total} sats. You need to deposit
+          at least another {requiredAmount - balances.onchain.total} sats to
+          cover channel opening fees.
         </p>
 
         <div className="flex items-center gap-2">
@@ -414,9 +434,9 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
   const newChannel =
     channels && prevChannels
       ? channels.find(
-        (newChannel) =>
-          !prevChannels.some((current) => current.id === newChannel.id)
-      )
+          (newChannel) =>
+            !prevChannels.some((current) => current.id === newChannel.id)
+        )
       : undefined;
 
   React.useEffect(() => {
