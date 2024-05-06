@@ -1,4 +1,4 @@
-import { Cable, ExternalLinkIcon, Menu, SendToBack, Settings, Store, Wallet, MessageCircleQuestion } from "lucide-react";
+import { Cable, ExternalLinkIcon, Menu, MessageCircleQuestion, SendToBack, Settings, Store, Wallet } from "lucide-react";
 import { ModeToggle } from "src/components/ui/mode-toggle";
 
 import { CaretUpIcon } from "@radix-ui/react-icons";
@@ -27,9 +27,9 @@ import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
 import { cn } from "src/lib/utils";
+import { openLink } from "src/utils/openLink";
 import { request } from "src/utils/request";
 import ExternalLink from "../ExternalLink";
-import { openLink } from "src/utils/openLink";
 
 export default function AppLayout() {
   const { data: albyMe } = useAlbyMe();
@@ -119,9 +119,10 @@ export default function AppLayout() {
           <Settings className="h-4 w-4" />
           Settings
         </MenuItem>
-        <MenuItem to="/" onClick={() => {
-          if (window.$chatwoot) {
-            window.$chatwoot.toggle("open");
+        <MenuItem to="#" onClick={() => {
+          const chatwoot = (window as any).$chatwoot;
+          if (chatwoot) {
+            chatwoot.toggle("open");
           } else {
             openLink("https://getalby.com/help")
           }
