@@ -119,13 +119,15 @@ export default function AppLayout() {
           <Settings className="h-4 w-4" />
           Settings
         </MenuItem>
-        <MenuItem to="#" onClick={() => {
+        <MenuItem to="/" onClick={(e) => {
           const chatwoot = (window as any).$chatwoot;
           if (chatwoot) {
             chatwoot.toggle("open");
           } else {
             openLink("https://getalby.com/help")
           }
+
+          e.preventDefault();
         }}>
           <MessageCircleQuestion className="h-4 w-4" />
           Live Support
@@ -237,13 +239,13 @@ const MenuItem = ({
   to: string;
   children: React.ReactNode | string;
   disabled?: boolean;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }) => (
   <NavLink
     to={to}
     onClick={(e) => {
       if (disabled) e.preventDefault();
-      if (onClick) onClick();
+      if (onClick) onClick(e);
     }}
     className={({ isActive }) =>
       cn(
