@@ -367,7 +367,9 @@ export default function Channels() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button variant="outline">Increase</Button>
+            <Link to="/channels/new">
+              <Button variant="outline">Increase</Button>
+            </Link>
           </CardFooter>
         </Card>
       </div>
