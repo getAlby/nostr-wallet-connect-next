@@ -47,16 +47,16 @@ type RecommendedPeer = {
   name: string;
   minimumChannelSize: number;
 } & (
-  | {
+    | {
       paymentMethod: "onchain";
       pubkey: string;
       host: string;
     }
-  | {
+    | {
       paymentMethod: "lightning";
       lsp: string;
     }
-);
+  );
 
 const recommendedPeers: RecommendedPeer[] = [
   {
@@ -200,16 +200,6 @@ function NewChannelInternal({ network }: { network: Network }) {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-
-    if (
-      order.isPublic &&
-      !confirm(
-        `Are you sure you want to open a public channel? in most cases a private channel is recommended.`
-      )
-    ) {
-      return;
-    }
-
     useChannelOrderStore.getState().setOrder(order as NewChannelOrder);
     navigate("/channels/order");
   }
@@ -264,7 +254,7 @@ function NewChannelInternal({ network }: { network: Network }) {
             }}
           />
           {order.amount && +order.amount < 200_000 && (
-            <p className="text-destructive text-xs">
+            <p className="text-muted-foreground text-xs">
               Channels smaller than 200K sats are not recommended.{" "}
               <ExternalLink
                 to="https://guides.getalby.com/user-guide/v/alby-account-and-browser-extension/alby-lightning-account/faqs-alby-account"
