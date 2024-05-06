@@ -18,7 +18,7 @@ User=root
 ExecStart=$HOME/albyhub/nostr-wallet-connect
 
 Environment="PORT=80"
-Environment="WORK_DIR=$HOME/albyhub/data"
+Environment="WORK_DIR=$HOME/.local/share/alby-hub/"
 Environment="LDK_ESPLORA_SERVER=https://electrs.albylabs.com"
 Environment="ALBY_OAUTH_CLIENT_ID=alby_internal_client"
 Environment="ALBY_OAUTH_CLIENT_SECRET=zblqaACzgqUmHjLZdfXJ"
