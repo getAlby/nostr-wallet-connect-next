@@ -238,7 +238,7 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
         {unspentAmount > 0 && <p>{unspentAmount} sats deposited</p>}
 
         <div className="grid gap-1.5">
-          <Label htmlFor="text">On-chain Address</Label>
+          <Label htmlFor="text">On-Chain Address</Label>
           <Input type="text" value={onchainAddress} />
         </div>
 
