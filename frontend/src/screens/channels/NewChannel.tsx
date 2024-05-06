@@ -241,7 +241,10 @@ function NewChannelInternal({ network }: { network: Network }) {
           <div className="grid grid-cols-3 gap-1.5 text-muted-foreground text-xs">
             {presetAmounts.map((amount) => (
               <div
-                className="text-center border rounded p-2 cursor-pointer hover:border-muted-foreground"
+                className={`text-center border rounded p-2 cursor-pointer hover:border-muted-foreground ${
+                  +(order.amount || "0") === amount &&
+                  "bg-primary text-primary-foreground"
+                }`}
                 onClick={() => setAmount(amount.toString())}
               >
                 {formatAmount(amount * 1000, 0)}
@@ -487,9 +490,9 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
             <Label htmlFor="public-channel" className="flex items-center gap-2">
               Public Channel
             </Label>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Enable if you want to receive keysend payments. (e.g. for
-              podcasting).
+              podcasting)
             </p>
           </div>
         </div>
