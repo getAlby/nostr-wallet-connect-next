@@ -41,7 +41,7 @@ jobs:
           GOARCH: arm
           GOARM: 6
           CGO_ENABLED: 1
-          CC: ~/armv6-unknown-linux-gnueabihf/bin/armv6-unknown-linux-gnueabihf-gcc
+          CC: ${GITHUB_WORKSPACE}/armv6-unknown-linux-gnueabihf/bin/armv6-unknown-linux-gnueabihf-gcc
         run: go build -tags skip_breez,netgo -v -o nostr-wallet-connect
 
       - name: Find and copy shared libraries
