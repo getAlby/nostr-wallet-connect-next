@@ -54,11 +54,6 @@ export default function NewOnchainAddress() {
     getNewAddress();
   }, [getNewAddress]);
 
-  function confirmGetNewAddress() {
-    if (confirm("Do you want a fresh address?")) {
-      getNewAddress();
-    }
-  }
 
   if (!onchainAddress) {
     return (
@@ -83,8 +78,7 @@ export default function NewOnchainAddress() {
       </div>
       <div>
         <LoadingButton
-          onClick={confirmGetNewAddress}
-          disabled={isLoading}
+          onClick={getNewAddress}
           loading={isLoading}
         >
           Get a new address

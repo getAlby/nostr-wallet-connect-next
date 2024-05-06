@@ -202,12 +202,6 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
     getNewAddress();
   }, [getNewAddress]);
 
-  function confirmGetNewAddress() {
-    if (confirm("Do you want a fresh address?")) {
-      getNewAddress();
-    }
-  }
-
   if (!onchainAddress || !balances) {
     return (
       <div className="flex justify-center">
@@ -254,7 +248,7 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
         <QRCode value={onchainAddress} />
         <div className="flex justify-center">
           <LoadingButton
-            onClick={confirmGetNewAddress}
+            onClick={getNewAddress}
             disabled={isLoading}
             loading={isLoading}
           >

@@ -47,6 +47,7 @@ import { useInfo } from "src/hooks/useInfo";
 import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo.ts";
 import { useRedeemOnchainFunds } from "src/hooks/useRedeemOnchainFunds.ts";
 import { copyToClipboard } from "src/lib/clipboard.ts";
+import { formatAmount } from "src/lib/utils.ts";
 import { CloseChannelResponse, Node } from "src/types";
 import { request } from "src/utils/request";
 import { useCSRF } from "../../hooks/useCSRF.ts";
@@ -117,9 +118,8 @@ export default function Channels() {
       }
       if (
         !confirm(
-          `Are you sure you want to close the channel with ${
-            nodes.find((node) => node.public_key === nodeId)?.alias ||
-            "Unknown Node"
+          `Are you sure you want to close the channel with ${nodes.find((node) => node.public_key === nodeId)?.alias ||
+          "Unknown Node"
           }?\n\nNode ID: ${nodeId}\n\nChannel ID: ${channelId}`
         )
       ) {
@@ -272,7 +272,7 @@ export default function Channels() {
         }
       ></AppHeader>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {(albyBalance?.sats || 0) >= 100 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -368,7 +368,9 @@ export default function Channels() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button variant="outline">Increase</Button>
+            <Link to="/channels/new">
+              <Button variant="outline">Increase</Button>
+            </Link>
           </CardFooter>
         </Card>
       </div>
@@ -467,12 +469,3 @@ export default function Channels() {
     </>
   );
 }
-
-const formatAmount = (amount: number, decimals = 1) => {
-  amount /= 1000; //msat to sat
-  let i = 0;
-  for (i; amount >= 1000; i++) {
-    amount /= 1000;
-  }
-  return amount.toFixed(i > 0 ? decimals : 0) + ["", "k", "M", "G"][i];
-};
