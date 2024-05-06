@@ -1,4 +1,12 @@
-import { Cable, FlaskRound, Menu, Settings, Store, Wallet } from "lucide-react";
+import {
+  Cable,
+  ExternalLinkIcon,
+  FlaskRound,
+  Menu,
+  Settings,
+  Store,
+  Wallet,
+} from "lucide-react";
 
 import { CaretUpIcon } from "@radix-ui/react-icons";
 import React from "react";
@@ -67,10 +75,11 @@ export default function AppLayout() {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <ExternalLink
-              to="https://getalby.com/settings/alby_page"
-              className="w-full"
+              to="https://getalby.com/dashboard"
+              className="w-full flex flex-row items-center gap-2"
             >
-              Profile
+              <ExternalLinkIcon className="w-4 h-4"></ExternalLinkIcon>
+              Go to getalby.com
             </ExternalLink>
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -108,11 +117,11 @@ export default function AppLayout() {
         </div> */}
         {(info?.backendType === "LDK" ||
           info?.backendType === "GREENLIGHT") && (
-            <MenuItem to="/channels">
-              <FlaskRound className="h-4 w-4" />
-              Liquidity
-            </MenuItem>
-          )}
+          <MenuItem to="/channels">
+            <FlaskRound className="h-4 w-4" />
+            Liquidity
+          </MenuItem>
+        )}
         <MenuItem to="/settings">
           <Settings className="h-4 w-4" />
           Settings
@@ -216,7 +225,7 @@ export default function AppLayout() {
             </div>
           </main>
         </div>
-      </div >
+      </div>
     </>
   );
 }
