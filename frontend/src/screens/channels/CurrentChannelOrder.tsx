@@ -18,7 +18,6 @@ import QRCode from "src/components/QRCode";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
-import { Separator } from "src/components/ui/separator";
 import { Table, TableBody, TableCell, TableRow } from "src/components/ui/table";
 import { useToast } from "src/components/ui/use-toast";
 import { useBalances } from "src/hooks/useBalances";
@@ -264,10 +263,10 @@ function PayBitcoinChannelOrderWithSpendableFunds({
   if (order.paymentMethod !== "onchain") {
     throw new Error("incorrect payment method");
   }
-  const [loading, setLoading] = React.useState(false);
   const [nodeDetails, setNodeDetails] = React.useState<Node | undefined>();
   const { data: csrf } = useCSRF();
   const { toast } = useToast();
+  const [, setHasCalledOpenChannel] = React.useState(false);
 
   const { pubkey, host } = order;
 
@@ -320,7 +319,7 @@ function PayBitcoinChannelOrderWithSpendableFunds({
     });
   }, [csrf, nodeDetails, pubkey, host]);
 
-  async function openChannel() {
+  const openChannel = React.useCallback(async () => {
     try {
       if (order.paymentMethod !== "onchain") {
         throw new Error("incorrect payment method");
@@ -328,16 +327,6 @@ function PayBitcoinChannelOrderWithSpendableFunds({
       if (!csrf) {
         throw new Error("csrf not loaded");
       }
-      if (
-        order.isPublic &&
-        !confirm(
-          `Are you sure you want to open a public channel? in most cases a private channel is recommended.`
-        )
-      ) {
-        return;
-      }
-
-      setLoading(true);
 
       await connectPeer();
 
@@ -373,65 +362,28 @@ function PayBitcoinChannelOrderWithSpendableFunds({
     } catch (error) {
       console.error(error);
       alert("Something went wrong: " + error);
-    } finally {
-      setLoading(false);
     }
-  }
+  }, [connectPeer, csrf, order, pubkey, toast]);
+
+  React.useEffect(() => {
+    setHasCalledOpenChannel((hasCalledOpenChannel) => {
+      if (!hasCalledOpenChannel) {
+        openChannel();
+      }
+      return true;
+    });
+  }, [openChannel, order.amount, pubkey]);
 
   return (
     <div className="flex flex-col gap-5">
       <AppHeader
-        title="Open a channel"
-        description="Funds successfully deposited. Check the configuration and confirm to open the channel"
+        title="Opening channel"
+        description="Your funds have been successfully deposited"
       />
 
       <div className="flex flex-col gap-5">
-        <div className="grid gap-1.5">
-          <Label>Channel peer</Label>
-          <div className="flex flex-row items-center">
-            <span
-              style={{ color: `${nodeDetails?.color || "#000"}` }}
-              className="mr-2"
-            >
-              ⬤
-            </span>
-            {nodeDetails?.alias ? (
-              <>
-                {nodeDetails.alias}
-                <span className="ml-2 text-sm text-muted-foreground">
-                  ({nodeDetails.active_channel_count} channels)
-                </span>
-              </>
-            ) : (
-              <>
-                {pubkey}
-                &nbsp;(? channels)
-              </>
-            )}
-          </div>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Channel size</Label>
-          <div className="flex flex-row items-center">
-            {new Intl.NumberFormat().format(+order.amount)} sats
-          </div>
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Estimated onchain fee</Label>
-          <div className="flex flex-row items-center">
-            {new Intl.NumberFormat().format(ESTIMATED_TRANSACTION_FEE)} sats
-          </div>
-        </div>
-        <Separator />
-        <div className="inline">
-          <LoadingButton
-            disabled={!pubkey || !order.amount || loading}
-            onClick={openChannel}
-            loading={loading}
-          >
-            Confirm
-          </LoadingButton>
-        </div>
+        <Loading />
+        <p>Please wait...</p>
       </div>
     </div>
   );
