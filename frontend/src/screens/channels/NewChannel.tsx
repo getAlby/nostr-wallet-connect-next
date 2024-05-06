@@ -30,7 +30,7 @@ import {
 import { ALBY_MIN_BALANCE, ALBY_SERVICE_FEE } from "src/constants";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance";
 import { useInfo } from "src/hooks/useInfo";
-import { cn } from "src/lib/utils";
+import { cn, formatAmount } from "src/lib/utils";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 import { Network, NewChannelOrder, Node } from "src/types";
 import { request } from "src/utils/request";
@@ -191,6 +191,7 @@ function NewChannelInternal({ network }: { network: Network }) {
   }, [order.paymentMethod, selectedPeer, setAmount]);
 
   const selectedCardStyles = "border-primary border-2 font-medium";
+  const presetAmounts = [250_000, 500_000, 1_000_000];
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -237,16 +238,6 @@ function NewChannelInternal({ network }: { network: Network }) {
 
         <div className="grid gap-1.5">
           <Label htmlFor="amount">Channel size (sats)</Label>
-          <Input
-            id="amount"
-            type="number"
-            required
-            min={selectedPeer?.minimumChannelSize}
-            value={order.amount}
-            onChange={(e) => {
-              setAmount(e.target.value.trim());
-            }}
-          />
           {order.amount && +order.amount < 200_000 && (
             <p className="text-muted-foreground text-xs">
               Channels smaller than 200K sats are not recommended.{" "}
@@ -258,6 +249,26 @@ function NewChannelInternal({ network }: { network: Network }) {
               </ExternalLink>
             </p>
           )}
+          <Input
+            id="amount"
+            type="number"
+            required
+            min={selectedPeer?.minimumChannelSize}
+            value={order.amount}
+            onChange={(e) => {
+              setAmount(e.target.value.trim());
+            }}
+          />
+          <div className="grid grid-cols-3 gap-1.5 text-muted-foreground text-xs">
+            {presetAmounts.map((amount) =>
+              <div
+                className="text-center border rounded p-2 cursor-pointer"
+                onClick={() => setAmount(amount.toString())}>
+                {formatAmount(amount * 1000, 0)}
+              </div>
+            )}
+          </div>
+
         </div>
         <div className="grid gap-3">
           <Label htmlFor="amount">Payment method</Label>

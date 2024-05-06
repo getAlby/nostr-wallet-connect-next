@@ -47,6 +47,7 @@ import { useInfo } from "src/hooks/useInfo";
 import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo.ts";
 import { useRedeemOnchainFunds } from "src/hooks/useRedeemOnchainFunds.ts";
 import { copyToClipboard } from "src/lib/clipboard.ts";
+import { formatAmount } from "src/lib/utils.ts";
 import { CloseChannelResponse, Node } from "src/types";
 import { request } from "src/utils/request";
 import { useCSRF } from "../../hooks/useCSRF.ts";
@@ -468,12 +469,3 @@ export default function Channels() {
     </>
   );
 }
-
-const formatAmount = (amount: number, decimals = 1) => {
-  amount /= 1000; //msat to sat
-  let i = 0;
-  for (i; amount >= 1000; i++) {
-    amount /= 1000;
-  }
-  return amount.toFixed(i > 0 ? decimals : 0) + ["", "k", "M", "G"][i];
-};
