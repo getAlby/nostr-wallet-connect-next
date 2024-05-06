@@ -1,4 +1,4 @@
-import { Cable, ExternalLinkIcon, Menu, SendToBack, Settings, Store, Wallet } from "lucide-react";
+import { Cable, ExternalLinkIcon, Menu, MessageCircleQuestion, SendToBack, Settings, Store, Wallet } from "lucide-react";
 import { ModeToggle } from "src/components/ui/mode-toggle";
 
 import { CaretUpIcon } from "@radix-ui/react-icons";
@@ -27,6 +27,7 @@ import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
 import { cn } from "src/lib/utils";
+import { openLink } from "src/utils/openLink";
 import { request } from "src/utils/request";
 import ExternalLink from "../ExternalLink";
 
@@ -118,7 +119,20 @@ export default function AppLayout() {
           <Settings className="h-4 w-4" />
           Settings
         </MenuItem>
-      </nav>
+        <MenuItem to="/" onClick={(e) => {
+          const chatwoot = (window as any).$chatwoot;
+          if (chatwoot) {
+            chatwoot.toggle("open");
+          } else {
+            openLink("https://getalby.com/help")
+          }
+
+          e.preventDefault();
+        }}>
+          <MessageCircleQuestion className="h-4 w-4" />
+          Live Support
+        </MenuItem>
+      </nav >
     );
   }
 
@@ -220,15 +234,18 @@ const MenuItem = ({
   to,
   children,
   disabled = false,
+  onClick,
 }: {
   to: string;
   children: React.ReactNode | string;
   disabled?: boolean;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
 }) => (
   <NavLink
     to={to}
     onClick={(e) => {
       if (disabled) e.preventDefault();
+      if (onClick) onClick(e);
     }}
     className={({ isActive }) =>
       cn(
