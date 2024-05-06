@@ -52,7 +52,7 @@ jobs:
 
       - name: Strip and patch RPATH in the executable
         run: |
-          arm-linux-gnueabihf-strip ./nostr-wallet-connect
+          ${{ github.workspace }}/armv6-unknown-linux-gnueabihf/bin/armv6-unknown-linux-gnueabihf-strip ./nostr-wallet-connect
           patchelf --force-rpath --set-rpath '$ORIGIN/lib' ./nostr-wallet-connect
 
       - name: Zip application and libraries
