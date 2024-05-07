@@ -32,7 +32,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y patchelf
-          wget -nv https://github.com/rdmitr/gcc-arm-linux-gnueabihf/releases/download/v1.0.0/armv6-unknown-linux-gnueabihf.tar.bz2
+          wget -nv https://github.com/getAlby/gcc-arm-linux-gnueabihf/releases/download/v1.0.0/armv6-unknown-linux-gnueabihf.tar.bz2
           tar -xf armv6-unknown-linux-gnueabihf.tar.bz2
 
       - name: Build
