@@ -13,6 +13,8 @@ services:
       sizeGB: 1
     autoDeploy: false
     envVars:
+      - key: WORK_DIR
+        value: /data/albyhub
       - key: LOG_EVENTS
         value: true
       - key: LDK_ESPLORA_SERVER
