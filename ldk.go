@@ -997,3 +997,9 @@ func deleteOldLDKLogs(logger *logrus.Logger, ldkLogDir string) {
 		}
 	}
 }
+
+func (ls *LDKService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return &lnclient.NodeStatus{
+		InternalNodeStatus: ls.node.Status(),
+	}, nil
+}
