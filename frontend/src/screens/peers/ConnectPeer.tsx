@@ -24,18 +24,19 @@ export default function ConnectPeer() {
     if (!connectionString) {
       throw new Error("connection details missing");
     }
-    const [pubkey, connectionDetails] = connectionString.split("@");
-    const [address, port] = connectionDetails.split(":");
-    if (!pubkey || !address || !port) {
-      throw new Error("connection details missing");
-    }
-    console.log(`🔌 Peering with ${pubkey}`);
-    const connectPeerRequest: ConnectPeerRequest = {
-      pubkey,
-      address,
-      port: +port,
-    };
     try {
+      const [pubkey, connectionDetails] = connectionString.split("@");
+      const [address, port] = connectionDetails.split(":");
+      if (!pubkey || !address || !port) {
+        throw new Error("connection details missing");
+      }
+      console.log(`🔌 Peering with ${pubkey}`);
+      const connectPeerRequest: ConnectPeerRequest = {
+        pubkey,
+        address,
+        port: +port,
+      };
+
       setLoading(true);
       await request("/api/peers", {
         method: "POST",
@@ -49,6 +50,10 @@ export default function ConnectPeer() {
       setConnectionString("");
       navigate("/channels");
     } catch (e) {
+      toast({
+        variant: "destructive",
+        title: "Failed to connect peer: " + e,
+      });
       console.error(e);
     } finally {
       setLoading(false);
