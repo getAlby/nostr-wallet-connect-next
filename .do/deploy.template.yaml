@@ -5,4 +5,5 @@ spec:
       github:
         branch: master
         repo: getAlby/nostr-wallet-connect
-        deploy_on_push: true
+        deploy_on_push: false
+      instance_size_slug: basic-xxs
