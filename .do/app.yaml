@@ -9,4 +9,4 @@ services:
     - key: LDK_ESPLORA_SERVER
       value: "https://electrs.albylabs.com"
     - key: LOG_EVENTS
-      value: true
+      value: "true"
