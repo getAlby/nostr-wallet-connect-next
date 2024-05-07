@@ -11,9 +11,6 @@ function AppStore() {
         description="Apps that you can connect your wallet into"
         contentRight={
           <>
-            <Button variant="secondary" className="hidden sm:flex">
-              How to connect to apps?
-            </Button>
             <a
               href="https://form.jotform.com/232284367043051"
               target="_blank"
@@ -27,9 +24,6 @@ function AppStore() {
           </>
         }
       />
-      <h2 className="text-md font-medium md:text-xl">Featured</h2>
-      TBD
-      <h2 className="text-md font-medium md:text-xl">All apps</h2>
       <SuggestedApps />
     </>
   );
