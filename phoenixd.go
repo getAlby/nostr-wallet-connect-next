@@ -348,18 +348,22 @@ func (svc *PhoenixService) SignMessage(ctx context.Context, message string) (str
 	return "", errors.New("not implemented")
 }
 
-func (bs *PhoenixService) SendPaymentProbes(ctx context.Context, invoice string) error {
+func (svc *PhoenixService) SendPaymentProbes(ctx context.Context, invoice string) error {
 	return nil
 }
 
-func (bs *PhoenixService) SendSpontaneousPaymentProbes(ctx context.Context, amountMsat uint64, nodeId string) error {
+func (svc *PhoenixService) SendSpontaneousPaymentProbes(ctx context.Context, amountMsat uint64, nodeId string) error {
 	return nil
 }
 
-func (bs *PhoenixService) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, error) {
+func (svc *PhoenixService) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, error) {
 	return nil, nil
 }
 
-func (bs *PhoenixService) GetLogOutput(ctx context.Context, maxLen int) ([]byte, error) {
+func (svc *PhoenixService) GetLogOutput(ctx context.Context, maxLen int) ([]byte, error) {
 	return []byte{}, nil
+}
+
+func (svc *PhoenixService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return nil, nil
 }
