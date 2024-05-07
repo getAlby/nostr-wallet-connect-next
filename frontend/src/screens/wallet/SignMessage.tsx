@@ -1,6 +1,5 @@
 import React from "react";
 import { Copy } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import { Input } from "src/components/ui/input";
 import { Button } from "src/components/ui/button";
