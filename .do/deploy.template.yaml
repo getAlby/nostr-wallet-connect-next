@@ -2,10 +2,9 @@ spec:
   name: albyhub
   services:
     - name: web
-      github:
+      git:
         branch: master
-        repo: getAlby/nostr-wallet-connect
-        deploy_on_push: false
+        repo_clone_url: https://github.com/getAlby/nostr-wallet-connect-next.git
       instance_size_slug: basic-xxs
       envs:
       - key: LDK_ESPLORA_SERVER
