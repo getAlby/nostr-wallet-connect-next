@@ -1,7 +1,12 @@
-name: nwc
+name: albyhub
 services:
   - name: web
     github:
       repo: getAlby/nostr-wallet-connect
-      branch: feat/onboarding-flow
+      branch: master
     dockerfile_path: .do/Dockerfile
+    envs:
+    - key: LDK_ESPLORA_SERVER
+      value: "https://electrs.albylabs.com"
+    - key: LOG_EVENTS
+      value: true
