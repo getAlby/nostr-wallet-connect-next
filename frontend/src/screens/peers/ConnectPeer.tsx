@@ -1,9 +1,9 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
-import Loading from "src/components/Loading";
-import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
+import { LoadingButton } from "src/components/ui/loading-button";
 import { useToast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
 import { ConnectPeerRequest } from "src/types";
@@ -14,6 +14,7 @@ export default function ConnectPeer() {
   const { toast } = useToast();
   const [isLoading, setLoading] = React.useState(false);
   const [connectionString, setConnectionString] = React.useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -46,12 +47,13 @@ export default function ConnectPeer() {
       });
       toast({ title: "Peer connected!" });
       setConnectionString("");
+      navigate("/channels");
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="grid gap-5">
@@ -73,12 +75,16 @@ export default function ConnectPeer() {
               }}
             />
           </div>
-          <div className="">
-            <Button type="submit" disabled={!connectionString} size="lg">
+          <div className="mt-4">
+            <LoadingButton
+              loading={isLoading}
+              type="submit"
+              disabled={!connectionString}
+              size="lg"
+            >
               Connect
-            </Button>
+            </LoadingButton>
           </div>
-          {isLoading && (<Loading />)}
         </form>
       </div>
     </div>

@@ -85,7 +85,9 @@ function App() {
                   element={<NewOnchainAddress />}
                 />
               </Route>
-              <Route path="peers/new" element={<ConnectPeer />} />
+              <Route path="peers" element={<DefaultRedirect />}>
+                <Route path="new" element={<ConnectPeer />} />
+              </Route>
             </Route>
             <Route path="intro" element={<Intro />} />
             <Route element={<TwoColumnFullScreenLayout />}>
