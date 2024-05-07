@@ -84,18 +84,20 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	// TODO: review naming
 	e.POST("/api/instant-channel-invoices", httpSvc.newInstantChannelInvoiceHandler, authMiddleware)
 	e.GET("/api/node/connection-info", httpSvc.nodeConnectionInfoHandler, authMiddleware)
+	e.GET("/api/node/status", httpSvc.nodeStatusHandler, authMiddleware)
 	e.GET("/api/peers", httpSvc.listPeers, authMiddleware)
 	e.POST("/api/peers", httpSvc.connectPeerHandler, authMiddleware)
 	e.DELETE("/api/peers/:peerId/channels/:channelId", httpSvc.closeChannelHandler, authMiddleware)
 	e.POST("/api/wallet/new-address", httpSvc.newOnchainAddressHandler, authMiddleware)
 	e.POST("/api/wallet/redeem-onchain-funds", httpSvc.redeemOnchainFundsHandler, authMiddleware)
+	e.POST("/api/wallet/sign-message", httpSvc.signMessageHandler, authMiddleware)
 	e.GET("/api/balances", httpSvc.balancesHandler, authMiddleware)
 	e.POST("/api/reset-router", httpSvc.resetRouterHandler, authMiddleware)
 	e.POST("/api/stop", httpSvc.stopHandler, authMiddleware)
 
 	httpSvc.albyHttpSvc.RegisterSharedRoutes(e, authMiddleware)
 
-	e.GET("/api/mempool/lightning/nodes/:pubkey", httpSvc.mempoolLightningNodeHandler, authMiddleware)
+	e.GET("/api/mempool", httpSvc.mempoolApiHandler, authMiddleware)
 
 	e.POST("/api/send-payment-probes", httpSvc.sendPaymentProbesHandler, authMiddleware)
 	e.POST("/api/send-spontaneous-payment-probes", httpSvc.sendSpontaneousPaymentProbesHandler, authMiddleware)
@@ -312,6 +314,20 @@ func (httpSvc *HttpService) nodeConnectionInfoHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, info)
 }
 
+func (httpSvc *HttpService) nodeStatusHandler(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	info, err := httpSvc.api.GetNodeStatus(ctx)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
 func (httpSvc *HttpService) balancesHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -326,16 +342,17 @@ func (httpSvc *HttpService) balancesHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, balances)
 }
 
-func (httpSvc *HttpService) mempoolLightningNodeHandler(c echo.Context) error {
-	pubkey := c.Param("pubkey")
-	if pubkey == "" {
+func (httpSvc *HttpService) mempoolApiHandler(c echo.Context) error {
+	endpoint := c.QueryParam("endpoint")
+	if endpoint == "" {
 		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Message: "Invalid pubkey parameter",
 		})
 	}
 
-	response, err := httpSvc.api.GetMempoolLightningNode(pubkey)
+	response, err := httpSvc.api.RequestMempoolApi(endpoint)
 	if err != nil {
+		httpSvc.svc.Logger.WithField("endpoint", endpoint).WithError(err).Error("Failed to request mempool API")
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Message: fmt.Sprintf("Failed to request mempool API: %s", err.Error()),
 		})
@@ -467,6 +484,25 @@ func (httpSvc *HttpService) redeemOnchainFundsHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, redeemOnchainFundsResponse)
 }
 
+func (httpSvc *HttpService) signMessageHandler(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	var signMessageRequest api.SignMessageRequest
+	if err := c.Bind(&signMessageRequest); err != nil {
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Message: fmt.Sprintf("Bad request: %s", err.Error()),
+		})
+	}
+
+	signMessageResponse, err := httpSvc.api.SignMessage(ctx, signMessageRequest.Message)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: fmt.Sprintf("Failed to sign messae: %s", err.Error()),
+		})
+	}
+	return c.JSON(http.StatusOK, signMessageResponse)
+}
 func (httpSvc *HttpService) appsListHandler(c echo.Context) error {
 
 	apps, err := httpSvc.api.ListApps()

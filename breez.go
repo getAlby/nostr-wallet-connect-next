@@ -1,3 +1,5 @@
+//go:build !skip_breez
+
 package main
 
 import (
@@ -413,6 +415,10 @@ func (bs *BreezService) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, 
 
 func (bs *BreezService) GetLogOutput(ctx context.Context, maxLen int) ([]byte, error) {
 	return []byte{}, nil
+}
+
+func (bs *BreezService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return nil, nil
 }
 
 func (bs *BreezService) SignMessage(ctx context.Context, message string) (string, error) {

@@ -51,6 +51,7 @@ type LNClient interface {
 	Shutdown() error
 	ListChannels(ctx context.Context) (channels []Channel, err error)
 	GetNodeConnectionInfo(ctx context.Context) (nodeConnectionInfo *NodeConnectionInfo, err error)
+	GetNodeStatus(ctx context.Context) (nodeStatus *NodeStatus, err error)
 	ConnectPeer(ctx context.Context, connectPeerRequest *ConnectPeerRequest) error
 	OpenChannel(ctx context.Context, openChannelRequest *OpenChannelRequest) (*OpenChannelResponse, error)
 	CloseChannel(ctx context.Context, closeChannelRequest *CloseChannelRequest) (*CloseChannelResponse, error)
@@ -67,12 +68,20 @@ type LNClient interface {
 }
 
 type Channel struct {
-	LocalBalance  int64  `json:"localBalance"`
-	RemoteBalance int64  `json:"remoteBalance"`
-	Id            string `json:"id"`
-	RemotePubkey  string `json:"remotePubkey"`
-	Active        bool   `json:"active"`
-	Public        bool   `json:"public"`
+	LocalBalance          int64       `json:"localBalance"`
+	RemoteBalance         int64       `json:"remoteBalance"`
+	Id                    string      `json:"id"`
+	RemotePubkey          string      `json:"remotePubkey"`
+	FundingTxId           string      `json:"fundingTxId"`
+	Active                bool        `json:"active"`
+	Public                bool        `json:"public"`
+	InternalChannel       interface{} `json:"internalChannel"`
+	Confirmations         *uint32     `json:"confirmations"`
+	ConfirmationsRequired *uint32     `json:"confirmationsRequired"`
+}
+
+type NodeStatus struct {
+	InternalNodeStatus interface{} `json:"internalNodeStatus"`
 }
 
 type ConnectPeerRequest struct {
@@ -102,6 +111,7 @@ type CloseChannelResponse struct {
 type OnchainBalanceResponse struct {
 	Spendable int64 `json:"spendable"`
 	Total     int64 `json:"total"`
+	Reserved  int64 `json:"reserved"`
 }
 
 type PeerDetails struct {

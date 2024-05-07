@@ -56,10 +56,16 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
+		lsp.AlbyMutinynetPlebsLSP().Pubkey,
+		lsp.OlympusMutinynetFlowLSP().Pubkey,
 	}
 	config.AnchorChannelsConfig.TrustedPeersNoReserve = []string{
 		lsp.OlympusLSP().Pubkey,
+		lsp.OlympusMutinynetLSPS1LSP().Pubkey,
+		lsp.OlympusMutinynetFlowLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
+		lsp.AlbyMutinynetPlebsLSP().Pubkey,
+		"0296b2db342fcf87ea94d981757fdf4d3e545bd5cef4919f58b5d38dfdd73bf5c9", // blocktank
 	}
 
 	config.ListeningAddresses = &listeningAddresses
@@ -72,7 +78,12 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 	builder.SetEntropyBip39Mnemonic(mnemonic, nil)
 	builder.SetNetwork(network)
 	builder.SetEsploraServer(esploraServer)
-	builder.SetGossipSourceRgs(gossipSource)
+	if gossipSource != "" {
+		svc.Logger.WithField("gossipSource", gossipSource).Warn("LDK RGS instance set")
+		builder.SetGossipSourceRgs(gossipSource)
+	} else {
+		svc.Logger.Warn("No LDK RGS instance set")
+	}
 	builder.SetStorageDirPath(filepath.Join(newpath, "./storage"))
 
 	// TODO: remove when https://github.com/lightningdevkit/rust-lightning/issues/2914 is merged
@@ -147,14 +158,37 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 	}
 
 	nodeId := node.NodeId()
-
-	if err != nil {
-		return nil, err
-	}
-
 	svc.Logger.WithFields(logrus.Fields{
 		"nodeId": nodeId,
+		"status": node.Status(),
 	}).Info("Connected to LDK node")
+
+	walletSynced := false
+	for i := 0; i < 10; i++ {
+		svc.Logger.WithFields(logrus.Fields{
+			"nodeId":    nodeId,
+			"status":    node.Status(),
+			"iteration": i,
+		}).Info("Waiting for LDK node to sync")
+		time.Sleep(1 * time.Second)
+
+		if node.Status().LatestOnchainWalletSyncTimestamp != nil {
+			svc.Logger.WithFields(logrus.Fields{
+				"nodeId":    nodeId,
+				"status":    node.Status(),
+				"iteration": i,
+			}).Info("LDK node finished sync")
+			walletSynced = true
+			break
+		}
+	}
+	if !walletSynced {
+		svc.Logger.WithFields(logrus.Fields{
+			"nodeId": nodeId,
+			"status": node.Status(),
+		}).Error("Timed out waiting for LDK node to sync")
+		time.Sleep(1 * time.Second)
+	}
 
 	return &ls, nil
 }
@@ -493,11 +527,19 @@ func (gs *LDKService) ListTransactions(ctx context.Context, from, until, limit, 
 	payments := gs.node.ListPayments()
 
 	for _, payment := range payments {
-		if payment.Status == ldk_node.PaymentStatusSucceeded {
+		if payment.Status == ldk_node.PaymentStatusSucceeded || unpaid {
 			transaction, err := gs.ldkPaymentToTransaction(&payment)
 
 			if err != nil {
 				gs.svc.Logger.Errorf("Failed to map transaction: %v", err)
+				continue
+			}
+
+			// locally filter
+			if from != 0 && uint64(transaction.CreatedAt) < from {
+				continue
+			}
+			if until != 0 && uint64(transaction.CreatedAt) > until {
 				continue
 			}
 
@@ -510,7 +552,14 @@ func (gs *LDKService) ListTransactions(ctx context.Context, from, until, limit, 
 		return transactions[i].CreatedAt > transactions[j].CreatedAt
 	})
 
-	// locally limit for now
+	if offset > 0 {
+		if offset < uint64(len(transactions)) {
+			transactions = transactions[offset:]
+		} else {
+			transactions = []Nip47Transaction{}
+		}
+	}
+
 	if len(transactions) > int(limit) {
 		transactions = transactions[:limit]
 	}
@@ -544,12 +593,16 @@ func (gs *LDKService) ListChannels(ctx context.Context) ([]lnclient.Channel, err
 
 	for _, ldkChannel := range ldkChannels {
 		channels = append(channels, lnclient.Channel{
-			LocalBalance:  int64(ldkChannel.OutboundCapacityMsat),
-			RemoteBalance: int64(ldkChannel.InboundCapacityMsat),
-			RemotePubkey:  ldkChannel.CounterpartyNodeId,
-			Id:            ldkChannel.UserChannelId, // CloseChannel takes the UserChannelId
-			Active:        ldkChannel.IsUsable,      // superset of ldkChannel.IsReady
-			Public:        ldkChannel.IsPublic,
+			InternalChannel:       ldkChannel,
+			LocalBalance:          int64(ldkChannel.OutboundCapacityMsat),
+			RemoteBalance:         int64(ldkChannel.InboundCapacityMsat),
+			RemotePubkey:          ldkChannel.CounterpartyNodeId,
+			Id:                    ldkChannel.UserChannelId, // CloseChannel takes the UserChannelId
+			Active:                ldkChannel.IsUsable,      // superset of ldkChannel.IsReady
+			Public:                ldkChannel.IsPublic,
+			FundingTxId:           ldkChannel.FundingTxo.Txid,
+			Confirmations:         ldkChannel.Confirmations,
+			ConfirmationsRequired: ldkChannel.ConfirmationsRequired,
 		})
 	}
 
@@ -582,7 +635,7 @@ func (gs *LDKService) GetNodeConnectionInfo(ctx context.Context) (nodeConnection
 func (gs *LDKService) ConnectPeer(ctx context.Context, connectPeerRequest *lnclient.ConnectPeerRequest) error {
 	err := gs.node.Connect(connectPeerRequest.Pubkey, connectPeerRequest.Address+":"+strconv.Itoa(int(connectPeerRequest.Port)), true)
 	if err != nil {
-		gs.svc.Logger.WithError(err).Error("ConnectPeer failed")
+		gs.svc.Logger.WithField("request", connectPeerRequest).WithError(err).Error("ConnectPeer failed")
 		return err
 	}
 
@@ -671,7 +724,8 @@ func (gs *LDKService) GetOnchainBalance(ctx context.Context) (*lnclient.OnchainB
 	}).Debug("Listed Balances")
 	return &lnclient.OnchainBalanceResponse{
 		Spendable: int64(balances.SpendableOnchainBalanceSats),
-		Total:     int64(balances.TotalOnchainBalanceSats),
+		Total:     int64(balances.TotalOnchainBalanceSats - balances.TotalAnchorChannelsReserveSats),
+		Reserved:  int64(balances.TotalAnchorChannelsReserveSats),
 	}, nil
 }
 
@@ -947,4 +1001,10 @@ func deleteOldLDKLogs(logger *logrus.Logger, ldkLogDir string) {
 			}
 		}
 	}
+}
+
+func (ls *LDKService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return &lnclient.NodeStatus{
+		InternalNodeStatus: ls.node.Status(),
+	}, nil
 }

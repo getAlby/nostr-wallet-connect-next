@@ -95,6 +95,7 @@ type User struct {
 type InfoResponse struct {
 	BackendType          string `json:"backendType"`
 	SetupCompleted       bool   `json:"setupCompleted"`
+	OAuthRedirect        bool   `json:"oauthRedirect"`
 	OnboardingCompleted  bool   `json:"onboardingCompleted"` // TODO: rename - HasChannel?
 	Running              bool   `json:"running"`
 	Unlocked             bool   `json:"unlocked"`
@@ -102,6 +103,7 @@ type InfoResponse struct {
 	ShowBackupReminder   bool   `json:"showBackupReminder"`
 	AlbyUserIdentifier   string `json:"albyUserIdentifier"`
 	AlbyAccountConnected bool   `json:"albyAccountConnected"`
+	Network              string `json:"network"`
 }
 
 type EncryptedMnemonicResponse struct {
@@ -172,6 +174,15 @@ type GetLogOutputRequest struct {
 
 type GetLogOutputResponse struct {
 	Log string `json:"logs"`
+}
+
+type SignMessageRequest struct {
+	Message string `json:"message"`
+}
+
+type SignMessageResponse struct {
+	Message   string `json:"message"`
+	Signature string `json:"signature"`
 }
 
 // TODO: move to different file
