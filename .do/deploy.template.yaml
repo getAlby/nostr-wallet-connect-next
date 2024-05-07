@@ -6,7 +6,7 @@ spec:
         registry_type: GHCR
         registry: getalby
         repository: nostr-wallet-connect-next
-        instance_size_slug: basic-xxs
+      instance_size_slug: basic-xxs
       envs:
       - key: LDK_ESPLORA_SERVER
         value: "https://electrs.albylabs.com"
