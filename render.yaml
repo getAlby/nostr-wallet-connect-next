@@ -6,7 +6,7 @@ services:
       url: ghcr.io/getalby/nostr-wallet-connect-next:latest
     numInstances: 1
     region: frankfurt # Default: oregon
-    plan: free
+    plan: starter
     disk:
       name: data
       mountPath: /data
