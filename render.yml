@@ -1,0 +1,19 @@
+services:
+  - type: web
+    runtime: image
+    name: albyhub
+    image:
+      url: ghcr.io/getalby/nostr-wallet-connect-next:latest
+    numInstances: 1
+    region: frankfurt # Default: oregon
+    plan: free
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    autoDeploy: false
+    envVars:
+      - key: LOG_EVENTS
+        value: true
+      - key: LDK_ESPLORA_SERVER
+        value: "https://electrs.albylabs.com"
