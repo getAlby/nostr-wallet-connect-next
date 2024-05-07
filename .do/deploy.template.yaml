@@ -7,3 +7,8 @@ spec:
         repo: getAlby/nostr-wallet-connect
         deploy_on_push: false
       instance_size_slug: basic-xxs
+      envs:
+      - key: LDK_ESPLORA_SERVER
+        value: "https://electrs.albylabs.com"
+      - key: LOG_EVENTS
+        value: true
