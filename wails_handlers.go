@@ -263,6 +263,14 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 		return WailsRequestRouterResponse{Body: *redeemOnchainFundsResponse, Error: ""}
+	case "/api/wallet/sign-message":
+		signMessageRequest := &api.SignMessageRequest{}
+		err := json.Unmarshal([]byte(body), signMessageRequest)
+		signMessageResponse, err := app.api.SignMessage(ctx, signMessageRequest.Message)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: *signMessageResponse, Error: ""}
 	case "/api/peers":
 		switch method {
 		case "GET":
@@ -294,6 +302,12 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 		return WailsRequestRouterResponse{Body: *nodeConnectionInfo, Error: ""}
+	case "/api/node/status":
+		nodeStatus, err := app.api.GetNodeStatus(ctx)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: *nodeStatus, Error: ""}
 	case "/api/info":
 		infoResponse, err := app.api.GetInfo(ctx)
 		if err != nil {

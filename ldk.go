@@ -78,7 +78,12 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 	builder.SetEntropyBip39Mnemonic(mnemonic, nil)
 	builder.SetNetwork(network)
 	builder.SetEsploraServer(esploraServer)
-	builder.SetGossipSourceRgs(gossipSource)
+	if gossipSource != "" {
+		svc.Logger.WithField("gossipSource", gossipSource).Warn("LDK RGS instance set")
+		builder.SetGossipSourceRgs(gossipSource)
+	} else {
+		svc.Logger.Warn("No LDK RGS instance set")
+	}
 	builder.SetStorageDirPath(filepath.Join(newpath, "./storage"))
 
 	// TODO: remove when https://github.com/lightningdevkit/rust-lightning/issues/2914 is merged
@@ -1001,4 +1006,10 @@ func deleteOldLDKLogs(logger *logrus.Logger, ldkLogDir string) {
 			}
 		}
 	}
+}
+
+func (ls *LDKService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return &lnclient.NodeStatus{
+		InternalNodeStatus: ls.node.Status(),
+	}, nil
 }
