@@ -3,11 +3,8 @@ sudo mkdir -p /opt/albyhub
 sudo chown -R $USER:$USER /opt/albyhub
 cd /opt/albyhub
 wget https://nightly.link/getalby/nostr-wallet-connect-next/workflows/package-raspberry-pi/master/nostr-wallet-connect.zip
-# it's double ziped
-unzip nostr-wallet-connect.zip -d albyhub-tmp
-unzip albyhub-tmp/nostr-wallet-connect.zip -d app
 
-rm -rf albyhub-tmp
+unzip nostr-wallet-connect.zip -d app
 rm nostr-wallet-connect.zip
 
 ### Create systemd service
