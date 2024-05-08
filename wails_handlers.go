@@ -504,7 +504,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 
 		backupFile, err := os.Open(restoreRequest.BackupFilePath)
 		if err != nil {
-			return WailsRequestRouterResponse{Body: nil, Error: fmt.Sprintf("failed to open backup file: %w", err)}
+			return WailsRequestRouterResponse{Body: nil, Error: fmt.Sprintf("failed to open backup file: %v", err)}
 		}
 		defer backupFile.Close()
 

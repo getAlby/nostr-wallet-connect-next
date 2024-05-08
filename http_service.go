@@ -708,7 +708,7 @@ func (httpSvc *HttpService) createBackupHandler(c echo.Context) error {
 	var buffer bytes.Buffer
 	err := httpSvc.api.CreateBackup(&backupRequest, &buffer)
 	if err != nil {
-		return c.String(500, fmt.Sprintf("Failed to create backup: %w", err))
+		return c.String(500, fmt.Sprintf("Failed to create backup: %v", err))
 	}
 
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
