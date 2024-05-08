@@ -38,6 +38,13 @@ export function Welcome() {
               </Button>
             </Link>
           )}
+          {!info?.backendType && (
+            <Link to="/setup/node-restore" className="w-full">
+              <Button variant="ghost" className="w-full">
+                Import Backup File
+              </Button>
+            </Link>
+          )}
         </div>
         <div className="text-sm text-muted-foreground">
           By continuing, you agree to our <br />

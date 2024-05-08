@@ -670,6 +670,7 @@ func (httpSvc *HttpService) createBackupHandler(c echo.Context) error {
 	}
 
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
+	c.Response().Header().Set("Content-Disposition", "attachment; filename=backup.zip")
 	c.Response().WriteHeader(http.StatusOK)
 	return httpSvc.api.CreateBackup(&backupRequest, c.Response())
 }

@@ -34,12 +34,15 @@ import SettingsLayout from "src/components/layouts/SettingsLayout";
 import TwoColumnFullScreenLayout from "src/components/layouts/TwoColumnFullScreenLayout";
 import { OnboardingRedirect } from "src/components/redirects/OnboardingRedirect";
 import { Toaster } from "src/components/ui/toaster";
+import { BackupNode } from "src/screens/BackupNode";
+import { BackupNodeSuccess } from "src/screens/BackupNodeSuccess";
 import { Intro } from "src/screens/Intro";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
 import { CurrentChannelOrder } from "src/screens/channels/CurrentChannelOrder";
 import { Success } from "src/screens/onboarding/Success";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 import DebugTools from "src/screens/settings/DebugTools";
+import { RestoreNode } from "src/screens/setup/RestoreNode";
 
 function App() {
   usePosthog();
@@ -51,6 +54,12 @@ function App() {
           <Routes>
             <Route path="/" element={<AppLayout />}>
               <Route path="" element={<HomeRedirect />} />
+
+              <Route
+                path="node-backup-success"
+                element={<BackupNodeSuccess />}
+              />
+
               <Route path="settings" element={<DefaultRedirect />}>
                 <Route element={<SettingsLayout />}>
                   <Route index element={<Settings />} />
@@ -58,7 +67,8 @@ function App() {
                     path="change-unlock-password"
                     element={<ChangeUnlockPassword />}
                   />
-                  <Route path="backup" element={<BackupMnemonic />} />
+                  <Route path="key-backup" element={<BackupMnemonic />} />
+                  <Route path="node-backup" element={<BackupNode />} />
                 </Route>
               </Route>
               <Route path="wallet" element={<DefaultRedirect />}>
@@ -108,6 +118,7 @@ function App() {
                 <Route path="node" element={<SetupNode />} />
                 <Route path="wallet" element={<SetupWallet />} />
                 <Route path="import-mnemonic" element={<ImportMnemonic />} />
+                <Route path="node-restore" element={<RestoreNode />} />
                 <Route path="finish" element={<SetupFinish />} />
               </Route>
               <Route path="onboarding" element={<OnboardingRedirect />}>
