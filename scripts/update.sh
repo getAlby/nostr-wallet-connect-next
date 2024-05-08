@@ -16,4 +16,4 @@ rm nostr-wallet-connect.zip
 
 sudo systemctl start albyhub
 
-echo "✅ Update finished! Please login again to start your wallet."
+echo "✅ Update finished! Please visit http://$HOSTNAME.local to unlock your wallet."
