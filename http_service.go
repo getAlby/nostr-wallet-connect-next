@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
@@ -104,7 +105,7 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.GET("/api/log/:type", httpSvc.getLogOutputHandler, authMiddleware)
 
 	e.POST("/api/backup", httpSvc.createBackupHandler, authMiddleware)
-	e.POST("/api/restore", httpSvc.restoreBackupHandler, authMiddleware)
+	e.POST("/api/restore", httpSvc.restoreBackupHandler)
 
 	frontend.RegisterHandlers(e)
 }
@@ -704,13 +705,28 @@ func (httpSvc *HttpService) createBackupHandler(c echo.Context) error {
 		})
 	}
 
+	var buffer bytes.Buffer
+	err := httpSvc.api.CreateBackup(&backupRequest, &buffer)
+	if err != nil {
+		return c.String(500, fmt.Sprintf("Failed to create backup: %w", err))
+	}
+
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
-	c.Response().Header().Set("Content-Disposition", "attachment; filename=backup.zip")
+	c.Response().Header().Set("Content-Disposition", "attachment; filename=nwc.bkp")
 	c.Response().WriteHeader(http.StatusOK)
-	return httpSvc.api.CreateBackup(&backupRequest, c.Response())
+	c.Response().Write(buffer.Bytes())
+	return nil
 }
 
 func (httpSvc *HttpService) restoreBackupHandler(c echo.Context) error {
+	info, err := httpSvc.api.GetInfo(c.Request().Context())
+	if err != nil {
+		return err
+	}
+	if info.SetupCompleted {
+		return errors.New("Setup already completed")
+	}
+
 	password := c.FormValue("unlockPassword")
 
 	fileHeader, err := c.FormFile("backup")

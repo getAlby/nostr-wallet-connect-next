@@ -1269,6 +1269,7 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 		if err != nil {
 			return fmt.Errorf("failed to get storage dir: %w", err)
 		}
+		api.svc.Logger.WithField("path", lnStorageDir).Info("Found node storage dir")
 	}
 
 	// Stop the app to ensure no new requests are processed.
@@ -1286,24 +1287,21 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 		return fmt.Errorf("failed to close database connection: %w", err)
 	}
 
-	// The list of files to archive.
-	var archivedFiles []string
-
-	// Locate the main database file.
-	dbFilePath := api.svc.cfg.Env.DatabaseUri
+	var filesToArchive []string
 
 	if lnStorageDir != "" {
-		lnFiles, err := filepath.Glob(filepath.Join(lnStorageDir, "*"))
+		lnFiles, err := filepath.Glob(filepath.Join(workDir, lnStorageDir, "*"))
 		if err != nil {
 			return fmt.Errorf("failed to list files in the LNClient storage directory: %w", err)
 		}
+		api.svc.Logger.WithField("lnFiles", lnFiles).Info("Listed node storage dir")
 
 		// Avoid backing up log files.
 		slices.DeleteFunc(lnFiles, func(s string) bool {
 			return filepath.Ext(s) == ".log"
 		})
 
-		archivedFiles = append(archivedFiles, lnFiles...)
+		filesToArchive = append(filesToArchive, lnFiles...)
 	}
 
 	cw, err := encryptingWriter(w, basicBackupRequest.UnlockPassword)
@@ -1330,39 +1328,27 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 		return err
 	}
 
+	// Locate the main database file.
+	dbFilePath := api.svc.cfg.Env.DatabaseUri
 	// Add the database file to the archive.
+	api.svc.Logger.WithField("nwc.db", dbFilePath).Info("adding nwc db to zip")
 	err = addFileToZip(dbFilePath, "nwc.db")
+	if err != nil {
+		return fmt.Errorf("failed to write nwc db file to zip: %w", err)
+	}
 
-	for _, archivedFile := range archivedFiles {
-		relPath, err := filepath.Rel(workDir, archivedFile)
+	for _, fileToArchive := range filesToArchive {
+		api.svc.Logger.WithField("fileToArchive", fileToArchive).Info("adding file to zip")
+		relPath, err := filepath.Rel(workDir, fileToArchive)
 		if err != nil {
 			return fmt.Errorf("failed to get relative path of input file: %w", err)
 		}
 
 		// Ensure forward slashes for zip format compatibility.
-		err = addFileToZip(archivedFile, filepath.ToSlash(relPath))
+		err = addFileToZip(fileToArchive, filepath.ToSlash(relPath))
 		if err != nil {
 			return fmt.Errorf("failed to write input file to zip: %w", err)
 		}
-	}
-
-	return nil
-}
-
-func (api *API) CreateLocalBackup(basicBackupRequest *models.BasicBackupWailsRequest) error {
-	backupFile, err := os.Create(basicBackupRequest.BackupFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to create backup file: %w", err)
-	}
-	defer backupFile.Close()
-
-	backupReq := models.BasicBackupRequest{
-		UnlockPassword: basicBackupRequest.UnlockPassword,
-	}
-
-	err = api.CreateBackup(&backupReq, backupFile)
-	if err != nil {
-		return fmt.Errorf("failed to create backup: %w", err)
 	}
 
 	return nil
@@ -1374,23 +1360,8 @@ func (api *API) RestoreBackup(password string, r io.Reader) error {
 		return fmt.Errorf("failed to get absolute workdir: %w", err)
 	}
 
-	if !api.isDatabasePathDefault() {
-		return errors.New("cannot restore backup when database path is not default")
-	}
-
-	// Stop the app to ensure no new requests are processed.
-	api.svc.StopApp()
-	db, err := api.svc.db.DB()
-	if err != nil {
-		return fmt.Errorf("failed to get database connection: %w", err)
-	}
-
-	// Closing the database leaves the service in an inconsistent state,
-	// but that should not be a problem since the app is not expected
-	// to be used after its data is exported.
-	err = db.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close database connection: %w", err)
+	if strings.HasPrefix(api.svc.cfg.Env.DatabaseUri, "file:") {
+		return errors.New("cannot restore backup when database path is a file URI")
 	}
 
 	cr, err := decryptingReader(r, password)
@@ -1398,7 +1369,7 @@ func (api *API) RestoreBackup(password string, r io.Reader) error {
 		return fmt.Errorf("failed to create decrypted reader: %w", err)
 	}
 
-	tmpF, err := os.CreateTemp("", "nwc-backup-*.zip")
+	tmpF, err := os.CreateTemp("", "nwc-*.bkp")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary output file: %w", err)
 	}
@@ -1425,7 +1396,7 @@ func (api *API) RestoreBackup(password string, r io.Reader) error {
 	}
 
 	extractZipEntry := func(zipFile *zip.File) error {
-		fsFilePath := filepath.Join(workDir, filepath.FromSlash(zipFile.Name))
+		fsFilePath := filepath.Join(workDir, "restore", filepath.FromSlash(zipFile.Name))
 
 		if err = os.MkdirAll(filepath.Dir(fsFilePath), 0700); err != nil {
 			return fmt.Errorf("failed to create directory for zip entry: %w", err)
@@ -1450,26 +1421,21 @@ func (api *API) RestoreBackup(password string, r io.Reader) error {
 		return nil
 	}
 
+	api.svc.Logger.WithField("count", len(zr.File)).Info("Extracting files")
 	for _, f := range zr.File {
+		api.svc.Logger.WithField("file", f.Name).Info("Extracting file")
 		if err = extractZipEntry(f); err != nil {
 			return fmt.Errorf("failed to extract zip entry: %w", err)
 		}
 	}
+	api.svc.Logger.WithField("count", len(zr.File)).Info("Extracted files")
 
-	return nil
-}
-
-func (api *API) RestoreLocalBackup(basicRestoreRequest *models.BasicRestoreWailsRequest) error {
-	backupFile, err := os.Open(basicRestoreRequest.BackupFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to open backup file: %w", err)
-	}
-	defer backupFile.Close()
-
-	err = api.RestoreBackup(basicRestoreRequest.UnlockPassword, backupFile)
-	if err != nil {
-		return fmt.Errorf("failed to restore backup: %w", err)
-	}
+	go func() {
+		api.svc.Logger.Info("Backup restored. Shutting down Alby Hub...")
+		// schedule node shutdown after a few seconds to ensure frontend updates
+		time.Sleep(5 * time.Second)
+		os.Exit(0)
+	}()
 
 	return nil
 }
@@ -1487,30 +1453,6 @@ func (api *API) parseExpiresAt(expiresAtString string) (*time.Time, error) {
 		expiresAt = &expiresAtValue
 	}
 	return expiresAt, nil
-}
-
-func (api *API) isDatabasePathDefault() bool {
-	workDir, err := filepath.Abs(api.svc.cfg.Env.Workdir)
-	if err != nil {
-		return false
-	}
-
-	databaseURI := api.svc.cfg.Env.DatabaseUri
-	if strings.HasPrefix(databaseURI, "file:") {
-		return false
-	}
-
-	databasePath, err := filepath.Abs(databaseURI)
-	if err != nil {
-		return false
-	}
-
-	expectedDatabasePath := filepath.Join(workDir, "nwc.db")
-	if databasePath != expectedDatabasePath {
-		return false
-	}
-
-	return true
 }
 
 func encryptingWriter(w io.Writer, password string) (io.Writer, error) {

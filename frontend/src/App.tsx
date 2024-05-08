@@ -21,7 +21,6 @@ import NewChannel from "src/screens/channels/NewChannel";
 import MigrateAlbyFunds from "src/screens/onboarding/MigrateAlbyFunds";
 import NewOnchainAddress from "src/screens/onchain/NewAddress";
 import ConnectPeer from "src/screens/peers/ConnectPeer";
-import SignMessage from "src/screens/wallet/SignMessage";
 import Settings from "src/screens/settings/Settings";
 import { ImportMnemonic } from "src/screens/setup/ImportMnemonic";
 import { SetupFinish } from "src/screens/setup/SetupFinish";
@@ -29,6 +28,7 @@ import { SetupNode } from "src/screens/setup/SetupNode";
 import { SetupPassword } from "src/screens/setup/SetupPassword";
 import { SetupWallet } from "src/screens/setup/SetupWallet";
 import Wallet from "src/screens/wallet";
+import SignMessage from "src/screens/wallet/SignMessage";
 import { usePosthog } from "./hooks/usePosthog";
 
 import SettingsLayout from "src/components/layouts/SettingsLayout";
@@ -53,14 +53,12 @@ function App() {
         <Toaster />
         <HashRouter>
           <Routes>
+            <Route
+              path="/node-backup-success"
+              element={<BackupNodeSuccess />}
+            />
             <Route path="/" element={<AppLayout />}>
               <Route path="" element={<HomeRedirect />} />
-
-              <Route
-                path="node-backup-success"
-                element={<BackupNodeSuccess />}
-              />
-
               <Route path="settings" element={<DefaultRedirect />}>
                 <Route element={<SettingsLayout />}>
                   <Route index element={<Settings />} />

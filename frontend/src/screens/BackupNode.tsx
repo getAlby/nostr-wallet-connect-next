@@ -43,11 +43,11 @@ export function BackupNode() {
         throw new Error(`Error:${response.statusText}`);
       }
 
-      let blob = await response.blob();
-      let url = window.URL.createObjectURL(blob);
-      let a = document.createElement("a");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
       a.href = url;
-      a.download = "backup.zip";
+      a.download = "nwc.bkp";
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -64,13 +64,13 @@ export function BackupNode() {
     <>
       <SettingsHeader
         title="Backup Your Node"
-        description="The node will be stopped and you will receive a zip file"
+        description="Your Alby Hub will be stopped and you will receive a backup file you can import on another host or machine"
       />
       {showPasswordScreen ? (
         <Container>
-          <h1 className="text-xl font-medium">Please confirm it's you</h1>
+          <h1 className="text-xl font-medium">Enter unlock password</h1>
           <p className="text-center text-md text-muted-foreground mb-14">
-            Enter your unlock password to continue
+            Your unlock password will be used to encrypt your backup
           </p>
           <form
             onSubmit={onSubmitPassword}

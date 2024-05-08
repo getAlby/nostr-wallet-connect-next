@@ -974,8 +974,9 @@ func (ls *LDKService) GetBalances(ctx context.Context) (*lnclient.BalancesRespon
 }
 
 func (ls *LDKService) GetStorageDir() (string, error) {
-	cfg := ls.node.Config()
-	return cfg.StorageDirPath, nil
+	// cfg := ls.node.Config()
+	// return cfg.StorageDirPath, nil
+	return "ldk/storage", nil
 }
 
 func deleteOldLDKLogs(logger *logrus.Logger, ldkLogDir string) {

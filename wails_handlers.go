@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -461,7 +462,25 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			}).WithError(err).Error("Failed to decode request to wails router")
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
-		err = app.api.CreateLocalBackup(backupRequest)
+
+		backupFile, err := os.Create(backupRequest.BackupFilePath)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to create backup file")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		defer backupFile.Close()
+
+		backupReq := api.BasicBackupRequest{
+			UnlockPassword: backupRequest.UnlockPassword,
+		}
+
+		err = app.api.CreateBackup(&backupReq, backupFile)
+
 		if err != nil {
 			app.svc.Logger.WithFields(logrus.Fields{
 				"route":  route,
@@ -482,7 +501,14 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			}).WithError(err).Error("Failed to decode request to wails router")
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
-		err = app.api.RestoreLocalBackup(restoreRequest)
+
+		backupFile, err := os.Open(restoreRequest.BackupFilePath)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: fmt.Sprintf("failed to open backup file: %w", err)}
+		}
+		defer backupFile.Close()
+
+		err = app.api.RestoreBackup(restoreRequest.UnlockPassword, backupFile)
 		if err != nil {
 			app.svc.Logger.WithFields(logrus.Fields{
 				"route":  route,

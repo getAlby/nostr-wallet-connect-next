@@ -95,6 +95,8 @@ func NewService(ctx context.Context) (*Service, error) {
 	}
 	logger.AddHook(fileLoggerHook)
 
+	finishRestoreNode(logger, appConfig.Workdir)
+
 	// If DATABASE_URI is a URI or a path, leave it unchanged.
 	// If it only contains a filename, prepend the workdir.
 	if !strings.HasPrefix(appConfig.DatabaseUri, "file:") {
@@ -766,4 +768,43 @@ func (svc *Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay) er
 
 func (svc *Service) LogFilePath() string {
 	return filepath.Join(svc.cfg.Env.Workdir, logDir, logFilename)
+}
+
+func finishRestoreNode(logger *logrus.Logger, workDir string) {
+	restoreDir := filepath.Join(workDir, "restore")
+	if restoreDirStat, err := os.Stat(restoreDir); err == nil && restoreDirStat.IsDir() {
+		logger.WithField("restoreDir", restoreDir).Infof("Restore directory found. Finishing Node restore")
+
+		existingFiles, err := os.ReadDir(restoreDir)
+		if err != nil {
+			logger.WithError(err).Fatal("Failed to read WORK_DIR")
+		}
+
+		for _, file := range existingFiles {
+			if file.Name() != "restore" {
+				err = os.RemoveAll(filepath.Join(workDir, file.Name()))
+				if err != nil {
+					logger.WithField("filename", file.Name()).WithError(err).Fatal("Failed to remove file")
+				}
+				logger.WithField("filename", file.Name()).Info("removed file")
+			}
+		}
+
+		files, err := os.ReadDir(restoreDir)
+		if err != nil {
+			logger.WithError(err).Fatal("Failed to read restore directory")
+		}
+		for _, file := range files {
+			err = os.Rename(filepath.Join(restoreDir, file.Name()), filepath.Join(workDir, file.Name()))
+			if err != nil {
+				logger.WithField("filename", file.Name()).WithError(err).Fatal("Failed to move file")
+			}
+			logger.WithField("filename", file.Name()).Info("copied file from restore directory")
+		}
+		err = os.RemoveAll(restoreDir)
+		if err != nil {
+			logger.WithError(err).Fatal("Failed to remove restore directory")
+		}
+		logger.WithField("restoreDir", restoreDir).Info("removed restore directory")
+	}
 }
