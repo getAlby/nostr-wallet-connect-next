@@ -55,9 +55,6 @@ jobs:
           ${{ github.workspace }}/armv6-unknown-linux-gnueabihf/bin/armv6-unknown-linux-gnueabihf-strip ./nostr-wallet-connect
           patchelf --force-rpath --set-rpath '$ORIGIN/lib' ./nostr-wallet-connect
 
-      - name: Add executable permissions
-        run: chmod +x ./nostr-wallet-connect
-
       - name: Archive the artifacts
         uses: actions/upload-artifact@v4
         with:
