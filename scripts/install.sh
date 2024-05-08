@@ -1,8 +1,14 @@
-cd ~
-wget https://nightly.link/getAlby/nostr-wallet-connect-next/workflows/package-raspberry-pi.yaml/master
-tar zxf nostr-wallet-connect-bin.tgz
-rm nostr-wallet-connect-bin.tgz
-mv nostr-wallet-connect-bin albyhub
+
+sudo mkdir -p /opt/albyhub
+sudo chown -R $USER:$USER /opt/albyhub
+cd /opt/albyhub
+wget https://nightly.link/getalby/nostr-wallet-connect-next/workflows/package-raspberry-pi/master/nostr-wallet-connect.zip
+# it's double ziped
+unzip nostr-wallet-connect.zip -d albyhub-tmp
+unzip albyhub-tmp/nostr-wallet-connect.zip -d app
+
+rm -rf albyhub-tmp
+rm nostr-wallet-connect.zip
 
 ### Create systemd service
 cat > /etc/systemd/system/albyhub.service << EOF
@@ -15,13 +21,11 @@ Type=simple
 Restart=always
 RestartSec=1
 User=root
-ExecStart=$HOME/albyhub/nostr-wallet-connect
+ExecStart=/opt/albyhub/app/nostr-wallet-connect
 
 Environment="PORT=80"
-Environment="WORK_DIR=$HOME/.local/share/alby-hub/"
+Environment="WORK_DIR=/opt/albyhub/data"
 Environment="LDK_ESPLORA_SERVER=https://electrs.albylabs.com"
-Environment="ALBY_OAUTH_CLIENT_ID=alby_internal_client"
-Environment="ALBY_OAUTH_CLIENT_SECRET=zblqaACzgqUmHjLZdfXJ"
 Environment="LOG_EVENTS=true"
 
 [Install]

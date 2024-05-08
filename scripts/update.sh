@@ -3,13 +3,16 @@
 echo "🔃 Updating Alby Hub..."
 sudo systemctl stop albyhub
 
-cd ~
+cd /opt/albyhub
 rm -rf albyhub-backup
-mv albyhub albyhub-backup
+mv app albyhub-backup
 wget https://nightly.link/getalby/nostr-wallet-connect-next/workflows/package-raspberry-pi/master/nostr-wallet-connect.zip
 
-unzip nostr-wallet-connect.zip -d albyhub
+unzip nostr-wallet-connect.zip -d albyhub-tmp
+unzip albyhub-tmp/nostr-wallet-connect.zip -d app
+
 rm nostr-wallet-connect.zip
+rm -rf albyhub-tmp
 
 sudo systemctl start albyhub
 
