@@ -311,7 +311,7 @@ func (gs *LDKService) SendPaymentSync(ctx context.Context, invoice string) (*lnc
 		"duration": time.Since(paymentStart).Milliseconds(),
 		"fee":      fee,
 	}).Info("Successful payment")
-	//preimage string
+
 	return &lnclient.Nip47PayInvoiceResponse{
 		Preimage: preimage,
 		Fee:      &fee,
