@@ -232,7 +232,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: openChannelResponse, Error: ""}
 		}
 	case "/api/channels/suggestions":
-		suggestions, err := app.api.ChannelPeerSuggestions(ctx)
+		suggestions, err := app.api.GetChannelPeerSuggestions(ctx)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}

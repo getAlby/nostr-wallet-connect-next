@@ -277,7 +277,7 @@ func (httpSvc *HttpService) channelsListHandler(c echo.Context) error {
 func (httpSvc *HttpService) channelPeerSuggestionsHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	suggestions, err := httpSvc.api.ChannelPeerSuggestions(ctx)
+	suggestions, err := httpSvc.api.GetChannelPeerSuggestions(ctx)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{

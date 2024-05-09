@@ -305,7 +305,7 @@ func (api *API) ListChannels(ctx context.Context) ([]lnclient.Channel, error) {
 	return api.svc.lnClient.ListChannels(ctx)
 }
 
-func (api *API) ChannelPeerSuggestions(ctx context.Context) ([]alby.ChannelPeerSuggestion, error) {
+func (api *API) GetChannelPeerSuggestions(ctx context.Context) ([]alby.ChannelPeerSuggestion, error) {
 	return api.svc.AlbyOAuthSvc.GetChannelPeerSuggestions(ctx)
 }
 
