@@ -193,3 +193,7 @@ type AlbyBalanceResponse struct {
 type AlbyPayRequest struct {
 	Invoice string `json:"invoice"`
 }
+
+type ResetRouterRequest struct {
+	Key string `json:"key"`
+}

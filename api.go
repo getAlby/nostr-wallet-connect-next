@@ -304,11 +304,11 @@ func (api *API) ListChannels(ctx context.Context) ([]lnclient.Channel, error) {
 	return api.svc.lnClient.ListChannels(ctx)
 }
 
-func (api *API) ResetRouter(ctx context.Context) error {
+func (api *API) ResetRouter(ctx context.Context, key string) error {
 	if api.svc.lnClient == nil {
 		return errors.New("LNClient not started")
 	}
-	err := api.svc.lnClient.ResetRouter(ctx)
+	err := api.svc.lnClient.ResetRouter(ctx, key)
 	if err != nil {
 		return err
 	}

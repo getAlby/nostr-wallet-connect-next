@@ -236,6 +236,8 @@ github.com/getAlby/glalby-go v0.0.0-20240416174357-e6e2faa2fbd8 h1:mJsdhUb8hmSSS
 github.com/getAlby/glalby-go v0.0.0-20240416174357-e6e2faa2fbd8/go.mod h1:ViyJvjlvv0GCesTJ7mb3fBo4G+/qsujDAFN90xZ7a9U=
 github.com/getAlby/ldk-node-go v0.0.0-20240508193508-e18c07203ae1 h1:1eWAPaNWzx/iQ+a8UoUTD2bO3+9P5QXEGZ3D8kx/F7c=
 github.com/getAlby/ldk-node-go v0.0.0-20240508193508-e18c07203ae1/go.mod h1:8BRjtKcz8E0RyYTPEbMS8VIdgredcGSLne8vHDtcRLg=
+github.com/getAlby/ldk-node-go v0.0.0-20240509054800-07d21de3fb83 h1:/DxZVyHE1Cyda7Kyp8EsQJ4Trt+cDe4EXVLLk9FFMtA=
+github.com/getAlby/ldk-node-go v0.0.0-20240509054800-07d21de3fb83/go.mod h1:8BRjtKcz8E0RyYTPEbMS8VIdgredcGSLne8vHDtcRLg=
 github.com/getsentry/raven-go v0.2.0 h1:no+xWJRb5ZI7eE8TWgIq1jLulQiIoLG0IfYxv5JYMGs=
 github.com/getsentry/raven-go v0.2.0/go.mod h1:KungGk8q33+aIAZUIVWZDr2OfAEBsO49PX4NzFV5kcQ=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
