@@ -23,11 +23,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "src/components/ui/select";
-import { useInfo } from "src/hooks/useInfo";
 import { useChannelPeerSuggestions } from "src/hooks/useChannelPeerSuggestions";
+import { useInfo } from "src/hooks/useInfo";
 import { cn, formatAmount } from "src/lib/utils";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
-import { Network, NewChannelOrder, Node, RecommendedChannelPeer } from "src/types";
+import {
+  Network,
+  NewChannelOrder,
+  Node,
+  RecommendedChannelPeer,
+} from "src/types";
 import { request } from "src/utils/request";
 
 function getPeerKey(peer: RecommendedChannelPeer) {
@@ -72,7 +77,9 @@ function NewChannelInternal({ network }: { network: Network }) {
   }, []);
 
   React.useEffect(() => {
-    if (!channelPeerSuggestions) { return; }
+    if (!channelPeerSuggestions) {
+      return;
+    }
     const recommendedPeer = channelPeerSuggestions.find(
       (peer) =>
         peer.network === network && peer.paymentMethod === order.paymentMethod
@@ -113,6 +120,10 @@ function NewChannelInternal({ network }: { network: Network }) {
     e.preventDefault();
     useChannelOrderStore.getState().setOrder(order as NewChannelOrder);
     navigate("/channels/order");
+  }
+
+  if (!channelPeerSuggestions) {
+    return <Loading />;
   }
 
   return (
@@ -156,7 +167,7 @@ function NewChannelInternal({ network }: { network: Network }) {
             id="amount"
             type="number"
             required
-            min={selectedPeer?.minimumChannelSize}
+            min={selectedPeer?.minimumChannelSize || 100000}
             value={order.amount}
             onChange={(e) => {
               setAmount(e.target.value.trim());
@@ -169,7 +180,7 @@ function NewChannelInternal({ network }: { network: Network }) {
                 className={cn(
                   "text-center border rounded p-2 cursor-pointer hover:border-muted-foreground",
                   +(order.amount || "0") === amount &&
-                  "border-primary hover:border-primary"
+                    "border-primary hover:border-primary"
                 )}
                 onClick={() => setAmount(amount.toString())}
               >
@@ -224,7 +235,9 @@ function NewChannelInternal({ network }: { network: Network }) {
                   value={getPeerKey(selectedPeer)}
                   onValueChange={(value) =>
                     setSelectedPeer(
-                      channelPeerSuggestions.find((x) => getPeerKey(x) === value)
+                      channelPeerSuggestions.find(
+                        (x) => getPeerKey(x) === value
+                      )
                     )
                   }
                 >
@@ -245,10 +258,12 @@ function NewChannelInternal({ network }: { network: Network }) {
                         >
                           <div className="flex items-center space-between gap-3 w-full">
                             <div className="flex items-center gap-3">
-                              <img
-                                src={peer.image}
-                                className="w-12 h-12 object-contain"
-                              />
+                              {peer.name !== "Custom" && (
+                                <img
+                                  src={peer.image}
+                                  className="w-12 h-12 object-contain"
+                                />
+                              )}
                               <div>
                                 {peer.name}
                                 {peer.minimumChannelSize > 0 && (
