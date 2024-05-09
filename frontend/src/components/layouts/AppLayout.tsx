@@ -2,10 +2,12 @@ import {
   Cable,
   ExternalLinkIcon,
   FlaskRound,
+  LogOut,
   Menu, MessageCircleQuestion,
+  Power,
   Settings,
   Store,
-  Wallet,
+  Wallet
 } from "lucide-react";
 
 import { CaretUpIcon } from "@radix-ui/react-icons";
@@ -74,20 +76,26 @@ export default function AppLayout() {
     return (
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <ExternalLink
               to="https://getalby.com/dashboard"
               className="w-full flex flex-row items-center gap-2"
             >
-              <ExternalLinkIcon className="w-4 h-4"></ExternalLinkIcon>
+              <ExternalLinkIcon className="w-4 h-4" />
               Go to getalby.com
             </ExternalLink>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
+        <DropdownMenuItem onClick={logout}>
+          <LogOut className="w-4 h-4 mr-2" />
+          Log out
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={logout}>
+          <Power className="w-4 h-4 mr-2" />
+          Shutdown
+        </DropdownMenuItem>
       </DropdownMenuContent>
     );
   }
@@ -186,6 +194,24 @@ export default function AppLayout() {
                     </DropdownMenuTrigger>
                     <UserMenuContent />
                   </DropdownMenu>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Power className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem onClick={logout}>
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Log out
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={logout}>
+                        <Power className="w-4 h-4 mr-2" />
+                        Shutdown
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
                 </div>
               </div>
             </div>
