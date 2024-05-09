@@ -10,6 +10,7 @@ import {
   Wallet
 } from "lucide-react";
 
+import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { CaretUpIcon } from "@radix-ui/react-icons";
 import React from "react";
 import {
@@ -20,6 +21,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import SidebarHint from "src/components/SidebarHint";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "src/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "src/components/ui/avatar";
 import { Button } from "src/components/ui/button";
 import {
@@ -70,6 +72,25 @@ export default function AppLayout() {
 
     navigate("/", { replace: true });
     toast({ title: "You are now logged out." });
+  }, [csrf, navigate, toast]);
+
+  const shutdown = React.useCallback(async () => {
+    if (!csrf) {
+      throw new Error("csrf not loaded");
+    }
+
+    // TODO: Implement
+    // await request("/api/logout", {
+    //   method: "POST",
+    //   headers: {
+    //     "X-CSRF-Token": csrf,
+    //     "Content-Type": "application/json",
+    //   },
+    // });
+
+    // navigate("/", { replace: true });
+    // toast({ title: "You are now logged out." });
+
   }, [csrf, navigate, toast]);
 
   function UserMenuContent() {
@@ -186,31 +207,48 @@ export default function AppLayout() {
                       {albyMe?.name || albyMe?.email}
                     </Link>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <CaretUpIcon />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <UserMenuContent />
-                  </DropdownMenu>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Power className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem onClick={logout}>
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Log out
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={logout}>
-                        <Power className="w-4 h-4 mr-2" />
-                        Shutdown
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+
+                  <AlertDialog>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <CaretUpIcon />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <UserMenuContent />
+                    </DropdownMenu>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Power className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={logout}>
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Log out
+                        </DropdownMenuItem>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem>
+                            <Power className="w-4 h-4 mr-2" />
+                            Shutdown
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Do you want to turn off Alby Hub?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will turn off your Alby Hub and make your node offline. You won't be able to send or receive bitcoin until you unlock it.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={shutdown}>Continue</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
 
                 </div>
               </div>
