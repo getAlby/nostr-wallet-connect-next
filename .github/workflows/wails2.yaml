@@ -23,6 +23,7 @@ jobs:
         run: |
           rm main_http.go
           tail -n +3 main_wails.go > main_wails.tmp
+          rm main_wails.go
           mv main_wails.tmp main_wails.go
 
       - uses: dAppServer/wails-build-action@v2.2
