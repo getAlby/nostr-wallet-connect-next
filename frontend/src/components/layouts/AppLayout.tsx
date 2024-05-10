@@ -169,8 +169,8 @@ export default function AppLayout() {
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6 gap-3 border-t border-border justify-between">
                   <div className="grid grid-flow-col gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={albyMe?.avatar} alt="@satoshi" />
-                      <AvatarFallback>SN</AvatarFallback>
+                      <AvatarImage src={albyMe?.avatar} alt="Avatar" />
+                      <AvatarFallback>{(albyMe?.name || albyMe?.email || "SN").substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <Link
                       to="#"
