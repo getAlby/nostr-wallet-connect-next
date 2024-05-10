@@ -19,9 +19,7 @@ export default function SettingsLayout() {
             <MenuItem to="/settings">General</MenuItem>
             <MenuItem to="/settings/key-backup">Key Backup</MenuItem>
             {info?.backendType === "LDK" && (
-              <MenuItem to="/settings/node-backup">
-                Migrate/Backup Node
-              </MenuItem>
+              <MenuItem to="/settings/node-backup">Backup Node</MenuItem>
             )}
             <MenuItem to="/settings/change-unlock-password">
               Unlock Password

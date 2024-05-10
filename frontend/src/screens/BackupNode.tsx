@@ -41,7 +41,6 @@ export function BackupNode() {
           },
           body: JSON.stringify({
             UnlockPassword: unlockPassword,
-            BackupFilePath: "nwc.bkp",
           }),
         });
 
@@ -65,8 +64,7 @@ export function BackupNode() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            UnlockPassword: unlockPassword,
-            BackupFilePath: ".data/nwc.bkp",
+            unlockPassword,
           }),
         });
       }

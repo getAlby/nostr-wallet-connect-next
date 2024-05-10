@@ -453,7 +453,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		return WailsRequestRouterResponse{Body: sendSpontaneousPaymentProbesResponse, Error: ""}
 	case "/api/backup":
-		backupRequest := &api.BasicBackupWailsRequest{}
+		backupRequest := &api.BasicBackupRequest{}
 		err := json.Unmarshal([]byte(body), backupRequest)
 		if err != nil {
 			app.svc.Logger.WithFields(logrus.Fields{
@@ -516,10 +516,29 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 
-		backupFile, err := os.Open(restoreRequest.BackupFilePath)
+		backupFilePath, err := runtime.OpenFileDialog(ctx, runtime.OpenDialogOptions{
+			Title:           "Select Backup File",
+			DefaultFilename: "nwc.bkp",
+		})
 		if err != nil {
-			return WailsRequestRouterResponse{Body: nil, Error: fmt.Sprintf("failed to open backup file: %v", err)}
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to open save file dialog")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
+
+		backupFile, err := os.Open(backupFilePath)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to open backup file")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
 		defer backupFile.Close()
 
 		err = app.api.RestoreBackup(restoreRequest.UnlockPassword, backupFile)

@@ -22,6 +22,7 @@ export function RestoreNode() {
   const [loading, setLoading] = useState(false);
   const [restored, setRestored] = useState(false);
   const { data: info } = useInfo(restored);
+  const isHttpMode = window.location.protocol.startsWith("http");
 
   React.useEffect(() => {
     if (restored && info?.setupCompleted) {
@@ -59,21 +60,33 @@ export function RestoreNode() {
       throw new Error("No CSRF token");
     }
 
-    const formData = new FormData();
-    formData.append("unlockPassword", unlockPassword);
-    if (file !== null) {
-      formData.append("backup", file);
-    }
-
     try {
       setLoading(true);
-      await request("/api/restore", {
-        method: "POST",
-        headers: {
-          "X-CSRF-Token": csrf,
-        },
-        body: formData,
-      });
+
+      if (isHttpMode) {
+        const formData = new FormData();
+        formData.append("unlockPassword", unlockPassword);
+        if (file !== null) {
+          formData.append("backup", file);
+        }
+        await request("/api/restore", {
+          method: "POST",
+          headers: {
+            "X-CSRF-Token": csrf,
+          },
+          body: formData,
+        });
+      } else {
+        await request("/api/restore", {
+          method: "POST",
+          headers: {
+            "X-CSRF-Token": csrf,
+          },
+          body: JSON.stringify({
+            unlockPassword,
+          }),
+        });
+      }
 
       setRestored(true);
     } catch (error) {
@@ -109,17 +122,19 @@ export function RestoreNode() {
             placeholder="Unlock Password"
           />
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="backup">Backup File</Label>
-          <Input
-            type="file"
-            required
-            name="backup"
-            accept=".bkp"
-            onChange={handleChangeFile}
-            className="cursor-pointer"
-          />
-        </div>
+        {isHttpMode && (
+          <div className="grid gap-2">
+            <Label htmlFor="backup">Backup File</Label>
+            <Input
+              type="file"
+              required
+              name="backup"
+              accept=".bkp"
+              onChange={handleChangeFile}
+              className="cursor-pointer"
+            />
+          </div>
+        )}
         <LoadingButton loading={loading}>Restore Node</LoadingButton>
       </form>
     </>

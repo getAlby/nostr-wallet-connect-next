@@ -18,8 +18,8 @@ require (
 	github.com/nbd-wtf/ln-decodepay v1.5.2
 	github.com/orandin/lumberjackrus v1.0.1
 	github.com/stretchr/testify v1.8.4
-	github.com/wailsapp/wails/v2 v2.8.1
-	golang.org/x/crypto v0.18.0
+	github.com/wailsapp/wails/v2 v2.7.1
+	golang.org/x/crypto v0.23.0
 	golang.org/x/oauth2 v0.4.0
 	google.golang.org/grpc v1.53.0
 	gopkg.in/macaroon.v2 v2.1.0
@@ -174,10 +174,10 @@ require (
 	go.uber.org/multierr v1.9.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.20.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
-	golang.org/x/term v0.16.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/net v0.25.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/term v0.20.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
