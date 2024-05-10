@@ -150,7 +150,9 @@ func NewService(ctx context.Context) (*Service, error) {
 		nip47NotificationQueue: nip47NotificationQueue,
 	}
 	// FIXME: tangled dependency
-	svc.AlbyOAuthSvc = alby.NewAlbyOAuthService(logger, cfg, cfg.Env, eventPublisher, NewAPI(svc))
+	svc.AlbyOAuthSvc = alby.NewAlbyOAuthService(logger, cfg, cfg.Env, NewAPI(svc))
+
+	eventPublisher.RegisterSubscriber(svc.AlbyOAuthSvc)
 
 	eventPublisher.Publish(&events.Event{
 		Event: "nwc_started",
@@ -299,55 +301,33 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, r
 		return err
 	}
 
-	status, err := sub.Relay.Publish(ctx, *resp)
+	err = sub.Relay.Publish(ctx, *resp)
 	if err != nil {
+		responseEvent.State = RESPONSE_EVENT_STATE_PUBLISH_FAILED
 		svc.Logger.WithFields(logrus.Fields{
-			"requestEventNostrId": requestEvent.NostrId,
-			"status":              status,
-			"appId":               appId,
-			"replyEventId":        resp.ID,
+			"requestEventId":       requestEvent.ID,
+			"requestNostrEventId":  requestEvent.NostrId,
+			"appId":                appId,
+			"responseEventId":      responseEvent.ID,
+			"responseNostrEventId": resp.ID,
 		}).Errorf("Failed to publish reply: %v", err)
-		return err
-	}
-
-	if status == nostr.PublishStatusSucceeded {
+	} else {
 		responseEvent.State = RESPONSE_EVENT_STATE_PUBLISH_CONFIRMED
 		responseEvent.RepliedAt = time.Now()
 		svc.Logger.WithFields(logrus.Fields{
 			"requestEventId":       requestEvent.ID,
 			"requestNostrEventId":  requestEvent.NostrId,
-			"status":               status,
 			"appId":                appId,
 			"responseEventId":      responseEvent.ID,
 			"responseNostrEventId": resp.ID,
 		}).Info("Published reply")
-	} else if status == nostr.PublishStatusFailed {
-		responseEvent.State = RESPONSE_EVENT_STATE_PUBLISH_FAILED
-		svc.Logger.WithFields(logrus.Fields{
-			"requestEventId":       requestEvent.ID,
-			"requestNostrEventId":  requestEvent.NostrId,
-			"status":               status,
-			"appId":                appId,
-			"responseEventId":      responseEvent.ID,
-			"responseNostrEventId": resp.ID,
-		}).Info("Failed to publish reply")
-	} else {
-		responseEvent.State = RESPONSE_EVENT_STATE_PUBLISH_UNCONFIRMED
-		svc.Logger.WithFields(logrus.Fields{
-			"requestEventId":       requestEvent.ID,
-			"requestNostrEventId":  requestEvent.NostrId,
-			"status":               status,
-			"appId":                appId,
-			"responseEventId":      responseEvent.ID,
-			"responseNostrEventId": resp.ID,
-		}).Info("Reply sent but no response from relay (timeout)")
 	}
+
 	err = svc.db.Save(&responseEvent).Error
 	if err != nil {
 		svc.Logger.WithFields(logrus.Fields{
 			"requestEventId":       requestEvent.ID,
 			"requestNostrEventId":  requestEvent.NostrId,
-			"status":               status,
 			"appId":                appId,
 			"responseEventId":      responseEvent.ID,
 			"responseNostrEventId": resp.ID,
@@ -744,7 +724,8 @@ func (svc *Service) GetBudgetUsage(appPermission *AppPermission) int64 {
 	var result struct {
 		Sum uint
 	}
-	svc.db.Table("payments").Select("SUM(amount) as sum").Where("app_id = ? AND preimage IS NOT NULL AND created_at > ?", appPermission.AppId, GetStartOfBudget(appPermission.BudgetRenewal, appPermission.App.CreatedAt)).Scan(&result)
+	// TODO: discard failed payments from this check
+	svc.db.Table("payments").Select("SUM(amount) as sum").Where("app_id = ? AND created_at > ?", appPermission.AppId, GetStartOfBudget(appPermission.BudgetRenewal, appPermission.App.CreatedAt)).Scan(&result)
 	return int64(result.Sum)
 }
 
@@ -759,9 +740,9 @@ func (svc *Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay) er
 	if err != nil {
 		return err
 	}
-	status, err := relay.Publish(ctx, *ev)
-	if err != nil || status != nostr.PublishStatusSucceeded {
-		return fmt.Errorf("nostr publish not successful: %s error: %s", status, err)
+	err = relay.Publish(ctx, *ev)
+	if err != nil {
+		return fmt.Errorf("nostr publish not successful: %s", err)
 	}
 	return nil
 }
