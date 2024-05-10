@@ -10,6 +10,7 @@ import { LoadingButton } from "src/components/ui/loading-button";
 import { useToast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
 import { handleRequestError } from "src/utils/handleRequestError";
+import { request } from "src/utils/request";
 
 export function BackupNode() {
   const navigate = useNavigate();
@@ -26,32 +27,50 @@ export function BackupNode() {
       throw new Error("No CSRF token");
     }
 
+    const isHttpMode = window.location.protocol.startsWith("http");
+
     try {
       setLoading(true);
-      let response = await fetch("/api/backup", {
-        method: "POST",
-        headers: {
-          "X-CSRF-Token": csrf,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          UnlockPassword: unlockPassword,
-        }),
-      });
 
-      if (!response.ok) {
-        throw new Error(`Error:${response.statusText}`);
+      if (isHttpMode) {
+        const response = await fetch("/api/backup", {
+          method: "POST",
+          headers: {
+            "X-CSRF-Token": csrf,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            UnlockPassword: unlockPassword,
+            BackupFilePath: "nwc.bkp",
+          }),
+        });
+
+        if (!response?.ok) {
+          throw new Error(`Error:${response?.statusText}`);
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "nwc.bkp";
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      } else {
+        await request("/api/backup", {
+          method: "POST",
+          headers: {
+            "X-CSRF-Token": csrf,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            UnlockPassword: unlockPassword,
+            BackupFilePath: ".data/nwc.bkp",
+          }),
+        });
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "nwc.bkp";
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
       navigate("/node-backup-success");
     } catch (error) {
       handleRequestError(toast, "Failed to backup the node", error);

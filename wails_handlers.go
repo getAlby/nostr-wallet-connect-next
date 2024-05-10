@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/getAlby/nostr-wallet-connect/models/api"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type WailsRequestRouterResponse struct {
@@ -463,7 +464,20 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 
-		backupFile, err := os.Create(backupRequest.BackupFilePath)
+		saveFilePath, err := runtime.SaveFileDialog(ctx, runtime.SaveDialogOptions{
+			Title:           "Save Backup File",
+			DefaultFilename: "nwc.bkp",
+		})
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to open save file dialog")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		backupFile, err := os.Create(saveFilePath)
 		if err != nil {
 			app.svc.Logger.WithFields(logrus.Fields{
 				"route":  route,
