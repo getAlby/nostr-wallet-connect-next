@@ -1,0 +1,24 @@
+name: Wails build - all platforms
+
+on:
+  push:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [
+          {name: nostr-wallet-connect, platform: linux/amd64, os: ubuntu-20.04},
+          {name: nostr-wallet-connect, platform: windows/amd64, os: windows-2019},
+          {name: nostr-wallet-connect, platform: darwin/universal, os: macos-12}
+        ]
+    runs-on: ${{ matrix.build.os }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: dAppServer/wails-build-action@v2.2
+        with:
+          build-name: ${{ matrix.build.name }}
+          build-platform: ${{ matrix.build.platform }}
