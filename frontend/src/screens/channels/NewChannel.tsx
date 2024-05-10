@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "src/components/ui/select";
+import { Step, StepItem, Stepper } from "src/components/ui/stepper";
 import { useChannelPeerSuggestions } from "src/hooks/useChannelPeerSuggestions";
 import { useInfo } from "src/hooks/useInfo";
 import { cn, formatAmount } from "src/lib/utils";
@@ -126,6 +127,12 @@ function NewChannelInternal({ network }: { network: Network }) {
     return <Loading />;
   }
 
+  const steps = [
+    { label: "Step 1" },
+    { label: "Step 2" },
+    { label: "Step 3" },
+  ] satisfies StepItem[];
+
   return (
     <>
       <Breadcrumb>
@@ -145,6 +152,21 @@ function NewChannelInternal({ network }: { network: Network }) {
         title="Open a channel"
         description="Funds used to open a channel minus fees will be added to your spending balance"
       />
+
+      <div className="flex w-full flex-col gap-4">
+        <Stepper initialStep={0} steps={steps} orientation="vertical">
+          {steps.map(({ label }, index) => {
+            return (
+              <Step key={label} label={label}>
+                <div className="h-40 flex items-center justify-center my-2 border bg-secondary text-primary rounded-md">
+                  <h1 className="text-xl">Step {index + 1}</h1>
+                </div>
+              </Step>
+            )
+          })}
+        </Stepper>
+      </div>
+
       <form
         onSubmit={onSubmit}
         className="md:max-w-md max-w-full flex flex-col gap-5"
@@ -180,7 +202,7 @@ function NewChannelInternal({ network }: { network: Network }) {
                 className={cn(
                   "text-center border rounded p-2 cursor-pointer hover:border-muted-foreground",
                   +(order.amount || "0") === amount &&
-                    "border-primary hover:border-primary"
+                  "border-primary hover:border-primary"
                 )}
                 onClick={() => setAmount(amount.toString())}
               >
