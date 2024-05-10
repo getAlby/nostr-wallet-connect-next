@@ -173,7 +173,7 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 		}).Info("Waiting for LDK node to sync")
 		time.Sleep(1 * time.Second)
 
-		if node.Status().LatestOnchainWalletSyncTimestamp != nil {
+		if node.Status().LatestOnchainWalletSyncTimestamp != nil || node.Status().LatestWalletSyncTimestamp != nil {
 			svc.Logger.WithFields(logrus.Fields{
 				"nodeId":    nodeId,
 				"status":    node.Status(),
@@ -1002,6 +1002,14 @@ func (ls *LDKService) GetBalances(ctx context.Context) (*lnclient.BalancesRespon
 			NextMaxReceivableMPP: nextMaxReceivableMPP,
 		},
 	}, nil
+}
+
+func (ls *LDKService) GetStorageDir() (string, error) {
+	// Note: the below will return the path including the WORK_DIR which is harder to use,
+	// so for now we just return a hardcoded value.
+	// cfg := ls.node.Config()
+	// return cfg.StorageDirPath, nil
+	return "ldk/storage", nil
 }
 
 func deleteOldLDKLogs(logger *logrus.Logger, ldkLogDir string) {
