@@ -19,20 +19,85 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Hack to remove HTTP implementation and use Wails
-        run: |
-          rm main_http.go
-          tail -n +3 main_wails.go > main_wails.tmp
-          rm main_wails.go
-          mv main_wails.tmp main_wails.go
+      #- uses: dAppServer/wails-build-action@v2.2
+      #  with:
+      #    build-name: ${{ matrix.build.name }}
+      #    build-platform: ${{ matrix.build.platform }}
+      #    package: true
+      #    go-version: '1.21'
+      #    wails-version: 'v2.7.1'
+      #    nsis: false
+      #    node-version: '20.x'
+
+      - name: Setup GoLang
+        uses: actions/setup-go@v5
+        with:
+          check-latest: true
+          go-version: 1.21
+
+      - name: Get dependencies
+        run: go get -v -t -d ./...
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.7.1
         shell: bash
 
-      - uses: dAppServer/wails-build-action@v2.2
+      - name: Install Linux Wails deps
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install libgtk-3-0 libwebkit2gtk-4.0-dev gcc-aarch64-linux-gnu
+        shell: bash
+
+      - name: Install macOS Wails deps
+        if: runner.os == 'macOS'
+        run: brew install mitchellh/gon/gon
+        shell: bash
+
+      - name: Wails Doctor
+        working-directory: .
+        run: wails doctor
+        shell: bash
+
+
+      - name: Build App
+        if: runner.os == 'macOS'
+        run: wails build --platform darwin/universal -webview2 download -o ${{ matrix.build.name }} -tags "wails"
+        shell: bash
+
+      - name: Build App
+        if: runner.os == 'Linux'
+        run: wails build --platform linux/amd64 -webview2 download -o ${{ matrix.build.name }} -tags "wails"
+        shell: bash
+
+      - name: Build Windows App
+        if: runner.os == 'Windows'
+        run: wails build --platform windows/amd64 -webview2 download -o ${{ matrix.build.name }} -tags "wails"
+        shell: bash
+
+      - name: Add macOS perms
+        if: runner.os == 'macOS'
+        run: chmod +x build/bin/*/Contents/MacOS/*
+        shell: bash
+
+      - name: Add Linux perms
+        if: runner.os  == 'Linux'
+        run: chmod +x build/bin/*
+        shell: bash
+
+      - name: Build .app zip file
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          ditto -c -k ./build/bin/${{ matrix.build.name }}.app ./build/bin/${{ matrix.build.name }}.app.zip
+
+
+      - uses: actions/upload-artifact@v3
         with:
-          build-name: ${{ matrix.build.name }}
-          build-platform: ${{ matrix.build.platform }}
-          package: true
-          go-version: '1.21'
-          wails-version: 'v2.7.1'
-          nsis: false
-          node-version: '20.x'
+          name: Wails Build ${{runner.os}} ${{ matrix.build.name }}
+          path: |
+            */bin/
+            *\bin\*
