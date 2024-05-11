@@ -29,6 +29,12 @@ jobs:
       #    nsis: false
       #    node-version: '20.x'
 
+      - name: Install dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y patchelf
+
       - name: Setup GoLang
         uses: actions/setup-go@v5
         with:
@@ -62,6 +68,8 @@ jobs:
         run: wails doctor
         shell: bash
 
+      # On Windows, we need the shared libraries to be found in the same directory
+      # as the executable. Wails build will fail otherwise.
       - name: Copy shared libraries
         if: runner.os == 'Windows'
         run: |
@@ -93,6 +101,20 @@ jobs:
           cp glalby_bindings.dll ./build/bin/
           cp ldk_node.dll ./build/bin/
         shell: bash
+
+      - name: Copy shared libraries to the output directory
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p ./build/bin/lib
+          cp `go list -m -f "{{.Dir}}" github.com/breez/breez-sdk-go`/breez_sdk/lib/linux-amd64/libbreez_sdk_bindings.so ./build/bin/lib/
+          cp `go list -m -f "{{.Dir}}" github.com/getAlby/glalby-go`/glalby/x86_64-unknown-linux-gnu/libglalby_bindings.so ./build/bin/lib/
+          cp `go list -m -f "{{.Dir}}" github.com/getAlby/ldk-node-go`/ldk_node/x86_64-unknown-linux-gnu/libldk_node.so ./build/bin/lib/
+        shell: bash
+
+      - name: Patch executable RPATH
+        if: runner.os == 'Linux'
+        run: |
+          patchelf --force-rpath --set-rpath '$ORIGIN/lib' ./build/bin/nostr-wallet-connect
 
       - name: Add macOS perms
         if: runner.os == 'macOS'
