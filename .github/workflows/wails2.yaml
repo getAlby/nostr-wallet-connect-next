@@ -70,6 +70,7 @@ jobs:
           cp `go list -m -f "{{.Dir}}" github.com/getAlby/ldk-node-go`/ldk_node/x86_64-pc-windows-gnu/ldk_node.dll ./
         shell: bash
 
+
       - name: Build App
         if: runner.os == 'macOS'
         run: wails build --platform darwin/universal -webview2 download -o ${{ matrix.build.name }} -tags "wails"
@@ -82,7 +83,15 @@ jobs:
 
       - name: Build Windows App
         if: runner.os == 'Windows'
-        run: wails build --platform windows/amd64 -webview2 download -o ${{ matrix.build.name }} -tags "wails"
+        run: wails build --platform windows/amd64 -webview2 download -o ${{ matrix.build.name }}.exe -tags "wails"
+        shell: bash
+
+      - name: Copy DLLs to the output directory
+        if: runner.os == 'Windows'
+        run: |
+          cp breez_sdk_bindings.dll ./build/bin/
+          cp glalby_bindings.dll ./build/bin/
+          cp ldk_node.dll ./build/bin/
         shell: bash
 
       - name: Add macOS perms
