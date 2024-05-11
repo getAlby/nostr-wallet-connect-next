@@ -25,7 +25,7 @@ export function Welcome() {
           </h1>
           <p className="text-muted-foreground">
             A powerful, all-in-one lightning wallet with a superpower of
-            connecting into applications.
+            connecting to applications.
           </p>
         </div>
         <div className="grid gap-2">
@@ -45,183 +45,170 @@ export function Welcome() {
           <Dialog>
             <DialogTrigger asChild>
               <a className="underline cursor-pointer">
-                Terms of Service
+                Software License Agreement(
               </a>
             </DialogTrigger>
             <DialogContent className={"lg:max-w-screen-lg overflow-y-scroll max-h-[90%]"}>
               <DialogHeader>
-                <DialogTitle>Terms of Service</DialogTitle>
+                <DialogTitle>End User License Agreement(</DialogTitle>
               </DialogHeader>
               <div className="flex flex-col gap-2 text-sm">
-                <h2 className="font-semibold">Introduction</h2>
-                <p>
-                  These terms of service constitute a legally binding agreement (Agreement) made between you, whether personally or on behalf of an entity (“you” or “User(s)”) and Alby Inc., (“Alby”, “we”, “us”, or “our”), concerning your access to and use of our (“Services”) which include the Alby Account, the Alby Pro plan, the Alby Hub app, the Alby cloud infrastructure service.
-                </p>
-                <p>
-                  The Alby Account Pro plan allows users to self-host the Alby Hub app or connect another wallet to their Alby Account.
-                </p>
-                <p>
-                  To facilitate the usage of the Alby Hub app, Alby is offering a cloud infrastructure service to give you the option to conveniently self-host the Alby Hub app. Alternatively you can install and run the Alby Hub app on any other device according to its technical requirements and connect it to your Alby Account if you registered for the Pro plan.
-                </p>
-                <h2 className="font-semibold">General</h2>
-                <p>
-                  By accepting these terms and accessing or using the Alby Pro plan, you agree that you have read, understood, and accepted all of the terms and conditions contained in this Agreement that apply to our Services, as well as our Privacy Policy.</p>
-                <p>
-                  You affirm that you are the older of 18 years old or the age of majority as required by your local law and have the capacity to enter into this Agreement. If you are accessing the Services on behalf of the company you work for, you also affirm you have the proper grant of authority and capacity to enter into this Agreement on behalf of such company.
-                </p>
-                <p>
-                  We may change the terms of this agreement and supplemental agreement at any time without prior notice. Any changes will take effect immediately when posted (unless specifically indicated otherwise), and your continued use of the Services means you have accepted these changes.
-                </p>
-                <h2 className="font-semibold">User Representation</h2>
-                <p>
-                  By registering for the Alby Pro plan, you represent and warrant that: (1) all registration information you submit will be true, accurate, current, and complete; (2) you will maintain the accuracy of such information and promptly update such registration information as necessary; (3) you have the legal capacity and you agree to comply with this agreement; (4) you are not a minor in the jurisdiction in which you reside, or if a minor, you have received parental permission to use the account; (5) you will not use the account for any illegal or unauthorized purpose; and (6) your use of the account will not violate any applicable law or regulation.
-                </p>
-                <p>
-                  If you breach any of the foregoing representations or warranties, we have the right to suspend or terminate your Alby Pro plan and refuse any and all current or future use of the Services (or any portion thereof).
-                </p>
-                <h2 className="font-semibold">Accessing Alby Pro plan</h2>
-                <p>
-                  We reserve the right to remove, reclaim, or change a username (e.g. your lightning address) you select if we determine, in our sole discretion, that such username is inappropriate, obscene, or otherwise objectionable.
-                </p>
-                <h2 className="font-semibold">
-                  Responsibility
-                </h2>
-                <p>
-                  You are fully responsible for how you use the Services.
-                </p>
-                <p>
-                  It is your responsibility to keep a backup of all credentials, including the unlock password, the recovery phrase, private keys and other sensitive information related to the Alby Account and the Alby Hub app and to keep this backup outside of Services. If you do not maintain a backup of your Alby Hub app outside of Services, you will not be able to access the bitcoin previously accessed using your Alby Hub app.
-                </p>
-                <p>
-                  You are responsible for the use of Services by any user who accesses Services with your account credentials.
-                </p>
-                <p>
-                  You are responsible for obtaining all necessary rights and permissions to permit processing of Content in the Alby infrastructure service.
-                </p>
-                <h2 className="font-semibold">
-                  Password Management
-                </h2>
-                <p>
-                  With respect to the Alby Hub app, Alby does not receive or store the unlock password, nor any recovery phrase or private keys, or the individual transaction history. Alby cannot assist you with password retrieval. You are solely responsible for remembering, storing and keeping secret the password and recovery phrase. The assets you have associated with the Alby Hub app may become inaccessible if you do not know or keep secret your password, private keys and recovery phrase. Any third party with knowledge of one or more of your credentials (including, without limitation, a recovery phrase or password) can access the assets via your Alby Hub app or recover your funds in another app and initiate transactions.
-                </p>
-                <p>
-                  When you use the Alby Hub app using the Alby cloud infrastructure service, we strongly recommend that you: (i) create a strong password that you do not use for any other website or online service; (ii) provide accurate and truthful information; (iii) protect and keep secret all credentials such as the recovery phrase; (iii) protect access to your device, Alby Account and Alby Hub app; (iv) promptly notify us if you discover or otherwise suspect any security breaches related to the Alby Hub app; and (v) create a backup of the recovery phrase and passcode. You agree to take responsibility for all activities that occur with your Alby Hub app and accept all risks of any authorized or unauthorized access to their app, to the maximum extent permitted by law.
-                </p>
-                <h2 className="font-semibold">
-                  Transactions
-                </h2>
-                <p>
-                  Alby shall not be liable to you for any malformed transaction payloads created using our Services.
-                </p>
-                <p>
-                  Once transaction details have been submitted to the bitcoin lightning network, we cannot assist you in canceling or otherwise modifying the transaction or transaction details. Alby has no control over your assets stored by the Alby Hub app and does not have the ability to facilitate any cancellation or modification requests.
-                </p>
-                <h2 className="font-semibold">Alby's cloud infrastructure service</h2>
-                <p>
-                  In combination with the Alby Pro plan, we are offering a cloud infrastructure service to give you the opportunity to self-host your Alby Hub app.
-                  There are no service level commitments, however, Alby uses its best effort to maintain high service levels and minimize downtimes.
-                  It is agreed between Alby and the user that during an incident the objective of us will be to expeditiously resolve the incident and make reasonable assessment of the severity and call for certain elevated incident response.
-                  Any planned maintenance and downtime of the Alby infrastructure service will be announced upfront. There might be emergency changes that leave no time for notifications to you.
-                  Service interruptions may happen due to unrecoverable underlying infrastructure failure from hardware providers or any components, services, connections that are outside Alby’s control.
-                  Examples:
-                </p>
-                <ul className="list-disc list-inside">
-                  <li>Any Force Majeure incidents that impact the accessibility of cloud infrastructure locations of Alby.</li>
-                  <li>Any performance and service level deviations due to targeted attacks on the platform by anyone or due to the breach of fair or projected usage patterns by users.</li>
-                  <li>Distributed Denial of Service attack originating from any server.</li>
-                  <li>Sudden burst of requests not in line with the previously known traffic patterns.
-                    Support hours and response times:</li>
-                  <li>Email support: you'll receive an email response within 24 hours (Monday–Friday).</li>
-                  <li>Live chat and phone support: Live chat and phone support are available during our local business hours upon request (9:00am–5:00pm, Monday–Friday).</li>
-                </ul>
-                <h2 className="font-semibold">Ownership and control</h2>
-                <p>
-                  You retain all ownership and intellectual property rights in and to your Content (as defined below). The use of the Alby infrastructure service will not affect your ownership or license rights in Content.
-                  Content consists of all data, software such as the Alby Hub app, and information that you authorize access to, input to or run through the Alby cloud infrastructure service.
-                  We retain all ownership and intellectual property rights in the Alby Account service and the cloud infrastructure service, derivative works thereof, and anything developed or delivered by or on behalf of us under this Agreement.
-                  This means you retain full ownership of the Alby Hub app when you self-host the app with the Alby cloud infrastructure service.
-                  Alby has no control over the data that a user provides to form any transaction using the Alby Hub app; or how transactions are processed in the bitcoin lightning network.
-                  Alby therefore cannot and does not ensure that any transaction details you submit via the Alby Hub app will be confirmed on the bitcoin and lightning network. The transaction details submitted by you via applications provided by us may not be completed, or may be substantially delayed, by the bitcoin lightning network used to process the transaction. We do not guarantee that the Alby Hub app can transfer title or right in bitcoin or make any warranties whatsoever with regard to title.
-                </p>
-                <h2 className="font-semibold">Fees</h2>
-                <p>
-                  Alby charges a fixed monthly fee for the Alby Pro plan. You agree to pay any fees charged in connection with the Alby Pro plan. Alby reserves the right to change the fees at our discretion.
-                  Alby will disclose the amount of fees we will charge for the Pro plan at the time that you sign up or via other electronic channels (e.g. email).
-                  The user may incur charges from third parties by using the Alby Hub app.
-                  One example are network fees required to use the bitcoin and lightning network applicable to a bitcoin and lightning transaction. Alby may attempt to calculate such a fee for you. Our calculation may not be sufficient, or it may be excessive. You are solely responsible for selecting and paying any such fee and Alby shall not advance or fund such a fee on the user’s behalf. Alby shall not be responsible for any excess or insufficient fee calculation.
-                </p>
-                <h2 className="font-semibold">Termination and suspension</h2>
-                <p>
-                  You can cancel your subscription at any time by logging into your account. Your cancellation will take effect at the end of the current paid term.
-                  If Alby terminates or suspends a user’s account for any reason, the user is prohibited from registering and creating a new account under their name, a fake or borrowed name, or the name of any third party, even if the user may be acting on behalf of the third party. In addition to terminating or suspending the account, we reserve the right to take appropriate legal action, including without limitation pursuing civil, criminal, and injunctive redress.
-                </p>
-                <h2 className="font-semibold">Acceptable Use</h2>
-                <p>
-                  The user agrees not to use Services in ways that:
-                  <ul className="list-disc list-inside">
-                    <li>violate, misappropriate, or infringe the rights of any Alby entity, our users, or others, including privacy, publicity, intellectual property, or other proprietary rights;</li>
-                    <li>are illegal, defamatory, threatening, intimidating, or harassing;</li>
-                    <li>involve impersonating someone;</li>
-                    <li>breach any duty toward or rights of any person or entity, including rights of publicity, privacy, or trademark;</li>
-                    <li>involve sending illegal or impermissible communications such as bulk messaging, auto-messaging, auto-dialing, and the like;</li>
-                    <li>avoid, bypass, remove, deactivate, impair, descramble or otherwise circumvent any technological measure implemented by us or any of our service providers or any other third party (including another user) to protect Services;</li>
-                    <li>interfere with, or attempt to interfere with, the access of any user, host or network, including, without limitation, sending a virus, overloading, flooding, spamming, or mail-bombing;</li>
-                    <li>violate any applicable law or regulation; or</li>
-                    <li>encourage or enable any other individual to do any of the foregoing.</li>
-                  </ul>
-                </p>
-                <h2 className="font-semibold">User Comments, Feedback, and Other Submissions</h2>
-                <p>
-                  If, at our request, you send certain specific submissions or without a request from us you send creative ideas, suggestions, proposals, plans, or other materials, whether online, by email, by postal mail, or otherwise (collectively, "comments"), you agree that we may, at any time, without restriction, edit, copy, publish, distribute, translate and otherwise use in any medium any comments that you forward to us. We are and shall be under no obligation (1) to maintain any comments in confidence; (2) to pay compensation for any comments; or (3) to respond to any comments. We may, but have no obligation to, monitor, edit or remove content that we determine in our sole discretion are unlawful, offensive, threatening, libelous, defamatory, pornographic, obscene or otherwise objectionable or violates any party's intellectual property or this Agreement. You agree that your comments will not violate any right of any third-party, including copyright, trademark, privacy, personality or other personal or proprietary right. You further agree that your comments will not contain libelous or otherwise unlawful, abusive or obscene material, or contain any computer virus or other malware that could in any way affect the operation of Service or any related website. You may not use a false email address, pretend to be someone other than yourself, or otherwise mislead us or third-parties as to the origin of any comments. You are solely responsible for any comments you make and their accuracy. We take no responsibility and assume no liability for any comments posted by you or any third-party.
-                </p>
-                <h2 className="font-semibold">Personal Information</h2>
-                <p>
-                  Your submission of personal information through the Service is governed by our Privacy Policy at https://getalby.com/privacy-policy.
-                </p>
+                              <h2 className="font-semibold">Introduction</h2>
+                              <p>
+                                Please read this end user license agreement carefully before using this application. By using this application, you signify your assent to and acceptance of this end user license agreement and acknowledge you have read and understand the terms. An individual acting on behalf of an entity represents that he or she has the authority to enter into this end user license agreement on behalf of the entity. This end user license agreement does not provide any rights to Alby services such as software maintenance, upgrades or support.
+                              </p>
+                              <p>
+                                This end user license agreement (“EULA”) governs the use of the application that includes or refers to this license and any related updates, source code, appearance, structure and organization, regardless of the delivery mechanism.
+                              </p>
+                              <h2 className="font-semibold">Interpretation and Definitions</h2>
+                              <p>
+                                The words of which the initial letter is capitalized have meanings defined under the following conditions. The following definitions shall have the same meaning regardless of whether they appear in singular or in plural.</p>
+                              <p> For the purposes of this End-User License Agreement:
+                                  <ul className="list-disc list-inside">
+                              <li><b>Agreement</b> means this End-User License Agreement that forms the entire agreement between You and the Company regarding the use of the Application.</li>
+                              <li><b>Application</b> means the software program provided by the Company downloaded by You to a Device. </li>
+                              <li><b>Application Store</b> means the digital distribution service operated and developed by Apple Inc. (Apple App Store), Google Inc. (Google Play Store) or others by which the Application has been downloaded to your Device.</li>
+                              <li><b>Company</b> (referred to as either "the Company", "We", “Alby”, “Alby Inc.” "Us" or "Our" in this Agreement) refers to Alby.</li>
+                              <li><b>Content</b> refers to content such as text, images, or other information that can be posted, uploaded, linked to or otherwise made available by You, regardless of the form of that content.</li>
+                              <li><b>Device</b> means any device that can run the Application such as a server, a computer or a digital tablet.</li>
+                              <li><b>Third-Party Services</b> means any services or content (including data, information, applications and other products services) provided by a third-party that may be displayed, included or made available by the Application.</li>
+                              <li><b>You</b> means the individual accessing or using the Application or the company, or other legal entity on behalf of which such individual is accessing or using the Application, as applicable.</li>
+                              </ul>
+                              </p>
+                              <h2 className="font-semibold">Acknowledgment</h2>
+                              <p>
+                                By using the Application, You affirm that you are the older of 18 years old or the age of majority as required by your local law and have the capacity to enter into this Agreement. If you are accessing the Application on behalf of the company you work for, you also affirm you have the proper grant of authority and capacity to enter into this Agreement on behalf of such company.
+                              You are agreeing to be bound by the terms and conditions of this Agreement. If You do not agree to the terms of this Agreement, do not use the Application.
+                              This Agreement is a legal document between You and Alby and it governs your use of the Application made available to You by Alby. The Application is licensed, not sold, to You by Alby for use strictly in accordance with the terms of this Agreement.
+                              </p>
+                              <h2 className="font-semibold">License</h2>
+                              <p>
+                                Subject to the following terms, Alby grants to you a perpetual, worldwide license to the Application pursuant to the Apache-2.0 license. (https://github.com/getAlby/nostr-wallet-connect-next?tab=Apache-2.0-1-ov-file#readme). This EULA pertains solely to the Application and does not limit your rights under, or grant you rights that supersede, the license terms of any particular component.
+                              </p>
+                              <h2 className="font-semibold">Rights and Responsibilities</h2>
+                              <p>
+                                This Application functions as a free, open source application. The Application does not constitute an account where We or other third parties serve as financial intermediaries or custodians of Your assets.
+                              </p>
+                              <p>
+                                With respect to the Application, Alby does not receive or store the unlock password, nor any recovery phrase or private keys, or the individual transaction history. Alby cannot assist you with password retrieval. You are solely responsible for remembering, storing and keeping secret the password and recovery phrase. The assets you have associated with the Application may become inaccessible if you do not know or keep secret your password, private keys and recovery phrase. Any third party with knowledge of one or more of your credentials (including, without limitation, a recovery phrase or password) can access the assets via your Application or recover your funds in another app and initiate transactions.
+                              </p>
+                              <p>
+                                You agree to take responsibility for all activities that occur with the application operated by you and accept all risks of any authorized or unauthorized access to your application, to the maximum extent permitted by law.
+                              </p>
+                              <p>
+                                All transaction requests are irreversible. Alby shall not be liable to you for any malformed transaction payloads created using the Application.
+                              Once transaction details have been submitted to the asset network, we cannot assist you in canceling or otherwise modifying the transaction or transaction details. Alby has no control over your assets stored by the Application and does not have the ability to facilitate any cancellation or modification requests. Furthermore Alby has no control over the data that you provide to form any transaction using the Application; or how transactions are processed in the asset network.
+                              Alby therefore cannot and does not ensure that any transaction details you submit via the Application will be confirmed on the asset network. The transaction details submitted by you via the Application provided by us may not be completed, or may be substantially delayed, by the asset network used to process the transaction. We do not guarantee that the Application can transfer title or right in the asset or make any warranties whatsoever with regard to title.
 
-                <h2 className="font-semibold">Errors, Inaccuracies, and Omissions</h2>
-                <p>
-                  Occasionally there may be information in our Services that contains typographical errors, inaccuracies or omissions that may relate to product or service descriptions, pricing, and/or promotions. We reserve the right to correct any errors, inaccuracies or omissions, and to change or update information or cancel purchases if any information in our Services is inaccurate at any time without prior notice (including after you have submitted your purchase). We undertake no obligation to update, amend or clarify information in our Services, including without limitation, pricing information, except as required by law. No specified update or refresh date should be taken to indicate that all information in our Services has been modified or updated.
-                </p>
-                <h2 className="font-semibold">Warranties</h2>
-                <p>
-                  OUR SERVICES ARE PROVIDED ON AN AS-IS AND AS-AVAILABLE BASIS. YOU AGREE THAT YOUR USE OF THE SERVICES WILL BE AT YOUR SOLE RISK. TO THE FULLEST EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, IN CONNECTION WITH SERVICES AND YOUR USE THEREOF, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. WE MAKE NO WARRANTIES OR REPRESENTATIONS ABOUT THE ACCURACY OR COMPLETENESS OF SERVICES’ CONTENT OR THE CONTENT OF ANY WEBSITES LINKED TO SERVICES AND WE WILL ASSUME NO LIABILITY OR RESPONSIBILITY FOR ANY (1) ERRORS, MISTAKES, OR INACCURACIES OF CONTENT AND MATERIALS, (2) PERSONAL INJURY OR PROPERTY DAMAGE, OF ANY NATURE WHATSOEVER, RESULTING FROM YOUR ACCESS TO AND USE OF SERVICES, (3) ANY UNAUTHORIZED ACCESS TO OR USE OF OUR SECURE SERVERS AND ANY AND ALL PERSONAL INFORMATION OR FINANCIAL INFORMATION STORED THEREIN, (4) ANY INTERRUPTION OR CESSATION OF TRANSMISSION TO OR FROM SERVICES, (5) ANY BUGS, VIRUSES, TROJAN HORSES, OR THE LIKE THAT MAY BE TRANSMITTED TO OR THROUGH THE SERVICES BY ANY THIRD PARTY, OR (6) ANY ERRORS OR OMISSIONS IN ANY CONTENT AND MATERIALS OR FOR ANY LOSS OR DAMAGE OF ANY KIND INCURRED AS A RESULT OF THE USE OF ANY CONTENT POSTED, TRANSMITTED, OR OTHERWISE MADE AVAILABLE VIA SERVICES. WE WILL NOT BE A PARTY TO OR IN ANY WAY BE RESPONSIBLE FOR MONITORING ANY TRANSACTION BETWEEN YOU AND ANY THIRD-PARTY PROVIDERS OF PRODUCTS OR SERVICES. ALBY MAKES NO GUARANTEE THAT YOUR USE OF SERVICES WILL COMPLY WITH ANY APPLICABLE LAW OR REGULATION.
-                </p>
-                <h2 className="font-semibold">Limitations of Liability</h2>
-                <p>
-                  Alby Inc. shall not be liable to you or anyone else for any loss or injury resulting directly or indirectly from your use of Services, including any loss caused in whole or part by any inaccuracies or incompleteness, delays, interruptions, errors or omissions, including, but not limited to, those arising from the negligence of Alby Inc. or contingencies beyond its control in procuring, compiling, interpreting, computing, reporting, or delivering Services. In no event will Alby inc. be liable to you or anyone else for any decision made or action taken by you in reliance on, or in connection with your use of Services or the information therein.
-                  IN NO EVENT WILL WE OR OUR DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE TO YOU OR ANY THIRD PARTY FOR ANY DIRECT, INDIRECT, CONSEQUENTIAL, EXEMPLARY, INCIDENTAL, SPECIAL, OR PUNITIVE DAMAGES, INCLUDING LOST PROFIT, LOST REVENUE, LOSS OF DATA, OR OTHER DAMAGES ARISING FROM YOUR USE OF THE SERVICES, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. NOTWITHSTANDING ANYTHING TO THE CONTRARY CONTAINED HEREIN, OUR LIABILITY TO YOU FOR ANY CAUSE WHATSOEVER AND REGARDLESS OF THE FORM OF THE ACTION, WILL AT ALL TIMES BE LIMITED TO THE AMOUNT PAID, IF ANY, BY YOU TO US DURING THE SIX (6) MONTH PERIOD PRIOR TO ANY CAUSE OF ACTION ARISING. CERTAIN US STATE LAWS AND INTERNATIONAL LAWS DO NOT ALLOW LIMITATIONS ON IMPLIED WARRANTIES OR THE EXCLUSION OR LIMITATION OF CERTAIN DAMAGES. IF THESE LAWS APPLY TO YOU, SOME OR ALL OF THE ABOVE DISCLAIMERS OR LIMITATIONS MAY NOT APPLY TO YOU, AND YOU MAY HAVE ADDITIONAL RIGHTS.
-                  We are not responsible for loss of assets due to customer error. These include, but are not limited to, loss of recovery phrase, loss of credentials, or configuring the same Alby Hub app outside of Services. Furthermore, we are not responsible for loss of funds due to system outages. It is up to you to ensure proper backups and monitoring of your Alby Hub app with us. We may elect to provide services that assist you with monitoring and backups from time to time, but such services are not intended to shift responsibility for monitoring and backups from you to us.
+                              </p>
+                              <h2 className="font-semibold">Intellectual Property
+                              </h2>
+                              <p>
+                                We retain all right, title, and interest in all of Alby’s brands, logos, and trademarks, including, but not limited to and variations of the wording of the aforementioned brands, logos, and trademarks. This EULA does not permit you to distribute the Programs using the Company’s trademarks, regardless of whether the Application has been modified.
+                              </p>
 
-                  Indemnification
-                  You agree to indemnify and hold harmless Alby and its affiliates, officers, directors, employees and agents, from and against any claims, disputes, demands, liabilities, damages, losses, and costs and expenses, including, without limitation, reasonable legal and accounting fees arising out of or in any way connected with (i) their access to Alby Pro Account, the Alby Hub app or the Alby cloud infrastructure service, (ii) Third Party Services, or (ii) your violation of this Agreement.
+                              <h2 className="font-semibold">Modifications to the Application
+                              </h2>
+                              <p>
+                                The Company reserves the right to modify, suspend or discontinue, temporarily or permanently, the Application or any service to which it connects, with or without notice and without liability to You.
+                              </p>
+                              <h2 className="font-semibold">Updates to the Application</h2>
+                              <p>
+                                The Company may from time to time provide enhancements or improvements to the features/functionality of the Application, which may include patches, bug fixes, updates, upgrades and other modifications.
+                              Updates may modify or delete certain features and/or functionalities of the Application. You agree that the Company has no obligation to (i) provide any Updates, or (ii) continue to provide or enable any particular features and/or functionalities of the Application to You.
 
-                  Governing Law and Jurisdiction
-                  This Agreement shall be governed by and construed in accordance with the laws of Switzerland under the exclusion of its conflict of law provisions and the International Convention on the Sale of Goods (CISG). The ordinary courts of Zug, Switzerland, shall have sole jurisdiction relating to any dispute arising out of or in connection with this Agreement. YOU AND WE AGREE THAT EACH MAY BRING CLAIMS AGAINST THE OTHER ONLY ON AN INDIVIDUAL BASIS, AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS OR REPRESENTATIVE PROCEEDING. YOU AND WE EXPRESSLY WAIVE ANY RIGHT TO FILE A CLASS ACTION OR SEEK RELIEF ON A CLASS BASIS.
-                </p>
-                <h2 className="font-semibold">Dispute Resolution</h2>
-                <p>
-                  Any dispute, controversy, or claim arising out of, or in relation to, this contract, including regarding the validity, invalidity, breach, or termination thereof, shall be resolved by arbitration in accordance with the Swiss Rules of International Arbitration of the Swiss Arbitration Centre in force on the date on which the Notice of Arbitration is submitted in accordance with those Rules.
-                  The number of arbitrators shall be one;
-                  The seat of the arbitration shall be Zug;
-                  The arbitral proceedings shall be conducted in English.
-                </p>
-                <h2 className="font-semibold">Changes to the Agreement</h2>
-                <p>You can review the most current version of this Agreement at any time at this page. We reserve the right, at our sole discretion, to update, change or replace any part of this Agreement to the website or via email. It is your responsibility to check our website and emails periodically for changes. Your continued use of or access to Services following the posting of any changes to this Agreement constitutes acceptance of those changes.</p>
+                              You further agree that all updates or any other modifications will be (i) deemed to constitute an integral part of the Application, and (ii) subject to the terms and conditions of this Agreement.
 
-                <h2 className="font-semibold">Termination</h2>
-                <p>
-                  The obligations and liabilities of the parties incurred prior to the termination date shall survive the termination of this agreement for all purposes. This Agreement is effective unless and until terminated by either you or us. You may terminate this agreement at any time when you cease using Services. If in our sole judgment you fail, or we suspect that you have failed, to comply with any term or provision of this agreement, we also may terminate this agreement at any time without notice and you will remain liable for all amounts due up to and including the date of termination; and/or accordingly may deny you access to the Alby Pro plan (or any part thereof).
-                </p>
+                              </p>
+                              <h2 className="font-semibold">Maintenance and Support</h2>
+                              <p>
+                                The Company does not provide any maintenance or support for the download and use of the Application. To the extent that any maintenance or support is required by applicable law, the Company, not the Application Store, shall be obligated to furnish any such maintenance or support.
+                              </p>
+                              <h2 className="font-semibold">Third-Party Services</h2>
+                              <p>
+                                The Application may display, include or make available third-party content (including data, information, applications and other products services) or provide links to third-party websites or services.
+                              You acknowledge and agree that the Company shall not be responsible for any Third-party Services, including their accuracy, completeness, timeliness, validity, copyright compliance, legality, decency, quality or any other aspect thereof. The Company does not assume and shall not have any liability or responsibility to You or any other person or entity for any Third-party Services.
+                              You must comply with applicable Third parties' Terms of agreement when using the Application. You access and use Third-party Services entirely at your own risk and subject to such third parties' terms and conditions.
+                              The user may incur charges from third parties by using the Application. One example are network fees required to use an asset network applicable to an asset transaction. Alby may attempt to calculate such a fee for you. Our calculation may not be sufficient, or it may be excessive. You are solely responsible for selecting and paying any such fee and Alby shall not advance or fund such a fee on the user’s behalf. Alby shall not be responsible for any excess or insufficient fee calculation.
+                              </p>
+                                              <h2 className="font-semibold">Term and Termination</h2>
+                              <p>
+                              This Agreement shall remain in effect until terminated by You or the Company. The Company may, in its sole discretion, at any time and for any or no reason, suspend or terminate this Agreement with or without prior notice.
+                              This Agreement will terminate immediately, without prior notice from the Company, in the event that you fail to comply with any provision of this Agreement. You may also terminate this Agreement by deleting the Application and all copies thereof from your Device.
+                              Upon termination of this Agreement, You shall cease all use of the Application and delete all copies of the Application from your Device. Termination of this Agreement will not limit any of the Company's rights or remedies at law or in equity in case of breach by You (during the term of this Agreement) of any of your obligations under the present Agreement.
+                                  </p>
+                              <h2 className="font-semibold">Acceptable Use</h2>
+                              <p>
+                                The user agrees not to use the Application in ways that:
+                                <ul className="list-disc list-inside">
+                                  <li>violate, misappropriate, or infringe the rights of any Alby entity, our users, or others, including privacy, publicity, intellectual property, or other proprietary rights;</li>
+                                  <li>are illegal, defamatory, threatening, intimidating, or harassing;</li>
+                                  <li>involve impersonating someone;</li>
+                                  <li>breach any duty toward or rights of any person or entity, including rights of publicity, privacy, or trademark;</li>
+                                  <li>involve sending illegal or impermissible communications such as bulk messaging, auto-messaging, auto-dialing, and the like;</li>
+                                  <li>avoid, bypass, remove, deactivate, impair, descramble or otherwise circumvent any technological measure implemented by us or any of our service providers or any other third party (including another user) to protect the Application;</li>
+                                  <li>interfere with, or attempt to interfere with, the access of any user, host or network, including, without limitation, sending a virus, overloading, flooding, spamming, or mail-bombing;</li>
+                                  <li>violate any applicable law or regulation; or</li>
+                                  <li>encourage or enable any other individual to do any of the foregoing.</li>
+                                </ul>
+                              </p>
+                              <h2 className="font-semibold">Other Alby Services</h2>
+                              <p>
+                                Use of the Application may require other services from Alby such as an Alby Account with additional terms and fees. By using this software in connection with another Alby service, you agree to the applicable terms of that service, which you may access and review at https://getalby.com/terms-of-service. If you do not agree to the applicable terms and conditions for such a service, do not use the Application in connection with that service.
+                              </p>
+                              <h2 className="font-semibold">Personal Information</h2>
+                              <p>
+                                Your submission of personal information through the Application is governed by our Privacy Policy at https://getalby.com/privacy-policy.
+                              </p>
 
-                <h2 className="font-semibold">Miscellaneous</h2>
-                <p>
-                  This agreement and any policies or operating rules posted by us on getalby.com websites constitute the entire agreement and understanding between you and us. Our failure to exercise or enforce any right or provision of this agreement will not operate as a waiver of such right or provision. This agreement operates to the fullest extent permissible by law. We may assign any or all of our rights and obligations to others at any time. We will not be responsible or liable for any loss, damage, delay, or failure to act as a result of any act or event which occurs and is beyond our reasonable control, including, without limitation, acts of God, war, unrest or riot, strikes, any action of a governmental entity, weather, quarantine, fire, flood, earthquake, explosion, utility or telecommunications outages, Internet disturbance, epidemic, pandemic or any unforeseen change in circumstances, or any other causes beyond our reasonable control. If any provision or part of a provision of this agreement is determined to be unlawful, void, or unenforceable, that provision or part of the provision is deemed severable from this agreement and does not affect the validity and enforceability of any remaining provisions. There is no joint venture, partnership, employment or agency relationship created between you and us as a result of this agreement or use of Services.
-                  You agree that this agreement will not be construed against us by virtue of having drafted them. You hereby waive any and all defenses you may have based on the electronic form of this agreement and the lack of signing by the parties hereto to execute this agreement.
-                </p>
-                <h2 className="font-semibold">Contact information</h2>
-                <p>Questions about the Agreement should be sent to us at hello@getalby.com.</p>
-              </div>
+                              <h2 className="font-semibold">Indemnification</h2>
+                              <p>
+                                You agree to indemnify and hold the Company and its parents, subsidiaries, affiliates, officers, employees, agents, partners and licensors (if any) harmless from any claim or demand, including reasonable attorneys' fees, due to or arising out of your: (a) use of the Application; (b) violation of this Agreement or any law or regulation; or (c) violation of any right of a third party.
+                              </p>
+                              <h2 className="font-semibold">Warranties</h2>
+                              <p>
+                                THE APPLICATION IS PROVIDED ON AN AS-IS AND AS-AVAILABLE BASIS. YOU AGREE THAT YOUR USE OF THE APPLICATION WILL BE AT YOUR SOLE RISK. TO THE FULLEST EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, IN CONNECTION WITH THE APPLICATION AND YOUR USE THEREOF, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. WE MAKE NO WARRANTIES OR REPRESENTATIONS ABOUT THE ACCURACY OR COMPLETENESS OF APPLICATION’S CONTENT OR THE CONTENT OF ANY WEBSITES LINKED TO THE APPLICATION AND WE WILL ASSUME NO LIABILITY OR RESPONSIBILITY FOR ANY (1) ERRORS, MISTAKES, OR INACCURACIES OF CONTENT AND MATERIALS, (2) PERSONAL INJURY OR PROPERTY DAMAGE, OF ANY NATURE WHATSOEVER, RESULTING FROM YOUR ACCESS TO AND USE OF THE APPLICATION, (3) ANY UNAUTHORIZED ACCESS TO OR USE OF OUR SECURE SERVERS AND ANY AND ALL PERSONAL INFORMATION OR FINANCIAL INFORMATION STORED THEREIN, (4) ANY INTERRUPTION OR CESSATION OF TRANSMISSION TO OR FROM THE APPLICATION, (5) ANY BUGS, VIRUSES, TROJAN HORSES, OR THE LIKE THAT MAY BE TRANSMITTED TO OR THROUGH THE APPLICATION BY ANY THIRD PARTY, OR (6) ANY ERRORS OR OMISSIONS IN ANY CONTENT AND MATERIALS OR FOR ANY LOSS OR DAMAGE OF ANY KIND INCURRED AS A RESULT OF THE USE OF ANY CONTENT POSTED, TRANSMITTED, OR OTHERWISE MADE AVAILABLE VIA THE APPLICATION. WE WILL NOT BE A PARTY TO OR IN ANY WAY BE RESPONSIBLE FOR MONITORING ANY TRANSACTION BETWEEN YOU AND ANY THIRD-PARTY PROVIDERS OF PRODUCTS OR SERVICES. ALBY MAKES NO GUARANTEE THAT YOUR USE OF THE APPLICATION WILL COMPLY WITH ANY APPLICABLE LAW OR REGULATION.
+                              Some jurisdictions do not allow the exclusion of certain types of warranties or limitations on applicable statutory rights of a consumer, so some or all of the above exclusions and limitations may not apply to You. But in such a case the exclusions and limitations set forth in this section shall be applied to the greatest extent enforceable under applicable law. To the extent any warranty exists under law that cannot be disclaimed, the Company, not the Application Store, shall be solely responsible for such warranty.
+
+                              </p>
+                              <h2 className="font-semibold">Limitations of Liability</h2>
+                              <p>
+                                Alby shall not be liable to you or anyone else for any loss or injury resulting directly or indirectly from your use of the Application, including any loss caused in whole or part by any inaccuracies or incompleteness, delays, interruptions, errors or omissions, including, but not limited to, those arising from the negligence of Alby Inc. or contingencies beyond its control in procuring, compiling, interpreting, computing, reporting, or delivering the Application. In no event will Alby be liable to you or anyone else for any decision made or action taken by you in reliance on, or in connection with your use of the Application or the information therein.
+                              IN NO EVENT WILL WE OR OUR DIRECTORS, EMPLOYEES, OR AGENTS BE LIABLE TO YOU OR ANY THIRD PARTY FOR ANY DIRECT, INDIRECT, CONSEQUENTIAL, EXEMPLARY, INCIDENTAL, SPECIAL, OR PUNITIVE DAMAGES, INCLUDING LOST PROFIT, LOST REVENUE, LOSS OF DATA, OR OTHER DAMAGES ARISING FROM YOUR USE OF THE APPLICATION, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. NOTWITHSTANDING ANYTHING TO THE CONTRARY CONTAINED HEREIN, OUR LIABILITY TO YOU FOR ANY CAUSE WHATSOEVER AND REGARDLESS OF THE FORM OF THE ACTION, WILL AT ALL TIMES BE LIMITED TO THE AMOUNT PAID, IF ANY, BY YOU TO US DURING THE SIX (6) MONTH PERIOD PRIOR TO ANY CAUSE OF ACTION ARISING.  </p>
+
+                               <p>We are not responsible for loss of assets due to customer error. These include, but are not limited to, loss of recovery phrase, loss of credentials, configuring the same Application on another device or recovering assets with backups. Furthermore, we are not responsible for loss of funds due to system outages. It is up to you to ensure proper backups and monitoring of the Application. </p>
+                              <p> You expressly understand and agree that the Application Store, its subsidiaries and affiliates, and its licensors shall not be liable to You under any theory of liability for any direct, indirect, incidental, special consequential or exemplary damages that may be incurred by You, including any loss of data, whether or not the Application Store or its representatives have been advised of or should have been aware of the possibility of any such losses arising.</p>
+
+                          <h2 className="font-semibold">Severability and Waiver</h2>
+                              <p> If any provision of this Agreement is held to be unenforceable or invalid, such provision will be changed and interpreted to accomplish the objectives of such provision to the greatest extent possible under applicable law and the remaining provisions will continue in full force and effect.</p>
+                           <p>Except as provided herein, the failure to exercise a right or to require performance of an obligation under this Agreement shall not effect a party's ability to exercise such right or require such performance at any time thereafter nor shall the waiver of a breach constitute a waiver of any subsequent breach.</p>
+
+                          <h2 className="font-semibold">Product Claims</h2>
+                                The Company does not make any warranties concerning the Application. To the extent You have any claim arising from or relating to your use of the Application, the Company, not the Application Store, is responsible for addressing any such claims, which may include, but not limited to: (i) any product liability claims; (ii) any claim that the Application fails to conform to any applicable legal or regulatory requirement; and (iii) any claim arising under consumer protection, or similar legislation.
+
+                              </p>
+                              <h2 className="font-semibold">United States Legal Compliance</h2>
+                              <p>
+                                You represent and warrant that (i) You are not located in a country that is subject to the United States government embargo, or that has been designated by the United States government as a "terrorist supporting" country, and (ii) You are not listed on any United States government list of prohibited or restricted parties.
+
+                              </p>
+                              <h2 className="font-semibold">Changes to this Agreement</h2>
+                              <p>The Company reserves the right, at its sole discretion, to modify or replace this Agreement at any time. If a revision is material we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at the sole discretion of the Company.
+                              By continuing to use the Application after any revisions become effective, You agree to be bound by the revised terms. If You do not agree to the new terms, You are no longer authorized to use the Application.</p>
+
+                              <h2 className="font-semibold">Governing Law</h2>
+                              <p>
+                                The laws of Switzerland, excluding its conflicts of law rules, shall govern this Agreement and your use of the Application. Your use of the Application may also be subject to other local, state, national, or international laws.
+                              </p>
+
+                              <h2 className="font-semibold">Entire Agreement</h2>
+                              <p>
+                                The Agreement constitutes the entire agreement between You and the Company regarding your use of the Application and supersedes all prior and contemporaneous written or oral agreements between You and the Company. You may be subject to additional terms of services that apply when You use or purchase other Company's services.
+
+                              </p>
+                              <h2 className="font-semibold">Contact information</h2>
+                              <p>Questions about the Agreement should be sent to us at hello@getalby.com.</p>
+                            </div>
               <DialogFooter>
                 <DialogClose asChild>
                   <Button>Close</Button>
