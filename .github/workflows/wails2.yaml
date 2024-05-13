@@ -132,12 +132,12 @@ jobs:
 
       - name: Add macOS perms
         if: runner.os == 'macOS'
-        run: chmod +x build/bin/*/Contents/MacOS/*
+        run: chmod +x build/bin/${{ matrix.build.name }}.app/Contents/MacOS/${{ matrix.build.name }}
         shell: bash
 
       - name: Add Linux perms
         if: runner.os  == 'Linux'
-        run: chmod +x build/bin/*
+        run: chmod +x build/bin/${{ matrix.build.name }}
         shell: bash
 
       - name: Build .app zip file
