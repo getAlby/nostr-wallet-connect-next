@@ -140,12 +140,15 @@ jobs:
         run: chmod +x build/bin/${{ matrix.build.name }}
         shell: bash
 
-      - name: Build .app zip file
-        if: runner.os == 'macOS'
-        shell: bash
+      # Store everything in a tar archive to preserve permissions
+      # (specifically, the executable bit on the app executable).
+      - name: Make output tar archive
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
-          ditto -c -k ./build/bin/${{ matrix.build.name }}.app ./build/bin/${{ matrix.build.name }}.app.zip
-
+          mkdir -p ./build/out
+          tar -cf ./build/out/${{ matrix.build.name }}.tar -C ./build/bin .
+          rm -Rf ./build/bin/*
+          mv ./build/out/${{ matrix.build.name }}.tar ./build/bin/
 
       - uses: actions/upload-artifact@v4
         with:
