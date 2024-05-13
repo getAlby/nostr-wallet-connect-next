@@ -116,6 +116,20 @@ jobs:
         run: |
           patchelf --force-rpath --set-rpath '$ORIGIN/lib' ./build/bin/nostr-wallet-connect
 
+      - name: Copy shared libraries to the output directory
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p ./build/bin/${{ matrix.build.name }}.app/Contents/Frameworks
+          lipo -create -output ./build/bin/${{ matrix.build.name }}.app/Contents/Frameworks/libbreez_sdk_bindings.dylib `go list -m -f "{{.Dir}}" github.com/breez/breez-sdk-go`/breez_sdk/lib/darwin-aarch64/libbreez_sdk_bindings.dylib `go list -m -f "{{.Dir}}" github.com/breez/breez-sdk-go`/breez_sdk/lib/darwin-amd64/libbreez_sdk_bindings.dylib
+          cp `go list -m -f "{{.Dir}}" github.com/getAlby/glalby-go`/glalby/universal-macos/libglalby_bindings.dylib ./build/bin/${{ matrix.build.name }}.app/Contents/Frameworks/
+          cp `go list -m -f "{{.Dir}}" github.com/getAlby/ldk-node-go`/ldk_node/universal-macos/libldk_node.dylib ./build/bin/${{ matrix.build.name }}.app/Contents/Frameworks/
+        shell: bash
+
+      - name: Patch executable RPATH
+        if: runner.os == 'macOS'
+        run: |
+          install_name_tool -add_rpath @executable_path/../Frameworks ./build/bin/${{ matrix.build.name }}.app/Contents/MacOS/${{ matrix.build.name }}
+
       - name: Add macOS perms
         if: runner.os == 'macOS'
         run: chmod +x build/bin/*/Contents/MacOS/*
@@ -133,7 +147,7 @@ jobs:
           ditto -c -k ./build/bin/${{ matrix.build.name }}.app ./build/bin/${{ matrix.build.name }}.app.zip
 
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: Wails Build ${{runner.os}} ${{ matrix.build.name }}
           path: |
