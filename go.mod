@@ -23,7 +23,7 @@ require (
 	golang.org/x/oauth2 v0.17.0
 	google.golang.org/grpc v1.63.2
 	gopkg.in/macaroon.v2 v2.1.0
-	gorm.io/gorm v1.25.4
+	gorm.io/gorm v1.25.10
 )
 
 require (
