@@ -399,7 +399,7 @@ func (bs *BreezService) RedeemOnchainFunds(ctx context.Context, toAddress string
 	return hex.EncodeToString(redeemOnchainFundsResponse.Txid), nil
 }
 
-func (bs *BreezService) ResetRouter(ctx context.Context) error {
+func (bs *BreezService) ResetRouter(ctx context.Context, key string) error {
 	return nil
 }
 
@@ -454,4 +454,8 @@ func (bs *BreezService) GetBalances(ctx context.Context) (*lnclient.BalancesResp
 			NextMaxReceivableMPP: int64(info.MaxReceivableMsat),
 		},
 	}, nil
+}
+
+func (bs *BreezService) GetStorageDir() (string, error) {
+	return "", nil
 }

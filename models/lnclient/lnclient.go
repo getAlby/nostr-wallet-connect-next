@@ -57,7 +57,7 @@ type LNClient interface {
 	OpenChannel(ctx context.Context, openChannelRequest *OpenChannelRequest) (*OpenChannelResponse, error)
 	CloseChannel(ctx context.Context, closeChannelRequest *CloseChannelRequest) (*CloseChannelResponse, error)
 	GetNewOnchainAddress(ctx context.Context) (string, error)
-	ResetRouter(ctx context.Context) error
+	ResetRouter(ctx context.Context, key string) error
 	GetOnchainBalance(ctx context.Context) (*OnchainBalanceResponse, error)
 	GetBalances(ctx context.Context) (*BalancesResponse, error)
 	RedeemOnchainFunds(ctx context.Context, toAddress string) (txId string, err error)
@@ -66,6 +66,7 @@ type LNClient interface {
 	ListPeers(ctx context.Context) ([]PeerDetails, error)
 	GetLogOutput(ctx context.Context, maxLen int) ([]byte, error)
 	SignMessage(ctx context.Context, message string) (string, error)
+	GetStorageDir() (string, error)
 }
 
 type Channel struct {
