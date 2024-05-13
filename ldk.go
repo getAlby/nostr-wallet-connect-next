@@ -61,6 +61,7 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 		lsp.OlympusMutinynetFlowLSP().Pubkey,
 	}
 	config.AnchorChannelsConfig.TrustedPeersNoReserve = []string{
+		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
 		lsp.OlympusMutinynetLSPS1LSP().Pubkey,
 		lsp.OlympusMutinynetFlowLSP().Pubkey,
@@ -603,6 +604,11 @@ func (gs *LDKService) ListChannels(ctx context.Context) ([]lnclient.Channel, err
 	// }).Debug("Listed Channels")
 
 	for _, ldkChannel := range ldkChannels {
+		fundingTxId := ""
+		if ldkChannel.FundingTxo != nil {
+			fundingTxId = ldkChannel.FundingTxo.Txid
+		}
+
 		channels = append(channels, lnclient.Channel{
 			InternalChannel:       ldkChannel,
 			LocalBalance:          int64(ldkChannel.OutboundCapacityMsat),
@@ -611,7 +617,7 @@ func (gs *LDKService) ListChannels(ctx context.Context) ([]lnclient.Channel, err
 			Id:                    ldkChannel.UserChannelId, // CloseChannel takes the UserChannelId
 			Active:                ldkChannel.IsUsable,      // superset of ldkChannel.IsReady
 			Public:                ldkChannel.IsPublic,
-			FundingTxId:           ldkChannel.FundingTxo.Txid,
+			FundingTxId:           fundingTxId,
 			Confirmations:         ldkChannel.Confirmations,
 			ConfirmationsRequired: ldkChannel.ConfirmationsRequired,
 		})
@@ -936,17 +942,17 @@ func (ls *LDKService) logLdkEvent(ctx context.Context, event *ldk_node.Event) {
 		ls.eventPublisher.Publish(&events.Event{
 			Event: "nwc_channel_ready",
 			Properties: map[string]interface{}{
-				// "counterparty_node_id": v.CounterpartyNodeId,
-				"node_type": config.LDKBackendType,
+				"counterparty_node_id": v.CounterpartyNodeId,
+				"node_type":            config.LDKBackendType,
 			},
 		})
 	case ldk_node.EventChannelClosed:
 		ls.eventPublisher.Publish(&events.Event{
 			Event: "nwc_channel_closed",
 			Properties: map[string]interface{}{
-				// "counterparty_node_id": v.CounterpartyNodeId,
-				// "reason":               fmt.Sprintf("%+v", v.Reason),
-				"node_type": config.LDKBackendType,
+				"counterparty_node_id": v.CounterpartyNodeId,
+				"reason":               fmt.Sprintf("%+v", v.Reason),
+				"node_type":            config.LDKBackendType,
 			},
 		})
 	case ldk_node.EventPaymentReceived:
