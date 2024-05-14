@@ -28,6 +28,7 @@ import { Step, StepItem, Stepper, useStepper } from "src/components/ui/stepper";
 import { useChannelPeerSuggestions } from "src/hooks/useChannelPeerSuggestions";
 import { useInfo } from "src/hooks/useInfo";
 import { cn, formatAmount } from "src/lib/utils";
+import { CurrentChannelOrder } from "src/screens/channels/CurrentChannelOrder";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 import {
   Network,
@@ -121,7 +122,7 @@ function NewChannelInternal({ network }: { network: Network }) {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     useChannelOrderStore.getState().setOrder(order as NewChannelOrder);
-    navigate("/channels/order");
+    //navigate("/channels/order");
   }
 
   if (!channelPeerSuggestions) {
@@ -129,10 +130,11 @@ function NewChannelInternal({ network }: { network: Network }) {
   }
 
   const steps = [
-    { label: "Funding Method" },
-    { label: "Channel Peer" },
-    { label: "Deposit Funds" },
-    { label: "Open the Channel" },
+    { id: "channelsize" },
+    { id: "fundingmethod" },
+    { id: "channelpeer" },
+    { id: "depositfunds" },
+    { id: "openchannel" },
   ] satisfies StepItem[];
 
   const StepButtons = () => {
@@ -145,10 +147,11 @@ function NewChannelInternal({ network }: { network: Network }) {
           onClick={prevStep}
           size="sm"
           variant="secondary"
+          type="button"
         >
           Back
         </Button>
-        <Button size="sm" onClick={nextStep}>
+        <Button size="sm" onClick={nextStep} type="button">
           {isLastStep ? "Finish" : isOptionalStep ? "Skip" : "Next"}
         </Button>
       </div>
@@ -174,133 +177,222 @@ function NewChannelInternal({ network }: { network: Network }) {
         title="Open a channel"
         description="Funds used to open a channel minus fees will be added to your spending balance"
       />
-
-      <div className="grid grid-cols-2 gap-10">
-        <div className="flex w-full flex-col gap-4">
-          <Stepper initialStep={0} steps={steps} orientation="vertical">
-            <Step key={"Channel Size"} label="Channel Size">
-              <div className="grid gap-1.5">
-                {order.amount && +order.amount < 200_000 && (
-                  <p className="text-muted-foreground text-xs">
-                    For a smooth experience consider a opening a channel of 200k sats
-                    in size or more.{" "}
-                    <ExternalLink
-                      to="https://guides.getalby.com/user-guide/v/alby-account-and-browser-extension/alby-hub/liquidity"
-                      className="underline"
-                    >
-                      Learn more
-                    </ExternalLink>
-                  </p>
-                )}
-                <Input
-                  id="amount"
-                  type="number"
-                  required
-                  min={selectedPeer?.minimumChannelSize || 100000}
-                  value={order.amount}
-                  onChange={(e) => {
-                    setAmount(e.target.value.trim());
-                  }}
-                />
-                <div className="grid grid-cols-3 gap-1.5 text-muted-foreground text-xs">
-                  {presetAmounts.map((amount) => (
-                    <div
-                      key={amount}
-                      className={cn(
-                        "text-center border rounded p-2 cursor-pointer hover:border-muted-foreground",
-                        +(order.amount || "0") === amount &&
-                        "border-primary hover:border-primary"
-                      )}
-                      onClick={() => setAmount(amount.toString())}
-                    >
-                      {formatAmount(amount * 1000, 0)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <StepButtons />
-            </Step>
-            <Step key="Funding Method" label="Funding Method">
-              <div className="grid gap-3">
-                <p className="text-muted-foreground">How would you like to fund your channel?</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <Link
-                    to="#"
-                    onClick={() => setPaymentMethod("onchain")}
-                    className="flex-1"
-                  >
-                    <div
-                      className={cn(
-                        "rounded-xl border bg-card text-card-foreground shadow p-5 flex flex-col items-center gap-3",
-                        order.paymentMethod === "onchain"
-                          ? selectedCardStyles
-                          : undefined
-                      )}
-                    >
-                      <Box className="w-4 h-4" />
-                      Onchain
-                    </div>
-                  </Link>
-                  <Link to="#" onClick={() => setPaymentMethod("lightning")}>
-                    <div
-                      className={cn(
-                        "rounded-xl border bg-card text-card-foreground shadow p-5 flex flex-col items-center gap-3",
-                        order.paymentMethod === "lightning"
-                          ? selectedCardStyles
-                          : undefined
-                      )}
-                    >
-                      <Zap className="w-4 h-4" />
-                      Lightning
-                    </div>
-                  </Link>
-                </div>
-              </div>
-
-              <StepButtons />
-            </Step>
-
-            {steps.map(({ label }, index) => {
-              return (
-                <Step key={label} label={label}>
-                  <div className="h-40 flex items-center justify-center my-2 border bg-secondary text-primary rounded-md">
-                    <h1 className="text-xl">Step {index + 1}</h1>
-                  </div>
-                  <StepButtons />
-                </Step>
-              )
-            })}
-          </Stepper>
-        </div>
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Summary</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-row justify-between">
-              {order.amount && <>
-                <div className="text-muted-foreground">
-                  Channel Size
-                </div>
-                <div>
-                  {new Intl.NumberFormat().format(
-                    parseInt(order.amount)
-                  )}{" "}
-                  sats
-                </div>
-              </>}
-            </CardContent>
-            <CardFooter className="text-sm mt-5">
-              Need help?{" "}
-              <Button variant="link">
-                Start a Live Chat
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      </div>
-
       <form
+        onSubmit={onSubmit}
+      >
+        <div className="grid grid-cols-2 gap-10">
+          <div className="flex w-full flex-col gap-4">
+            <Stepper initialStep={0} steps={steps} orientation="vertical" >
+              <Step id="channelsize" key="channelsize" label="Channel Size">
+                <div className="grid gap-1.5">
+                  {order.amount && +order.amount < 200_000 && (
+                    <p className="text-muted-foreground text-xs">
+                      For a smooth experience consider a opening a channel of 200k sats
+                      in size or more.{" "}
+                      <ExternalLink
+                        to="https://guides.getalby.com/user-guide/v/alby-account-and-browser-extension/alby-hub/liquidity"
+                        className="underline"
+                      >
+                        Learn more
+                      </ExternalLink>
+                    </p>
+                  )}
+                  <Input
+                    id="amount"
+                    type="number"
+                    required
+                    min={selectedPeer?.minimumChannelSize || 100000}
+                    value={order.amount}
+                    onChange={(e) => {
+                      setAmount(e.target.value.trim());
+                    }}
+                  />
+                  <div className="grid grid-cols-3 gap-1.5 text-muted-foreground text-xs">
+                    {presetAmounts.map((amount) => (
+                      <div
+                        key={amount}
+                        className={cn(
+                          "text-center border rounded p-2 cursor-pointer hover:border-muted-foreground",
+                          +(order.amount || "0") === amount &&
+                          "border-primary hover:border-primary"
+                        )}
+                        onClick={() => setAmount(amount.toString())}
+                      >
+                        {formatAmount(amount * 1000, 0)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <StepButtons />
+              </Step>
+              <Step id="fundingmethod" key="fundingmethod" label="Funding Method">
+                <div className="grid gap-3">
+                  <p className="text-muted-foreground">How would you like to fund your channel?</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link
+                      to="#"
+                      onClick={() => setPaymentMethod("onchain")}
+                      className="flex-1"
+                    >
+                      <div
+                        className={cn(
+                          "rounded-xl border bg-card text-card-foreground shadow p-5 flex flex-col items-center gap-3",
+                          order.paymentMethod === "onchain"
+                            ? selectedCardStyles
+                            : undefined
+                        )}
+                      >
+                        <Box className="w-4 h-4" />
+                        Onchain
+                      </div>
+                    </Link>
+                    <Link to="#" onClick={() => setPaymentMethod("lightning")}>
+                      <div
+                        className={cn(
+                          "rounded-xl border bg-card text-card-foreground shadow p-5 flex flex-col items-center gap-3",
+                          order.paymentMethod === "lightning"
+                            ? selectedCardStyles
+                            : undefined
+                        )}
+                      >
+                        <Zap className="w-4 h-4" />
+                        Lightning
+                      </div>
+                    </Link>
+                  </div>
+                </div>
+
+                <StepButtons />
+              </Step>
+              <Step id="channelpeer" key="channelpeer" label="Channel Peer">
+                <div className="flex flex-col gap-3">
+                  {selectedPeer &&
+                    (selectedPeer.paymentMethod === "lightning" ||
+                      (order.paymentMethod === "onchain" &&
+                        selectedPeer.pubkey === order.pubkey)) && (
+                      <div className="grid gap-1.5">
+                        <Label>Channel peer</Label>
+                        <Select
+                          value={getPeerKey(selectedPeer)}
+                          onValueChange={(value) =>
+                            setSelectedPeer(
+                              channelPeerSuggestions.find(
+                                (x) => getPeerKey(x) === value
+                              )
+                            )
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select channel peer" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {channelPeerSuggestions
+                              .filter(
+                                (peer) =>
+                                  peer.network === network &&
+                                  peer.paymentMethod === order.paymentMethod
+                              )
+                              .map((peer) => (
+                                <SelectItem
+                                  value={getPeerKey(peer)}
+                                  key={getPeerKey(peer)}
+                                >
+                                  <div className="flex items-center space-between gap-3 w-full">
+                                    <div className="flex items-center gap-3">
+                                      {peer.name !== "Custom" && (
+                                        <img
+                                          src={peer.image}
+                                          className="w-12 h-12 object-contain"
+                                        />
+                                      )}
+                                      <div>
+                                        {peer.name}
+                                        {peer.minimumChannelSize > 0 && (
+                                          <span className="ml-4 text-xs text-muted-foreground">
+                                            Min.{" "}
+                                            {new Intl.NumberFormat().format(
+                                              peer.minimumChannelSize
+                                            )}{" "}
+                                            sats
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedPeer.name === "Custom" && (
+                          <>
+                            <div className="grid gap-1.5"></div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                </div>
+                <StepButtons />
+              </Step>
+              <Step id="depositfunds" key="Deposit Funds" label="Deposit Funds">
+                {order.paymentMethod === "onchain" && (
+                  <NewChannelOnchain
+                    order={order}
+                    setOrder={setOrder}
+                    showCustomOptions={selectedPeer?.name === "Custom"}
+                  />
+                )}
+                {order.paymentMethod === "lightning" && (
+                  <NewChannelLightning order={order} setOrder={setOrder} />
+                )}
+                <StepButtons />
+              </Step>
+              <Step id="openchannels" key="Open Channel" label="Open Channel">
+                <CurrentChannelOrder />
+              </Step>
+            </Stepper>
+          </div>
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2">
+                {order.amount && <div className="flex flex-row justify-between">
+                  <div className="text-muted-foreground">
+                    Channel Size
+                  </div>
+                  <div>
+                    {new Intl.NumberFormat().format(
+                      parseInt(order.amount)
+                    )}{" "}
+                    sats
+                  </div>
+                </div>}
+                {order.amount && <div className="flex flex-row justify-between">
+                  <div className="text-muted-foreground">
+                    Channel Size
+                  </div>
+                  <div>
+                    {new Intl.NumberFormat().format(
+                      parseInt(order.amount)
+                    )}{" "}
+                    sats
+                  </div>
+                </div>}
+              </CardContent>
+              <CardFooter className="text-sm mt-5">
+                Need help?{" "}
+                <Button variant="link">
+                  Start a Live Chat
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </div>
+      </form>
+
+
+      {/* <form
         onSubmit={onSubmit}
         className="md:max-w-md max-w-full flex flex-col gap-5"
       >
@@ -456,7 +548,7 @@ function NewChannelInternal({ network }: { network: Network }) {
           <NewChannelLightning order={order} setOrder={setOrder} />
         )}
         <Button size="lg">Next</Button>
-      </form>
+      </form> */}
     </>
   );
 }
