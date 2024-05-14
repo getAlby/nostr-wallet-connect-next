@@ -102,19 +102,21 @@ jobs:
           cp ldk_node.dll ./build/bin/
         shell: bash
 
-      - name: Copy shared libraries to the output directory
+      - name: Copy shared libraries to the output directory and adjust directory structure
         if: runner.os == 'Linux'
         run: |
           mkdir -p ./build/bin/lib
           cp `go list -m -f "{{.Dir}}" github.com/breez/breez-sdk-go`/breez_sdk/lib/linux-amd64/libbreez_sdk_bindings.so ./build/bin/lib/
           cp `go list -m -f "{{.Dir}}" github.com/getAlby/glalby-go`/glalby/x86_64-unknown-linux-gnu/libglalby_bindings.so ./build/bin/lib/
           cp `go list -m -f "{{.Dir}}" github.com/getAlby/ldk-node-go`/ldk_node/x86_64-unknown-linux-gnu/libldk_node.so ./build/bin/lib/
+          mkdir -p ./build/bin/bin
+          mv ./build/bin/${{ matrix.build.name }} ./build/bin/bin/
         shell: bash
 
       - name: Patch executable RPATH
         if: runner.os == 'Linux'
         run: |
-          patchelf --force-rpath --set-rpath '$ORIGIN/lib' ./build/bin/nostr-wallet-connect
+          patchelf --force-rpath --set-rpath '$ORIGIN/../lib' ./build/bin/bin/${{ matrix.build.name }}
 
       - name: Copy shared libraries to the output directory
         if: runner.os == 'macOS'
