@@ -145,19 +145,35 @@ jobs:
       # Store everything in a tar archive to preserve permissions
       # (specifically, the executable bit on the app executable).
       - name: Make output tar archive
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+        if: runner.os == 'Linux'
         run: |
           mkdir -p ./build/out
           tar -cjf ./build/out/albyhub-${{runner.os}}.tar.bz2 -C ./build/bin .
           rm -Rf ./build/bin/*
-          mv ./build/out/albyhub-${{runner.os}}.tar ./build/bin/
+          mv ./build/out/albyhub-${{runner.os}}.tar.bz2 ./build/bin/
+
+      - name: Make DMG image for macOS
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p ./build/out
+          hdiutil create -volname "AlbyHub" -srcfolder ./build/bin/${{ matrix.build.name }}.app -ov -format UDZO ./build/out/albyhub-${{runner.os}}.dmg
+          rm -Rf ./build/bin/*
+          mv ./build/out/albyhub-${{runner.os}}.dmg ./build/bin/
 
       - uses: actions/upload-artifact@v4
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+        if: runner.os == 'Linux'
         with:
           name: albyhub-${{runner.os}}
           path: |
-            ./build/bin/albyhub-${{runner.os}}.tar
+            ./build/bin/albyhub-${{runner.os}}.tar.bz2
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'macOS'
+        with:
+          name: albyhub-${{runner.os}}
+          path: |
+            ./build/bin/albyhub-${{runner.os}}.dmg
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
