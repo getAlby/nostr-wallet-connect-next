@@ -151,8 +151,17 @@ jobs:
           mv ./build/out/${{ matrix.build.name }}.tar ./build/bin/
 
       - uses: actions/upload-artifact@v4
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         with:
-          name: Wails Build ${{runner.os}} ${{ matrix.build.name }}
+          name: albyhub-${{runner.os}}
           path: |
-            */bin/
+            ./build/bin/${{ matrix.build.name }}.tar
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: albyhub-${{runner.os}}
+          path: |
             *\bin\*
+          if-no-files-found: error
