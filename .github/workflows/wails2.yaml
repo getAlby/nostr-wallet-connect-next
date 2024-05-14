@@ -148,7 +148,7 @@ jobs:
         if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
           mkdir -p ./build/out
-          tar -cf ./build/out/albyhub-${{runner.os}}.tar -C ./build/bin .
+          tar -cjf ./build/out/albyhub-${{runner.os}}.tar.bz2 -C ./build/bin .
           rm -Rf ./build/bin/*
           mv ./build/out/albyhub-${{runner.os}}.tar ./build/bin/
 
