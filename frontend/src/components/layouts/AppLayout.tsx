@@ -3,8 +3,9 @@ import {
   EllipsisVertical,
   ExternalLinkIcon,
   FlaskRound,
-  LogOut,
-  Menu, MessageCircleQuestion,
+  Lock,
+  Menu,
+  MessageCircleQuestion,
   Settings,
   Store,
   Wallet,
@@ -27,7 +28,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "src/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "src/components/ui/sheet";
 import { useToast } from "src/components/ui/use-toast";
@@ -80,14 +81,17 @@ export default function AppLayout() {
               className="w-full flex flex-row items-center gap-2"
             >
               <ExternalLinkIcon className="w-4 h-4" />
-              Alby Account Settings
+              <p>Alby Account Settings</p>
             </ExternalLink>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
-          <LogOut className="w-4 h-4" />
-          Log out
+        <DropdownMenuItem
+          onClick={logout}
+          className="w-full flex flex-row items-center gap-2"
+        >
+          <Lock className="w-4 h-4" />
+          <p>Lock Alby Hub</p>
         </DropdownMenuItem>
       </DropdownMenuContent>
     );
@@ -121,29 +125,32 @@ export default function AppLayout() {
         </div> */}
         {(info?.backendType === "LDK" ||
           info?.backendType === "GREENLIGHT") && (
-            <MenuItem to="/channels">
-              <FlaskRound className="h-4 w-4" />
-              Liquidity
-            </MenuItem>
-          )}
+          <MenuItem to="/channels">
+            <FlaskRound className="h-4 w-4" />
+            Liquidity
+          </MenuItem>
+        )}
         <MenuItem to="/settings">
           <Settings className="h-4 w-4" />
           Settings
         </MenuItem>
-        <MenuItem to="/" onClick={(e) => {
-          const chatwoot = (window as any).$chatwoot;
-          if (chatwoot) {
-            chatwoot.toggle("open");
-          } else {
-            openLink("https://getalby.com/help")
-          }
+        <MenuItem
+          to="/"
+          onClick={(e) => {
+            const chatwoot = (window as any).$chatwoot;
+            if (chatwoot) {
+              chatwoot.toggle("open");
+            } else {
+              openLink("https://getalby.com/help");
+            }
 
-          e.preventDefault();
-        }}>
+            e.preventDefault();
+          }}
+        >
           <MessageCircleQuestion className="h-4 w-4" />
           Live Support
         </MenuItem>
-      </nav >
+      </nav>
     );
   }
 
@@ -170,7 +177,11 @@ export default function AppLayout() {
                   <div className="grid grid-flow-col gap-2">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={albyMe?.avatar} alt="Avatar" />
-                      <AvatarFallback>{(albyMe?.name || albyMe?.email || "SN").substring(0, 2).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback>
+                        {(albyMe?.name || albyMe?.email || "SN")
+                          .substring(0, 2)
+                          .toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                     <Link
                       to="#"
