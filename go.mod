@@ -11,7 +11,7 @@ require (
 	github.com/getAlby/glalby-go v0.0.0-20240416174357-e6e2faa2fbd8
 	github.com/getAlby/ldk-node-go v0.0.0-20240509190335-2fd594b1b4c6
 	github.com/go-gormigrate/gormigrate/v2 v2.1.1
-	github.com/gorilla/sessions v1.2.1
+	github.com/gorilla/sessions v1.2.2
 	github.com/labstack/echo-contrib v0.14.1
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/nbd-wtf/go-nostr v0.30.2
@@ -75,7 +75,7 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/context v1.1.1 // indirect
-	github.com/gorilla/securecookie v1.1.1 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
