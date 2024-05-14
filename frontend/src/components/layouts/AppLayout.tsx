@@ -44,6 +44,7 @@ import ExternalLink from "../ExternalLink";
 export default function AppLayout() {
   const { data: albyMe } = useAlbyMe();
   const { data: csrf } = useCSRF();
+  const { mutate: refetchInfo } = useInfo();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const location = useLocation();
@@ -67,9 +68,10 @@ export default function AppLayout() {
       },
     });
 
+    await refetchInfo();
     navigate("/", { replace: true });
     toast({ title: "You are now logged out." });
-  }, [csrf, navigate, toast]);
+  }, [csrf, navigate, refetchInfo, toast]);
 
   function UserMenuContent() {
     return (
