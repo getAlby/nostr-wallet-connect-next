@@ -139,7 +139,7 @@ jobs:
 
       - name: Add Linux perms
         if: runner.os  == 'Linux'
-        run: chmod +x build/bin/${{ matrix.build.name }}
+        run: chmod +x build/bin/bin/${{ matrix.build.name }}
         shell: bash
 
       # Store everything in a tar archive to preserve permissions
