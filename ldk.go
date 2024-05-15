@@ -265,13 +265,13 @@ func (ls *LDKService) resetRouterInternal() {
 
 		switch key {
 		case "ALL":
-			command = "delete from ldk_node_data where key = 'latest_rgs_sync_timestamp' or key = 'scorer' or key = 'network_graph';"
+			command = "delete from ldk_node_data where key = 'latest_rgs_sync_timestamp' or key = 'scorer' or key = 'network_graph';VACUUM;"
 		case "LatestRgsSyncTimestamp":
-			command = "delete from ldk_node_data where key = 'latest_rgs_sync_timestamp';"
+			command = "delete from ldk_node_data where key = 'latest_rgs_sync_timestamp';VACUUM;"
 		case "Scorer":
-			command = "delete from ldk_node_data where key = 'scorer';"
+			command = "delete from ldk_node_data where key = 'scorer';VACUUM;"
 		case "NetworkGraph":
-			command = "delete from ldk_node_data where key = 'network_graph';"
+			command = "delete from ldk_node_data where key = 'network_graph';VACUUM;"
 		default:
 			ls.svc.Logger.WithField("key", key).Error("Unknown reset router key")
 			return
