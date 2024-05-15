@@ -238,6 +238,8 @@ github.com/getAlby/ldk-node-go v0.0.0-20240509190335-2fd594b1b4c6 h1:z/JNAllL3/f
 github.com/getAlby/ldk-node-go v0.0.0-20240509190335-2fd594b1b4c6/go.mod h1:8BRjtKcz8E0RyYTPEbMS8VIdgredcGSLne8vHDtcRLg=
 github.com/getAlby/ldk-node-go v0.0.0-20240515073516-379321f32875 h1:oYZ8kqg7jAF1iYJ7W7/WDcEbrtfGc6v5rYc+SXSt37Y=
 github.com/getAlby/ldk-node-go v0.0.0-20240515073516-379321f32875/go.mod h1:8BRjtKcz8E0RyYTPEbMS8VIdgredcGSLne8vHDtcRLg=
+github.com/getAlby/ldk-node-go v0.0.0-20240515131517-fde35422939d h1:8egXobWV/KWyvmB1pi2gwwq6oXeQJ5Kb26wJYocuBXo=
+github.com/getAlby/ldk-node-go v0.0.0-20240515131517-fde35422939d/go.mod h1:8BRjtKcz8E0RyYTPEbMS8VIdgredcGSLne8vHDtcRLg=
 github.com/getsentry/raven-go v0.2.0 h1:no+xWJRb5ZI7eE8TWgIq1jLulQiIoLG0IfYxv5JYMGs=
 github.com/getsentry/raven-go v0.2.0/go.mod h1:KungGk8q33+aIAZUIVWZDr2OfAEBsO49PX4NzFV5kcQ=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
