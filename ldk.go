@@ -225,8 +225,8 @@ func (ls *LDKService) Shutdown() error {
 		} else {
 			ls.svc.Logger.Info("LDK stop node succeeded")
 		}
-	case <-time.After(10 * time.Second):
-		ls.svc.Logger.Error("Timeout shutting down LDK node after 10 seconds")
+	case <-time.After(30 * time.Second):
+		ls.svc.Logger.Error("Timeout shutting down LDK node after 30 seconds")
 	}
 
 	ls.svc.Logger.Infof("Destroying node object")
