@@ -811,7 +811,7 @@ func (gs *LDKService) CloseChannel(ctx context.Context, closeChannelRequest *lnc
 		"request": closeChannelRequest,
 	}).Info("Closing Channel")
 	// TODO: support passing force option
-	err := gs.node.CloseChannel(closeChannelRequest.ChannelId, closeChannelRequest.NodeId, false)
+	err := gs.node.CloseChannel(closeChannelRequest.ChannelId, closeChannelRequest.NodeId, closeChannelRequest.Force)
 	if err != nil {
 		gs.svc.Logger.WithError(err).Error("CloseChannel failed")
 		return nil, err
