@@ -236,12 +236,6 @@ github.com/getAlby/glalby-go v0.0.0-20240416174357-e6e2faa2fbd8 h1:mJsdhUb8hmSSS
 github.com/getAlby/glalby-go v0.0.0-20240416174357-e6e2faa2fbd8/go.mod h1:ViyJvjlvv0GCesTJ7mb3fBo4G+/qsujDAFN90xZ7a9U=
 github.com/getAlby/ldk-node-go v0.0.0-20240509190335-2fd594b1b4c6 h1:z/JNAllL3/fRPdxM5iJOmICb6+d/9koaTBeHFTmT3Xk=
 github.com/getAlby/ldk-node-go v0.0.0-20240509190335-2fd594b1b4c6/go.mod h1:8BRjtKcz8E0RyYTPEbMS8VIdgredcGSLne8vHDtcRLg=
-github.com/getAlby/ldk-node-go v0.0.0-20240515073516-379321f32875 h1:oYZ8kqg7jAF1iYJ7W7/WDcEbrtfGc6v5rYc+SXSt37Y=
-github.com/getAlby/ldk-node-go v0.0.0-20240515073516-379321f32875/go.mod h1:8BRjtKcz8E0RyYTPEbMS8VIdgredcGSLne8vHDtcRLg=
-github.com/getAlby/ldk-node-go v0.0.0-20240515131517-fde35422939d h1:8egXobWV/KWyvmB1pi2gwwq6oXeQJ5Kb26wJYocuBXo=
-github.com/getAlby/ldk-node-go v0.0.0-20240515131517-fde35422939d/go.mod h1:8BRjtKcz8E0RyYTPEbMS8VIdgredcGSLne8vHDtcRLg=
-github.com/getAlby/ldk-node-go v0.0.0-20240515160849-d736a0549b39 h1:3+Wqk/XimXzp2/l4Zo7UabqGKnOk535+9qfYwYshBK0=
-github.com/getAlby/ldk-node-go v0.0.0-20240515160849-d736a0549b39/go.mod h1:8BRjtKcz8E0RyYTPEbMS8VIdgredcGSLne8vHDtcRLg=
 github.com/getsentry/raven-go v0.2.0 h1:no+xWJRb5ZI7eE8TWgIq1jLulQiIoLG0IfYxv5JYMGs=
 github.com/getsentry/raven-go v0.2.0/go.mod h1:KungGk8q33+aIAZUIVWZDr2OfAEBsO49PX4NzFV5kcQ=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
@@ -1349,8 +1343,6 @@ gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C
 gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
-gorm.io/gorm v1.25.7 h1:VsD6acwRjz2zFxGO50gPO6AkNs7KKnvfzUjHQhZDz/A=
-gorm.io/gorm v1.25.7/go.mod h1:hbnx/Oo0ChWMn1BIhpy1oYozzpM15i4YPuHDmfYtwg8=
 gorm.io/gorm v1.25.10 h1:dQpO+33KalOA+aFYGlK+EfxcI5MbO7EP2yYygwh9h+s=
 gorm.io/gorm v1.25.10/go.mod h1:hbnx/Oo0ChWMn1BIhpy1oYozzpM15i4YPuHDmfYtwg8=
 gotest.tools v2.2.0+incompatible h1:VsBPFP1AI068pPrMxtb/S8Zkgf9xEmTLJjfM+P5UIEo=
