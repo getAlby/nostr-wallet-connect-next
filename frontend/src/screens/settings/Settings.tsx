@@ -36,11 +36,16 @@ function Settings() {
           "Content-Type": "application/json",
         }
       });
+      setLinked(true);
     }
     catch (e) {
-      toast({ title: "Your Alby Hub couldn't be linked to your Alby Account." })
+      toast({
+        title: "Your Alby Hub couldn't be linked to your Alby Account.",
+        description: "Did you already link another Alby Hub?"
+      });
     }
     finally {
+      toast({ title: "Your Alby Hub has successfully been linked to your Alby Account." })
       setLoading(false);
     }
   }

@@ -36,6 +36,7 @@ type AlbyMe struct {
 	Name             string `json:"name"`
 	Avatar           string `json:"avatar"`
 	KeysendPubkey    string `json:"keysend_pubkey"`
+	SharedNode       bool   `json:"shared_node"`
 }
 
 type AlbyBalance struct {
@@ -211,7 +212,7 @@ func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 
 	client := svc.oauthConf.Client(ctx, token)
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/user/me", svc.appConfig.AlbyAPIURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/internal/user/me", svc.appConfig.AlbyAPIURL), nil)
 	if err != nil {
 		svc.logger.WithError(err).Error("Error creating request /me")
 		return nil, err
