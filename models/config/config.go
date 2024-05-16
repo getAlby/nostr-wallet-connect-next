@@ -32,6 +32,7 @@ type AppConfig struct {
 	FrontendUrl        string `envconfig:"FRONTEND_URL"`
 	LogEvents          bool   `envconfig:"LOG_EVENTS" default:"false"`
 	ConnectAlbyAccount bool   `envconfig:"CONNECT_ALBY_ACCOUNT" default:"true"`
+	GoProfilerAddr     string `envconfig:"GO_PROFILER_ADDR"`
 }
 
 func (c *AppConfig) IsDefaultClientId() bool {

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/pprof"
 	"os"
 	"path"
 	"path/filepath"
@@ -157,6 +159,10 @@ func NewService(ctx context.Context) (*Service, error) {
 	eventPublisher.Publish(&events.Event{
 		Event: "nwc_started",
 	})
+
+	if appConfig.GoProfilerAddr != "" {
+		startProfiler(ctx, appConfig.GoProfilerAddr)
+	}
 
 	return svc, nil
 }
@@ -791,4 +797,33 @@ func finishRestoreNode(logger *logrus.Logger, workDir string) {
 		}
 		logger.WithField("restoreDir", restoreDir).Info("removed restore directory")
 	}
+}
+
+func startProfiler(ctx context.Context, addr string) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	server := &http.Server{
+		Addr:    addr,
+		Handler: mux,
+	}
+
+	go func() {
+		<-ctx.Done()
+		err := server.Shutdown(context.Background())
+		if err != nil {
+			panic("pprof server shutdown failed: " + err.Error())
+		}
+	}()
+
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			panic("pprof server failed: " + err.Error())
+		}
+	}()
 }
