@@ -1,5 +1,6 @@
 import { CircleCheck, Link2Off } from "lucide-react";
 import { useEffect, useState } from "react";
+import Loading from "src/components/Loading";
 import SettingsHeader from "src/components/SettingsHeader";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "src/components/ui/card";
 import { LoadingButton } from "src/components/ui/loading-button";
@@ -14,14 +15,15 @@ function Settings() {
   const { data: me } = useAlbyMe();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
   const [loading, setLoading] = useState(false);
+  const [loadingInfo, setLoadingInfo] = useState(true);
   const [linked, setLinked] = useState(false);
-
 
   useEffect(() => {
     if (me && nodeConnectionInfo) {
       setLinked(me?.keysend_pubkey === nodeConnectionInfo?.pubkey)
+      setLoadingInfo(false);
     }
-  }, []);
+  }, [me?.keysend_pubkey, nodeConnectionInfo?.pubkey]);
 
   async function linkAccount() {
     try {
@@ -66,28 +68,37 @@ function Settings() {
           </CardHeader>
           <CardContent>
             <div className="text-muted-foreground text-sm">Status</div>
-            <div className="flex flex-row gap-2 items-center">
-              {linked &&
-                <>
-                  <CircleCheck className="w-4 h-4" />
-                  <p className="font-medium">Linked</p>
-                </>
-              }
-              {!linked &&
-                <>
-                  <Link2Off className="w-4 h-4" />
-                  <p className="font-medium">Not Linked</p>
-                </>
-              }
-            </div>
+            {loadingInfo && <Loading />}
+            {!loadingInfo &&
+              <div className="flex flex-row gap-2 items-center">
+                {linked &&
+                  <>
+                    <CircleCheck className="w-4 h-4" />
+                    <p className="font-medium">Linked</p>
+                  </>
+                }
+                {!linked && me?.shared_node &&
+                  <>
+                    <Link2Off className="w-4 h-4" />
+                    <p className="font-medium">Not Linked</p>
+                  </>
+                }
+                {!linked && !me?.shared_node &&
+                  <>
+                    <Link2Off className="w-4 h-4" />
+                    <p className="font-medium">Linked to another Alby Hub</p>
+                  </>
+                }
+              </div>
+            }
           </CardContent>
-          {!linked &&
-            <CardFooter>
+          {!loadingInfo && !linked && me?.shared_node &&
+            < CardFooter >
               <LoadingButton loading={loading} onClick={linkAccount}>Link now</LoadingButton>
             </CardFooter>
           }
         </Card>
-      </div>
+      </div >
     </>
   );
 }

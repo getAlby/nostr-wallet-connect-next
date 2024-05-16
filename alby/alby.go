@@ -212,7 +212,7 @@ func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 
 	client := svc.oauthConf.Client(ctx, token)
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/internal/user/me", svc.appConfig.AlbyAPIURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/internal/users", svc.appConfig.AlbyAPIURL), nil)
 	if err != nil {
 		svc.logger.WithError(err).Error("Error creating request /me")
 		return nil, err
@@ -225,6 +225,8 @@ func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 		svc.logger.WithError(err).Error("Failed to fetch /me")
 		return nil, err
 	}
+	svc.logger.WithError(err).Error(res.Body)
+
 	me := &AlbyMe{}
 	err = json.NewDecoder(res.Body).Decode(me)
 	if err != nil {
