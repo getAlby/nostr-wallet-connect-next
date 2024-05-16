@@ -1090,6 +1090,16 @@ func (api *API) requestLSPS1Invoice(selectedLsp *lsp.LSP, amount uint64, pubkey 
 	return invoice, fee, nil
 }
 
+func (api *API) LinkAccount(ctx context.Context) error {
+	err := api.svc.AlbyOAuthSvc.LinkAccount(ctx)
+	if err != nil {
+		api.svc.Logger.WithError(err).Error("Failed to connect alby account")
+		// not sure what to do here, don't return the error for now.
+	}
+
+	return err
+}
+
 func (api *API) GetInfo(ctx context.Context) (*models.InfoResponse, error) {
 	info := models.InfoResponse{}
 	backendType, _ := api.svc.cfg.Get("LNBackendType", "")

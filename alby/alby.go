@@ -116,15 +116,6 @@ func (svc *AlbyOAuthService) CallbackHandler(ctx context.Context, code string) e
 		}
 
 		svc.config.SetUpdate(userIdentifierKey, me.Identifier, "")
-
-		// setup the Alby Account NWC node and connection
-		if svc.appConfig.ConnectAlbyAccount {
-			err = svc.connectAccount(ctx)
-			if err != nil {
-				svc.logger.WithError(err).Error("Failed to connect alby account")
-				// not sure what to do here, don't return the error for now.
-			}
-		}
 	}
 
 	return nil
@@ -370,7 +361,7 @@ func (svc *AlbyOAuthService) GetAuthUrl() string {
 	return svc.oauthConf.AuthCodeURL("unused")
 }
 
-func (svc *AlbyOAuthService) connectAccount(ctx context.Context) error {
+func (svc *AlbyOAuthService) LinkAccount(ctx context.Context) error {
 	connectionPubkey, err := svc.createAlbyAccountNWCNode(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to create alby account nwc node")

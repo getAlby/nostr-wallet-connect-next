@@ -336,6 +336,13 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		infoResponse.Unlocked = infoResponse.Running
 		res := WailsRequestRouterResponse{Body: *infoResponse, Error: ""}
 		return res
+	case "/api/link-account":
+		err := app.api.LinkAccount(ctx)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		res := WailsRequestRouterResponse{Error: ""}
+		return res
 	case "/api/encrypted-mnemonic":
 		infoResponse := app.api.GetEncryptedMnemonic()
 		res := WailsRequestRouterResponse{Body: *infoResponse, Error: ""}

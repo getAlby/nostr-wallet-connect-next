@@ -108,6 +108,8 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.POST("/api/backup", httpSvc.createBackupHandler, authMiddleware)
 	e.POST("/api/restore", httpSvc.restoreBackupHandler)
 
+	e.POST("/api/link-account", httpSvc.linkAccountHandler, authMiddleware)
+
 	frontend.RegisterHandlers(e)
 }
 
@@ -774,4 +776,14 @@ func (httpSvc *HttpService) restoreBackupHandler(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+func (httpSvc *HttpService) linkAccountHandler(c echo.Context) error {
+	err := httpSvc.api.LinkAccount(c.Request().Context())
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+	return c.NoContent(http.StatusOK)
 }
