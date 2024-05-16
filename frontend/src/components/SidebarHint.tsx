@@ -1,4 +1,4 @@
-import { LucideIcon, Plane, ShieldAlert, Zap } from "lucide-react";
+import { Link2, LucideIcon, Plane, ShieldAlert, Zap } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "src/components/ui/button";
 import {
@@ -68,6 +68,19 @@ function SidebarHint() {
         description="Deposit bitcoin by onchain or lightning payment to start using your new wallet."
         buttonText="Begin Now"
         buttonLink="/channels/new"
+      />
+    );
+  }
+
+  // User has not linked their hub to their Alby Account
+  if (info?.albyAccountConnected) {
+    return (
+      <SidebarHintCard
+        icon={Link2}
+        title="Link your Hub"
+        description="Finish the setup by linking your Alby Account to this hub."
+        buttonText="Link Hub"
+        buttonLink="/settings"
       />
     );
   }
