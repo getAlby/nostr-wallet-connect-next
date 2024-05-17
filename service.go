@@ -21,6 +21,7 @@ import (
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 
 	"github.com/glebarez/sqlite"
 	"github.com/joho/godotenv"
@@ -162,6 +163,10 @@ func NewService(ctx context.Context) (*Service, error) {
 
 	if appConfig.GoProfilerAddr != "" {
 		startProfiler(ctx, appConfig.GoProfilerAddr)
+	}
+
+	if appConfig.DdProfilerEnabled {
+		startDataDogProfiler(ctx, appConfig)
 	}
 
 	return svc, nil
@@ -825,5 +830,46 @@ func startProfiler(ctx context.Context, addr string) {
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			panic("pprof server failed: " + err.Error())
 		}
+	}()
+}
+
+func startDataDogProfiler(ctx context.Context, appConfig *config.AppConfig) {
+	if len(appConfig.DdProfilerTypes) == 0 {
+		panic("no DataDog profile types specified")
+	}
+
+	profTypes := make([]profiler.ProfileType, 0, len(appConfig.DdProfilerTypes))
+	for _, t := range appConfig.DdProfilerTypes {
+		profTypes = append(profTypes, profiler.ProfileType(t))
+	}
+
+	opts := make([]profiler.Option, 0)
+
+	if appConfig.DdProfilerAgentAddr != "" {
+		opts = append(opts, profiler.WithAPIKey(appConfig.DdProfilerAgentAddr))
+	}
+	if appConfig.DdProfilerService != "" {
+		opts = append(opts, profiler.WithService(appConfig.DdProfilerService))
+	}
+	if appConfig.DdProfilerEnv != "" {
+		opts = append(opts, profiler.WithEnv(appConfig.DdProfilerEnv))
+	}
+	if appConfig.DdProfilerVersion != "" {
+		opts = append(opts, profiler.WithVersion(appConfig.DdProfilerVersion))
+	}
+	if len(appConfig.DdProfilerTags) > 0 {
+		opts = append(opts, profiler.WithTags(appConfig.DdProfilerTags...))
+	}
+
+	opts = append(opts, profiler.WithProfileTypes(profTypes...))
+
+	err := profiler.Start(opts...)
+	if err != nil {
+		panic("failed to start DataDog profiler: " + err.Error())
+	}
+
+	go func() {
+		<-ctx.Done()
+		profiler.Stop()
 	}()
 }

@@ -1,6 +1,12 @@
 // TODO: move to config/models.go
 package config
 
+import (
+	"fmt"
+
+	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
+)
+
 const (
 	LNDBackendType        = "LND"
 	GreenlightBackendType = "GREENLIGHT"
@@ -33,6 +39,14 @@ type AppConfig struct {
 	LogEvents          bool   `envconfig:"LOG_EVENTS" default:"false"`
 	ConnectAlbyAccount bool   `envconfig:"CONNECT_ALBY_ACCOUNT" default:"true"`
 	GoProfilerAddr     string `envconfig:"GO_PROFILER_ADDR"`
+
+	DdProfilerEnabled   bool             `envconfig:"DD_PROFILER_ENABLED" default:"false"`
+	DdProfilerAgentAddr string           `envconfig:"DD_PROFILER_AGENT_ADDR"`
+	DdProfilerService   string           `envconfig:"DD_PROFILER_SERVICE"`
+	DdProfilerEnv       string           `envconfig:"DD_PROFILER_ENV"`
+	DdProfilerVersion   string           `envconfig:"DD_PROFILER_VERSION"`
+	DdProfilerTags      []string         `envconfig:"DD_PROFILER_TAGS"` // Array of "<KEY1>:<VALUE1>", "<KEY2>:<VALUE2>", ...
+	DdProfilerTypes     []DdProfilerType `envconfig:"DD_PROFILER_TYPES"`
 }
 
 func (c *AppConfig) IsDefaultClientId() bool {
@@ -44,4 +58,32 @@ type Config interface {
 	SetIgnore(key string, value string, encryptionKey string)
 	SetUpdate(key string, value string, encryptionKey string)
 	GetNostrPublicKey() string
+}
+
+type DdProfilerType profiler.ProfileType
+
+const (
+	DdProfilerTypeCPU       = profiler.CPUProfile
+	DdProfilerTypeHeap      = profiler.HeapProfile
+	DdProfilerTypeBlock     = profiler.BlockProfile
+	DdProfilerTypeMutex     = profiler.MutexProfile
+	DdProfilerTypeGoroutine = profiler.GoroutineProfile
+)
+
+func (t *DdProfilerType) Decode(value string) error {
+	switch value {
+	case "cpu":
+		*t = DdProfilerType(DdProfilerTypeCPU)
+	case "heap":
+		*t = DdProfilerType(DdProfilerTypeHeap)
+	case "block":
+		*t = DdProfilerType(DdProfilerTypeBlock)
+	case "mutex":
+		*t = DdProfilerType(DdProfilerTypeMutex)
+	case "goroutine":
+		*t = DdProfilerType(DdProfilerTypeGoroutine)
+	default:
+		return fmt.Errorf("invalid datadog profile type: %s", value)
+	}
+	return nil
 }
