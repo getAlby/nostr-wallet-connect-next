@@ -77,7 +77,7 @@ function SidebarHint() {
   }
 
   // User has not linked their hub to their Alby Account
-  if (albyMe?.keysend_pubkey !== nodeConnectionInfo?.pubkey) {
+  if (albyMe && nodeConnectionInfo && albyMe?.keysend_pubkey !== nodeConnectionInfo?.pubkey) {
     return (
       <SidebarHintCard
         icon={Link2}

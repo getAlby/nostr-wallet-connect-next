@@ -1094,10 +1094,10 @@ func (api *API) LinkAccount(ctx context.Context) error {
 	err := api.svc.AlbyOAuthSvc.LinkAccount(ctx)
 	if err != nil {
 		api.svc.Logger.WithError(err).Error("Failed to connect alby account")
-		// not sure what to do here, don't return the error for now.
+		return err
 	}
 
-	return err
+	return nil
 }
 
 func (api *API) GetInfo(ctx context.Context) (*models.InfoResponse, error) {

@@ -225,7 +225,6 @@ func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 		svc.logger.WithError(err).Error("Failed to fetch /me")
 		return nil, err
 	}
-	svc.logger.WithError(err).Error(res.Body)
 
 	me := &AlbyMe{}
 	err = json.NewDecoder(res.Body).Decode(me)
