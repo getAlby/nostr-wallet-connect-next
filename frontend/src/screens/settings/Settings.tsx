@@ -31,7 +31,6 @@ function Settings() {
       if (!csrf) {
         throw new Error("csrf not loaded");
       }
-      console.log("csrf", csrf);
       await request("/api/alby/link-account", {
         method: "POST",
         headers: {

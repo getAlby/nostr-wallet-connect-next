@@ -54,9 +54,7 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.Use(echologrus.Middleware())
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
-	e.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
-		TokenLookup: "header:X-CSRF-Token",
-	}))
+	e.Use(middleware.CSRF())
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte(httpSvc.svc.cfg.CookieSecret))))
 
 	authMiddleware := httpSvc.validateUserMiddleware
