@@ -107,5 +107,5 @@ func (albyHttpSvc *AlbyHttpService) albyLinkAccountHandler(c echo.Context) error
 		return err
 	}
 
-	return nil
+	return c.NoContent(http.StatusNoContent)
 }
