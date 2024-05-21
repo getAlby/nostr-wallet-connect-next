@@ -87,7 +87,7 @@ function Settings() {
                 {!linked && !me?.shared_node &&
                   <>
                     <Link2Off className="w-4 h-4" />
-                    <p className="font-medium">Linked to another Alby Hub</p>
+                    <p className="font-medium">Linked to a different wallet</p>
                   </>
                 }
               </div>
