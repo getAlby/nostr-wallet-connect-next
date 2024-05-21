@@ -31,7 +31,8 @@ function Settings() {
       if (!csrf) {
         throw new Error("csrf not loaded");
       }
-      await request("/api/link-account", {
+      console.log("csrf", csrf);
+      await request("/api/alby/link-account", {
         method: "POST",
         headers: {
           "X-CSRF-Token": csrf,
@@ -39,6 +40,7 @@ function Settings() {
         }
       });
       setLinked(true);
+      toast({ title: "Your Alby Hub has successfully been linked to your Alby Account." })
     }
     catch (e) {
       toast({
@@ -47,7 +49,6 @@ function Settings() {
       });
     }
     finally {
-      toast({ title: "Your Alby Hub has successfully been linked to your Alby Account." })
       setLoading(false);
     }
   }

@@ -336,8 +336,8 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		infoResponse.Unlocked = infoResponse.Running
 		res := WailsRequestRouterResponse{Body: *infoResponse, Error: ""}
 		return res
-	case "/api/link-account":
-		err := app.api.LinkAccount(ctx)
+	case "/api/alby/link-account":
+		err := app.svc.AlbyOAuthSvc.LinkAccount(ctx)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
