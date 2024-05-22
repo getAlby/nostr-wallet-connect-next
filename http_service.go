@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	echologrus "github.com/davrux/echo-logrus/v4"
 	"github.com/gorilla/sessions"
@@ -81,14 +83,18 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	// TODO: below could be supported by NIP-47
 	e.GET("/api/channels", httpSvc.channelsListHandler, authMiddleware)
 	e.POST("/api/channels", httpSvc.openChannelHandler, authMiddleware)
+	e.GET("/api/channels/suggestions", httpSvc.channelPeerSuggestionsHandler, authMiddleware)
 	// TODO: review naming
 	e.POST("/api/instant-channel-invoices", httpSvc.newInstantChannelInvoiceHandler, authMiddleware)
 	e.GET("/api/node/connection-info", httpSvc.nodeConnectionInfoHandler, authMiddleware)
+	e.GET("/api/node/status", httpSvc.nodeStatusHandler, authMiddleware)
+	e.GET("/api/node/network-graph", httpSvc.nodeNetworkGraphHandler, authMiddleware)
 	e.GET("/api/peers", httpSvc.listPeers, authMiddleware)
 	e.POST("/api/peers", httpSvc.connectPeerHandler, authMiddleware)
 	e.DELETE("/api/peers/:peerId/channels/:channelId", httpSvc.closeChannelHandler, authMiddleware)
 	e.POST("/api/wallet/new-address", httpSvc.newOnchainAddressHandler, authMiddleware)
 	e.POST("/api/wallet/redeem-onchain-funds", httpSvc.redeemOnchainFundsHandler, authMiddleware)
+	e.POST("/api/wallet/sign-message", httpSvc.signMessageHandler, authMiddleware)
 	e.GET("/api/balances", httpSvc.balancesHandler, authMiddleware)
 	e.POST("/api/reset-router", httpSvc.resetRouterHandler, authMiddleware)
 	e.POST("/api/stop", httpSvc.stopHandler, authMiddleware)
@@ -100,6 +106,9 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.POST("/api/send-payment-probes", httpSvc.sendPaymentProbesHandler, authMiddleware)
 	e.POST("/api/send-spontaneous-payment-probes", httpSvc.sendSpontaneousPaymentProbesHandler, authMiddleware)
 	e.GET("/api/log/:type", httpSvc.getLogOutputHandler, authMiddleware)
+
+	e.POST("/api/backup", httpSvc.createBackupHandler, authMiddleware)
+	e.POST("/api/restore", httpSvc.restoreBackupHandler)
 
 	frontend.RegisterHandlers(e)
 }
@@ -271,10 +280,29 @@ func (httpSvc *HttpService) channelsListHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, channels)
 }
 
-func (httpSvc *HttpService) resetRouterHandler(c echo.Context) error {
+func (httpSvc *HttpService) channelPeerSuggestionsHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	err := httpSvc.api.ResetRouter(ctx)
+	suggestions, err := httpSvc.api.GetChannelPeerSuggestions(ctx)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, suggestions)
+}
+
+func (httpSvc *HttpService) resetRouterHandler(c echo.Context) error {
+	var resetRouterRequest api.ResetRouterRequest
+	if err := c.Bind(&resetRouterRequest); err != nil {
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Message: fmt.Sprintf("Bad request: %s", err.Error()),
+		})
+	}
+
+	err := httpSvc.api.ResetRouter(resetRouterRequest.Key, true)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -302,6 +330,34 @@ func (httpSvc *HttpService) nodeConnectionInfoHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	info, err := httpSvc.api.GetNodeConnectionInfo(ctx)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func (httpSvc *HttpService) nodeStatusHandler(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	info, err := httpSvc.api.GetNodeStatus(ctx)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
+func (httpSvc *HttpService) nodeNetworkGraphHandler(c echo.Context) error {
+	nodeIds := strings.Split(c.QueryParam("nodeIds"), ",")
+
+	info, err := httpSvc.api.GetNetworkGraph(nodeIds)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -401,7 +457,7 @@ func (httpSvc *HttpService) openChannelHandler(c echo.Context) error {
 func (httpSvc *HttpService) closeChannelHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	closeChannelResponse, err := httpSvc.api.CloseChannel(ctx, c.Param("peerId"), c.Param("channelId"))
+	closeChannelResponse, err := httpSvc.api.CloseChannel(ctx, c.Param("peerId"), c.Param("channelId"), c.QueryParam("force") == "true")
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -468,6 +524,25 @@ func (httpSvc *HttpService) redeemOnchainFundsHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, redeemOnchainFundsResponse)
 }
 
+func (httpSvc *HttpService) signMessageHandler(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	var signMessageRequest api.SignMessageRequest
+	if err := c.Bind(&signMessageRequest); err != nil {
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Message: fmt.Sprintf("Bad request: %s", err.Error()),
+		})
+	}
+
+	signMessageResponse, err := httpSvc.api.SignMessage(ctx, signMessageRequest.Message)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: fmt.Sprintf("Failed to sign messae: %s", err.Error()),
+		})
+	}
+	return c.JSON(http.StatusOK, signMessageResponse)
+}
 func (httpSvc *HttpService) appsListHandler(c echo.Context) error {
 
 	apps, err := httpSvc.api.ListApps()
@@ -650,4 +725,67 @@ func (httpSvc *HttpService) getLogOutputHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, getLogResponse)
+}
+
+func (httpSvc *HttpService) createBackupHandler(c echo.Context) error {
+	var backupRequest api.BasicBackupRequest
+	if err := c.Bind(&backupRequest); err != nil {
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Message: fmt.Sprintf("Bad request: %s", err.Error()),
+		})
+	}
+
+	if !httpSvc.svc.cfg.CheckUnlockPassword(backupRequest.UnlockPassword) {
+		return c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Message: "Invalid password",
+		})
+	}
+
+	var buffer bytes.Buffer
+	err := httpSvc.api.CreateBackup(&backupRequest, &buffer)
+	if err != nil {
+		return c.String(500, fmt.Sprintf("Failed to create backup: %v", err))
+	}
+
+	c.Response().Header().Set("Content-Type", "application/octet-stream")
+	c.Response().Header().Set("Content-Disposition", "attachment; filename=nwc.bkp")
+	c.Response().WriteHeader(http.StatusOK)
+	c.Response().Write(buffer.Bytes())
+	return nil
+}
+
+func (httpSvc *HttpService) restoreBackupHandler(c echo.Context) error {
+	info, err := httpSvc.api.GetInfo(c.Request().Context())
+	if err != nil {
+		return err
+	}
+	if info.SetupCompleted {
+		return errors.New("Setup already completed")
+	}
+
+	password := c.FormValue("unlockPassword")
+
+	fileHeader, err := c.FormFile("backup")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Message: fmt.Sprintf("Failed to get backup file header: %v", err),
+		})
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: fmt.Sprintf("Failed to open backup file: %v", err),
+		})
+	}
+	defer file.Close()
+
+	err = httpSvc.api.RestoreBackup(password, file)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: fmt.Sprintf("Failed to restore backup: %v", err),
+		})
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }

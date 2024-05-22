@@ -1256,8 +1256,10 @@ func NewMockLn() (*MockLn, error) {
 	return &MockLn{}, nil
 }
 
-func (mln *MockLn) SendPaymentSync(ctx context.Context, payReq string) (preimage string, err error) {
-	return "123preimage", nil
+func (mln *MockLn) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.Nip47PayInvoiceResponse, error) {
+	return &lnclient.Nip47PayInvoiceResponse{
+		Preimage: "123preimage",
+	}, nil
 }
 
 func (mln *MockLn) SendKeysend(ctx context.Context, amount int64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
@@ -1314,7 +1316,7 @@ func (mln *MockLn) GetOnchainBalance(ctx context.Context) (*lnclient.OnchainBala
 func (mln *MockLn) RedeemOnchainFunds(ctx context.Context, toAddress string) (txId string, err error) {
 	return "", nil
 }
-func (mln *MockLn) ResetRouter(ctx context.Context) error {
+func (mln *MockLn) ResetRouter(key string) error {
 	return nil
 }
 func (mln *MockLn) SendPaymentProbes(ctx context.Context, invoice string) error {
@@ -1329,7 +1331,15 @@ func (mln *MockLn) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, error
 func (mln *MockLn) GetLogOutput(ctx context.Context, maxLen int) ([]byte, error) {
 	return []byte{}, nil
 }
-
 func (mln *MockLn) SignMessage(ctx context.Context, message string) (string, error) {
 	return "", nil
+}
+func (mln *MockLn) GetStorageDir() (string, error) {
+	return "", nil
+}
+func (mln *MockLn) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return nil, nil
+}
+func (mln *MockLn) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
+	return nil, nil
 }

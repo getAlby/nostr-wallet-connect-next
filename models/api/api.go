@@ -176,6 +176,15 @@ type GetLogOutputResponse struct {
 	Log string `json:"logs"`
 }
 
+type SignMessageRequest struct {
+	Message string `json:"message"`
+}
+
+type SignMessageResponse struct {
+	Message   string `json:"message"`
+	Signature string `json:"signature"`
+}
+
 // TODO: move to different file
 type AlbyBalanceResponse struct {
 	Sats int64 `json:"sats"`
@@ -184,3 +193,17 @@ type AlbyBalanceResponse struct {
 type AlbyPayRequest struct {
 	Invoice string `json:"invoice"`
 }
+
+type ResetRouterRequest struct {
+	Key string `json:"key"`
+}
+
+type BasicBackupRequest struct {
+	UnlockPassword string `json:"unlockPassword"`
+}
+
+type BasicRestoreWailsRequest struct {
+	UnlockPassword string `json:"unlockPassword"`
+}
+
+type NetworkGraphResponse = lnclient.NetworkGraphResponse

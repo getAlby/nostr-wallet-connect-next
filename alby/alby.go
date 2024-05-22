@@ -20,12 +20,11 @@ import (
 )
 
 type AlbyOAuthService struct {
-	appConfig      *config.AppConfig
-	config         config.Config
-	oauthConf      *oauth2.Config
-	logger         *logrus.Logger
-	eventPublisher events.EventPublisher
-	api            api.API
+	appConfig *config.AppConfig
+	config    config.Config
+	oauthConf *oauth2.Config
+	logger    *logrus.Logger
+	api       api.API
 }
 
 // TODO: move to models/alby
@@ -37,12 +36,24 @@ type AlbyMe struct {
 	Name             string `json:"name"`
 	Avatar           string `json:"avatar"`
 	KeysendPubkey    string `json:"keysend_pubkey"`
+	SharedNode       bool   `json:"shared_node"`
 }
 
 type AlbyBalance struct {
 	Balance  int64  `json:"balance"`
 	Unit     string `json:"unit"`
 	Currency string `json:"currency"`
+}
+
+type ChannelPeerSuggestion struct {
+	Network            string `json:"network"`
+	PaymentMethod      string `json:"paymentMethod"`
+	Pubkey             string `json:"pubkey"`
+	Host               string `json:"host"`
+	MinimumChannelSize uint64 `json:"minimumChannelSize"`
+	Name               string `json:"name"`
+	Image              string `json:"image"`
+	Lsp                string `json:"lsp"`
 }
 
 const (
@@ -52,7 +63,7 @@ const (
 	userIdentifierKey    = "AlbyUserIdentifier"
 )
 
-func NewAlbyOAuthService(logger *logrus.Logger, kvStore config.Config, appConfig *config.AppConfig, eventPublisher events.EventPublisher, api api.API) *AlbyOAuthService {
+func NewAlbyOAuthService(logger *logrus.Logger, kvStore config.Config, appConfig *config.AppConfig, api api.API) *AlbyOAuthService {
 	conf := &oauth2.Config{
 		ClientID:     appConfig.AlbyClientId,
 		ClientSecret: appConfig.AlbyClientSecret,
@@ -71,12 +82,11 @@ func NewAlbyOAuthService(logger *logrus.Logger, kvStore config.Config, appConfig
 	}
 
 	albyOAuthSvc := &AlbyOAuthService{
-		appConfig:      appConfig,
-		oauthConf:      conf,
-		config:         kvStore,
-		logger:         logger,
-		eventPublisher: eventPublisher,
-		api:            api,
+		appConfig: appConfig,
+		oauthConf: conf,
+		config:    kvStore,
+		logger:    logger,
+		api:       api,
 	}
 	return albyOAuthSvc
 }
@@ -107,15 +117,6 @@ func (svc *AlbyOAuthService) CallbackHandler(ctx context.Context, code string) e
 		}
 
 		svc.config.SetUpdate(userIdentifierKey, me.Identifier, "")
-
-		// setup the Alby Account NWC node and connection
-		if svc.appConfig.ConnectAlbyAccount {
-			err = svc.connectAccount(ctx)
-			if err != nil {
-				svc.logger.WithError(err).Error("Failed to connect alby account")
-				// not sure what to do here, don't return the error for now.
-			}
-		}
 	}
 
 	return nil
@@ -211,7 +212,7 @@ func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 
 	client := svc.oauthConf.Client(ctx, token)
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/user/me", svc.appConfig.AlbyAPIURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/internal/users", svc.appConfig.AlbyAPIURL), nil)
 	if err != nil {
 		svc.logger.WithError(err).Error("Error creating request /me")
 		return nil, err
@@ -224,6 +225,7 @@ func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 		svc.logger.WithError(err).Error("Failed to fetch /me")
 		return nil, err
 	}
+
 	me := &AlbyMe{}
 	err = json.NewDecoder(res.Body).Decode(me)
 	if err != nil {
@@ -361,7 +363,7 @@ func (svc *AlbyOAuthService) GetAuthUrl() string {
 	return svc.oauthConf.AuthCodeURL("unused")
 }
 
-func (svc *AlbyOAuthService) connectAccount(ctx context.Context) error {
+func (svc *AlbyOAuthService) LinkAccount(ctx context.Context) error {
 	connectionPubkey, err := svc.createAlbyAccountNWCNode(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to create alby account nwc node")
@@ -545,4 +547,38 @@ func (svc *AlbyOAuthService) activateAlbyAccountNWCNode(ctx context.Context) err
 	svc.logger.Info("Activated alby nwc node successfully")
 
 	return nil
+}
+
+func (svc *AlbyOAuthService) GetChannelPeerSuggestions(ctx context.Context) ([]ChannelPeerSuggestion, error) {
+
+	token, err := svc.fetchUserToken(ctx)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to fetch user token")
+		return nil, err
+	}
+
+	client := svc.oauthConf.Client(ctx, token)
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/internal/channel_suggestions", svc.appConfig.AlbyAPIURL), nil)
+	if err != nil {
+		svc.logger.WithError(err).Error("Error creating request to channel_suggestions endpoint")
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", "NWC-next")
+
+	res, err := client.Do(req)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to fetch channel_suggestions endpoint")
+		return nil, err
+	}
+	var suggestions []ChannelPeerSuggestion
+	err = json.NewDecoder(res.Body).Decode(&suggestions)
+	if err != nil {
+		svc.logger.WithError(err).Errorf("Failed to decode API response")
+		return nil, err
+	}
+
+	svc.logger.WithFields(logrus.Fields{"channel_suggestions": suggestions}).Info("Alby channel peer suggestions response")
+	return suggestions, nil
 }

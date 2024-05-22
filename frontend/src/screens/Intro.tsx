@@ -49,7 +49,7 @@ export function Intro() {
         style={{
           backgroundImage: `url(${Cloud})`,
           backgroundPositionX: `${-Math.max(progress, 0) * 40}%`,
-          filter: theme === "light" ? "invert(1)" : undefined,
+          filter: theme === "light" ? "invert(0.3)" : undefined,
         }}
       />
       <div
@@ -58,7 +58,7 @@ export function Intro() {
           backgroundImage: `url(${Cloud2})`,
           backgroundPositionX: `${150 - Math.max(progress, 0) * 60}%`,
           backgroundPositionY: "100%",
-          filter: theme === "light" ? "invert(1)" : undefined,
+          filter: theme === "light" ? "invert(0.3)" : undefined,
         }}
       />
       <CarouselContent className="select-none bg-transparent">
@@ -69,8 +69,7 @@ export function Intro() {
                 Welcome to Alby Hub
               </div>
               <div className="text-2xl text-muted-foreground font-semibold">
-                A powerful, all-in-one lightning wallet with a superpower of
-                connecting into apps
+                A powerful, all-in-one bitcoin lightning wallet with the superpower of connecting to applications.
               </div>
               <div className="mt-5">
                 <Button onClick={() => api?.scrollNext()} size="lg">
@@ -84,7 +83,7 @@ export function Intro() {
           <Slide
             api={api}
             icon={CloudLightning}
-            title="Alby Hub Lives in a Cloud"
+            title="Anywhere & Anytime"
             description="Your wallet is always online and ready to use on any device."
           />
         </CarouselItem>

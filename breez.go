@@ -102,19 +102,21 @@ func (bs *BreezService) Shutdown() error {
 	return bs.svc.Disconnect()
 }
 
-func (bs *BreezService) SendPaymentSync(ctx context.Context, payReq string) (preimage string, err error) {
+func (bs *BreezService) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.Nip47PayInvoiceResponse, error) {
 	sendPaymentRequest := breez_sdk.SendPaymentRequest{
 		Bolt11: payReq,
 	}
 	resp, err := bs.svc.SendPayment(sendPaymentRequest)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	var lnDetails breez_sdk.PaymentDetailsLn
 	if resp.Payment.Details != nil {
 		lnDetails, _ = resp.Payment.Details.(breez_sdk.PaymentDetailsLn)
 	}
-	return lnDetails.Data.PaymentPreimage, nil
+	return &lnclient.Nip47PayInvoiceResponse{
+		Preimage: lnDetails.Data.PaymentPreimage,
+	}, nil
 
 }
 
@@ -397,7 +399,7 @@ func (bs *BreezService) RedeemOnchainFunds(ctx context.Context, toAddress string
 	return hex.EncodeToString(redeemOnchainFundsResponse.Txid), nil
 }
 
-func (bs *BreezService) ResetRouter(ctx context.Context) error {
+func (bs *BreezService) ResetRouter(key string) error {
 	return nil
 }
 
@@ -415,6 +417,10 @@ func (bs *BreezService) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, 
 
 func (bs *BreezService) GetLogOutput(ctx context.Context, maxLen int) ([]byte, error) {
 	return []byte{}, nil
+}
+
+func (bs *BreezService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return nil, nil
 }
 
 func (bs *BreezService) SignMessage(ctx context.Context, message string) (string, error) {
@@ -448,4 +454,12 @@ func (bs *BreezService) GetBalances(ctx context.Context) (*lnclient.BalancesResp
 			NextMaxReceivableMPP: int64(info.MaxReceivableMsat),
 		},
 	}, nil
+}
+
+func (bs *BreezService) GetStorageDir() (string, error) {
+	return "", nil
+}
+
+func (bs *BreezService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
+	return nil, nil
 }

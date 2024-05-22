@@ -111,17 +111,19 @@ func (gs *GreenlightService) Shutdown() error {
 	return nil
 }
 
-func (gs *GreenlightService) SendPaymentSync(ctx context.Context, payReq string) (preimage string, err error) {
+func (gs *GreenlightService) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.Nip47PayInvoiceResponse, error) {
 	response, err := gs.client.Pay(glalby.PayRequest{
 		Bolt11: payReq,
 	})
 
 	if err != nil {
 		gs.svc.Logger.Errorf("Failed to send payment: %v", err)
-		return "", err
+		return nil, err
 	}
 	log.Printf("SendPaymentSync succeeded: %v", response.Preimage)
-	return response.Preimage, nil
+	return &lnclient.Nip47PayInvoiceResponse{
+		Preimage: response.Preimage,
+	}, nil
 }
 
 func (gs *GreenlightService) SendKeysend(ctx context.Context, amount int64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
@@ -594,7 +596,7 @@ func (gs *GreenlightService) greenlightInvoiceToTransaction(invoice *glalby.List
 	return transaction, nil
 }
 
-func (gs *GreenlightService) ResetRouter(ctx context.Context) error {
+func (gs *GreenlightService) ResetRouter(key string) error {
 	return nil
 }
 
@@ -647,4 +649,16 @@ func (gs *GreenlightService) GetBalances(ctx context.Context) (*lnclient.Balance
 		},
 	}, nil
 
+}
+
+func (gs *GreenlightService) GetStorageDir() (string, error) {
+	return "", nil
+}
+
+func (gs *GreenlightService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return nil, nil
+}
+
+func (gs *GreenlightService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
+	return nil, nil
 }
