@@ -24,8 +24,8 @@ export function Welcome() {
             Welcome to Alby Hub
           </h1>
           <p className="text-muted-foreground">
-            A powerful, all-in-one lightning wallet with a superpower of
-            connecting to applications.
+            A powerful, all-in-one bitcoin lightning wallet with the superpower
+            of connecting to applications.
           </p>
         </div>
         <div className="grid gap-2">
@@ -35,7 +35,7 @@ export function Welcome() {
           {!info?.backendType && (
             <Link to="/setup/password?wallet=import" className="w-full">
               <Button variant="ghost" className="w-full">
-                Import Existing Wallet
+                Restore Wallet from Master Key
               </Button>
             </Link>
           )}

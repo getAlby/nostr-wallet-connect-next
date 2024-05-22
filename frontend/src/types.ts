@@ -183,13 +183,12 @@ export type ConnectPeerRequest = {
 
 export type SignMessageRequest = {
   message: string;
-}
+};
 
 export type SignMessageResponse = {
   message: string;
   signature: string;
-}
-
+};
 
 export type OpenChannelRequest = {
   pubkey: string;
@@ -235,6 +234,23 @@ export type SetupNodeInfo = Partial<{
   lndMacaroonHex?: string;
 }>;
 
+export type RecommendedChannelPeer = {
+  network: Network;
+  image: string;
+  name: string;
+  minimumChannelSize: number;
+} & (
+  | {
+      paymentMethod: "onchain";
+      pubkey: string;
+      host: string;
+    }
+  | {
+      paymentMethod: "lightning";
+      lsp: string;
+    }
+);
+
 // TODO: move to different file
 export type AlbyMe = {
   identifier: string;
@@ -244,6 +260,7 @@ export type AlbyMe = {
   name: string;
   avatar: string;
   keysend_pubkey: string;
+  shared_node: boolean;
 };
 
 export type AlbyBalance = {
@@ -286,13 +303,13 @@ export type NewChannelOrder = {
   status: NewChannelOrderStatus;
   fundingTxId?: string;
 } & (
-    | {
+  | {
       paymentMethod: "onchain";
       pubkey: string;
       host: string;
     }
-    | {
+  | {
       paymentMethod: "lightning";
       lsp: string;
     }
-  );
+);

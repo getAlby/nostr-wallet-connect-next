@@ -193,3 +193,17 @@ type AlbyBalanceResponse struct {
 type AlbyPayRequest struct {
 	Invoice string `json:"invoice"`
 }
+
+type ResetRouterRequest struct {
+	Key string `json:"key"`
+}
+
+type BasicBackupRequest struct {
+	UnlockPassword string `json:"unlockPassword"`
+}
+
+type BasicRestoreWailsRequest struct {
+	UnlockPassword string `json:"unlockPassword"`
+}
+
+type NetworkGraphResponse = lnclient.NetworkGraphResponse

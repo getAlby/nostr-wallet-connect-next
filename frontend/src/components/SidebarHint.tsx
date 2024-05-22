@@ -1,4 +1,4 @@
-import { LucideIcon, Plane, ShieldAlert, Zap } from "lucide-react";
+import { Link2, LucideIcon, Plane, ShieldAlert, Zap } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "src/components/ui/button";
 import {
@@ -10,16 +10,20 @@ import {
 } from "src/components/ui/card";
 import { ALBY_MIN_BALANCE, ALBY_SERVICE_FEE } from "src/constants";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance";
+import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useChannels } from "src/hooks/useChannels";
 import { useInfo } from "src/hooks/useInfo";
+import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 
 function SidebarHint() {
   const { data: channels } = useChannels();
   const { data: albyBalance } = useAlbyBalance();
   const { data: info } = useInfo();
+  const { data: albyMe } = useAlbyMe();
   const { order } = useChannelOrderStore();
   const location = useLocation();
+  const { data: nodeConnectionInfo } = useNodeConnectionInfo();
 
   // Don't distract with hints while opening a channel
   if (
@@ -72,6 +76,19 @@ function SidebarHint() {
     );
   }
 
+  // User has not linked their hub to their Alby Account
+  if (albyMe && nodeConnectionInfo && albyMe?.keysend_pubkey !== nodeConnectionInfo?.pubkey) {
+    return (
+      <SidebarHintCard
+        icon={Link2}
+        title="Link your Hub"
+        description="Finish the setup by linking your Alby Account to this hub."
+        buttonText="Link Hub"
+        buttonLink="/settings"
+      />
+    );
+  }
+
   if (info?.showBackupReminder) {
     return (
       <SidebarHintCard
@@ -80,7 +97,7 @@ function SidebarHint() {
         description=" Not backing up your key might result in permanently losing
               access to your funds."
         buttonText="Backup Now"
-        buttonLink="/settings/backup"
+        buttonLink="/settings/key-backup"
       />
     );
   }

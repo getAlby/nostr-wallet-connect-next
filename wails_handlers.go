@@ -3,12 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/getAlby/nostr-wallet-connect/models/api"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type WailsRequestRouterResponse struct {
@@ -90,23 +92,40 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 	}
 
 	peerChannelRegex := regexp.MustCompile(
-		`/api/peers/([^/]+)/channels/([^/]+)`,
+		`/api/peers/([^/]+)/channels/([^/]+)\?force=(.+)`,
 	)
 
 	peerChannelMatch := peerChannelRegex.FindStringSubmatch(route)
 
 	switch {
-	case len(peerChannelMatch) > 1:
+	case len(peerChannelMatch) == 4:
 		peerId := peerChannelMatch[1]
 		channelId := peerChannelMatch[2]
+		force := peerChannelMatch[3]
 		switch method {
 		case "DELETE":
-			closeChannelResponse, err := app.api.CloseChannel(ctx, peerId, channelId)
+			closeChannelResponse, err := app.api.CloseChannel(ctx, peerId, channelId, force == "true")
 			if err != nil {
 				return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 			}
 			return WailsRequestRouterResponse{Body: closeChannelResponse, Error: ""}
 		}
+	}
+
+	networkGraphRegex := regexp.MustCompile(
+		`/api/node/network-graph\?nodeIds=(.+)`,
+	)
+
+	networkGraphMatch := networkGraphRegex.FindStringSubmatch(route)
+
+	switch {
+	case len(networkGraphMatch) == 2:
+		nodeIds := networkGraphMatch[1]
+		networkGraphResponse, err := app.api.GetNetworkGraph(strings.Split(nodeIds, ","))
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: networkGraphResponse, Error: ""}
 	}
 
 	mempoolApiRegex := regexp.MustCompile(
@@ -192,7 +211,18 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: createAppResponse, Error: ""}
 		}
 	case "/api/reset-router":
-		err := app.api.ResetRouter(ctx)
+		resetRouterRequest := &api.ResetRouterRequest{}
+		err := json.Unmarshal([]byte(body), resetRouterRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		err = app.api.ResetRouter(resetRouterRequest.Key, true)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
@@ -231,6 +261,13 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			}
 			return WailsRequestRouterResponse{Body: openChannelResponse, Error: ""}
 		}
+	case "/api/channels/suggestions":
+		suggestions, err := app.api.GetChannelPeerSuggestions(ctx)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		res := WailsRequestRouterResponse{Body: suggestions, Error: ""}
+		return res
 	case "/api/balances":
 		balancesResponse, err := app.api.GetBalances(ctx)
 		if err != nil {
@@ -315,6 +352,13 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		infoResponse.Unlocked = infoResponse.Running
 		res := WailsRequestRouterResponse{Body: *infoResponse, Error: ""}
+		return res
+	case "/api/alby/link-account":
+		err := app.svc.AlbyOAuthSvc.LinkAccount(ctx)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		res := WailsRequestRouterResponse{Error: ""}
 		return res
 	case "/api/encrypted-mnemonic":
 		infoResponse := app.api.GetEncryptedMnemonic()
@@ -450,6 +494,105 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 		return WailsRequestRouterResponse{Body: sendSpontaneousPaymentProbesResponse, Error: ""}
+	case "/api/backup":
+		backupRequest := &api.BasicBackupRequest{}
+		err := json.Unmarshal([]byte(body), backupRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		saveFilePath, err := runtime.SaveFileDialog(ctx, runtime.SaveDialogOptions{
+			Title:           "Save Backup File",
+			DefaultFilename: "nwc.bkp",
+		})
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to open save file dialog")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		backupFile, err := os.Create(saveFilePath)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to create backup file")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		defer backupFile.Close()
+
+		backupReq := api.BasicBackupRequest{
+			UnlockPassword: backupRequest.UnlockPassword,
+		}
+
+		err = app.api.CreateBackup(&backupReq, backupFile)
+
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to create backup")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: nil, Error: ""}
+	case "/api/restore":
+		restoreRequest := &api.BasicRestoreWailsRequest{}
+		err := json.Unmarshal([]byte(body), restoreRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		backupFilePath, err := runtime.OpenFileDialog(ctx, runtime.OpenDialogOptions{
+			Title:           "Select Backup File",
+			DefaultFilename: "nwc.bkp",
+		})
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to open save file dialog")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		backupFile, err := os.Open(backupFilePath)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to open backup file")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		defer backupFile.Close()
+
+		err = app.api.RestoreBackup(restoreRequest.UnlockPassword, backupFile)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to restore backup")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: nil, Error: ""}
 	}
 
 	if strings.HasPrefix(route, "/api/log/") {
