@@ -196,7 +196,7 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 	}
 
 	if ls.network == "bitcoin" {
-		// try to connect to some peers to retrieve P2P gossip data
+		// try to connect to some peers to retrieve P2P gossip data. TODO: Remove once LDK can correctly do gossip with CLN and Eclair nodes
 		peers := []string{
 			"031b301307574bbe9b9ac7b79cbe1700e31e544513eae0b5d7497483083f99e581@45.79.192.236:9735",   // Olympus
 			"0364913d18a19c671bb36dd04d6ad5be0fe8f2894314c36a9db3f03c2d414907e1@192.243.215.102:9735", // LQwD
