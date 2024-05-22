@@ -19,7 +19,6 @@ import AppStore from "src/screens/appstore/AppStore";
 import Channels from "src/screens/channels/Channels";
 import NewChannel from "src/screens/channels/NewChannel";
 import MigrateAlbyFunds from "src/screens/onboarding/MigrateAlbyFunds";
-import NewOnchainAddress from "src/screens/onchain/NewAddress";
 import ConnectPeer from "src/screens/peers/ConnectPeer";
 import Settings from "src/screens/settings/Settings";
 import { ImportMnemonic } from "src/screens/setup/ImportMnemonic";
@@ -41,6 +40,7 @@ import { Intro } from "src/screens/Intro";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
 import { CurrentChannelOrder } from "src/screens/channels/CurrentChannelOrder";
 import { Success } from "src/screens/onboarding/Success";
+import DepositBitcoin from "src/screens/onchain/DepositBitcoin";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 import DebugTools from "src/screens/settings/DebugTools";
 import { RestoreNode } from "src/screens/setup/RestoreNode";
@@ -91,8 +91,8 @@ function App() {
                 <Route path="new" element={<NewChannel />} />
                 <Route path="order" element={<CurrentChannelOrder />} />
                 <Route
-                  path="onchain/new-address"
-                  element={<NewOnchainAddress />}
+                  path="onchain/deposit-bitcoin"
+                  element={<DepositBitcoin />}
                 />
               </Route>
               <Route path="peers" element={<DefaultRedirect />}>
