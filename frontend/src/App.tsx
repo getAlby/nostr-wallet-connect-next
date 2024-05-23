@@ -40,6 +40,7 @@ import { BackupNodeSuccess } from "src/screens/BackupNodeSuccess";
 import { Intro } from "src/screens/Intro";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
 import { CurrentChannelOrder } from "src/screens/channels/CurrentChannelOrder";
+import InboundChannel from "src/screens/channels/InboundChannel";
 import { Success } from "src/screens/onboarding/Success";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 import DebugTools from "src/screens/settings/DebugTools";
@@ -90,6 +91,7 @@ function App() {
                 <Route index path="" element={<Channels />} />
                 <Route path="new" element={<NewChannel />} />
                 <Route path="order" element={<CurrentChannelOrder />} />
+                <Route path="inbound" element={<InboundChannel />} />
                 <Route
                   path="onchain/new-address"
                   element={<NewOnchainAddress />}
