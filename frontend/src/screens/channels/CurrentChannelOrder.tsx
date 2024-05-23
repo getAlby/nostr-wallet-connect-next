@@ -11,9 +11,8 @@ import {
 } from "src/types";
 
 import { Payment, init } from "@getalby/bitcoin-connect-react";
-import { Copy, QrCode, RefreshCw } from "lucide-react";
+import { CheckCircle, CheckCircle2, Copy, Loader, QrCode, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
-import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
 import QRCode from "src/components/QRCode";
 import { Button } from "src/components/ui/button";
@@ -21,9 +20,8 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "src/components/ui/card";
 import {
   Dialog,
@@ -34,9 +32,7 @@ import {
   DialogTrigger,
 } from "src/components/ui/dialog";
 import { Input } from "src/components/ui/input";
-import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
-import { Table, TableBody, TableCell, TableRow } from "src/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
@@ -49,7 +45,6 @@ import { useCSRF } from "src/hooks/useCSRF";
 import { useChannels } from "src/hooks/useChannels";
 import { useMempoolApi } from "src/hooks/useMempoolApi";
 import { copyToClipboard } from "src/lib/clipboard";
-import { Success } from "src/screens/onboarding/Success";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 import {
   NewInstantChannelInvoiceRequest,
@@ -75,7 +70,7 @@ export function CurrentChannelOrder() {
   return <ChannelOrderInternal order={order} />;
 }
 
-function ChannelOrderInternal({ order }: { order: NewChannelOrder }) {
+export function ChannelOrderInternal({ order }: { order: NewChannelOrder }) {
   switch (order.status) {
     case "pay":
       switch (order.paymentMethod) {
@@ -87,12 +82,6 @@ function ChannelOrderInternal({ order }: { order: NewChannelOrder }) {
           break;
       }
       break;
-    case "opening":
-      return <ChannelOpening fundingTxId={order.fundingTxId} />;
-    case "success":
-      return <Success />;
-    default:
-      break;
   }
 
   return (
@@ -102,7 +91,7 @@ function ChannelOrderInternal({ order }: { order: NewChannelOrder }) {
   );
 }
 
-function ChannelOpening({ fundingTxId }: { fundingTxId: string | undefined }) {
+export function ChannelOpening({ fundingTxId }: { fundingTxId: string | undefined }) {
   const { data: channels } = useChannels(true);
   const channel = fundingTxId
     ? channels?.find((channel) => channel.fundingTxId === fundingTxId)
@@ -150,7 +139,7 @@ function useEstimatedTransactionFee() {
 }
 
 // TODO: move these to new files
-function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
+export function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
   if (order.paymentMethod !== "onchain") {
     throw new Error("incorrect payment method");
   }
@@ -161,9 +150,11 @@ function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
     return <Loading />;
   }
 
+  // return <PayBitcoinChannelOrderTopup order={order} />;
+
   // expect at least the user to have more funds than the channel size, hopefully enough to cover mempool fees.
   if (balances.onchain.spendable > +order.amount) {
-    return <PayBitcoinChannelOrderWithSpendableFunds order={order} />;
+    return <PayBitcoinChannelOrderWithSpendableFundsPreview order={order} />;
   }
   if (balances.onchain.total > +order.amount) {
     return <PayBitcoinChannelOrderWaitingDepositConfirmation />;
@@ -174,19 +165,17 @@ function PayBitcoinChannelOrder({ order }: { order: NewChannelOrder }) {
 function PayBitcoinChannelOrderWaitingDepositConfirmation() {
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex flex-row items-center gap-2">
-            Bitcoin deposited
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center gap-2">
-          <Loading /> Waiting for one block confirmation
-        </CardContent>
-        <CardFooter className="text-muted-foreground">
-          estimated time: 10 minutes
-        </CardFooter>
-      </Card>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-row gap-2 items-center">
+          <CheckCircle className="w-4 h-4 text-green-600" />
+          <div className="text-muted-foreground">Deposit is pending in mempool</div>
+        </div>
+        <div className="bg-muted-foreground w-0.5 h-3 ml-[7px] -my-2"></div>
+        <div className="flex flex-row gap-2 items-center">
+          <Loader className="w-4 h-4 animate-spin" />
+          <div className="text-muted-foreground">Waiting for your transaction to confirm on-chain</div>
+        </div>
+      </div>
     </>
   );
 }
@@ -195,7 +184,6 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
   if (order.paymentMethod !== "onchain") {
     throw new Error("incorrect payment method");
   }
-
   const { data: channels } = useChannels();
   const { data: csrf } = useCSRF();
   const { data: balances } = useBalances();
@@ -276,96 +264,107 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
 
   return (
     <div className="grid gap-5">
-      <AppHeader
-        title="Deposit bitcoin"
-        description="You don't have enough Bitcoin to open your intended channel"
-      />
-      <div className="grid gap-5 max-w-lg">
-        <div className="grid gap-1.5">
-          <Label htmlFor="text">On-Chain Address</Label>
-          <p className="text-xs text-muted-foreground">
-            You currently have {balances.onchain.total} sats. You need to
-            deposit at least another{" "}
-            {+order.amount +
-              estimatedTransactionFee +
-              estimatedAnchorReserve -
-              balances.onchain.total}{" "}
-            sats to cover the cost of opening the channel, including onchain
-            fees and potential onchain channel reserves.
-          </p>
-          <div className="flex flex-row gap-2 items-center">
-            <Input
-              type="text"
-              value={onchainAddress}
-              readOnly
-              className="flex-1"
-            />
-            <Button
-              variant="secondary"
-              size="icon"
-              onClick={() => {
-                copyToClipboard(onchainAddress);
-                toast({ title: "Copied to clipboard." });
-              }}
-            >
-              <Copy className="w-4 h-4" />
-            </Button>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="secondary" size="icon">
-                  <QrCode className="w-4 h-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Deposit bitcoin</DialogTitle>
-                  <DialogDescription>
-                    Scan this QR code with your wallet to send funds.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-row justify-center p-3">
-                  <a href={`bitcoin:${onchainAddress}`} target="_blank">
-                    <QRCode value={onchainAddress} />
-                  </a>
-                </div>
-              </DialogContent>
-            </Dialog>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <LoadingButton
-                    variant="secondary"
-                    size="icon"
-                    onClick={getNewAddress}
-                    loading={isLoading}
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </LoadingButton>
-                </TooltipTrigger>
-                <TooltipContent>Generate a new address</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+      <div className="grid gap-1.5">
+        <p className="text-xs text-muted-foreground">
+          You currently have {balances.onchain.total} sats. You need to
+          deposit at least another{" "}
+          {+order.amount +
+            estimatedTransactionFee +
+            estimatedAnchorReserve -
+            balances.onchain.total}{" "}
+          sats to cover the cost of opening the channel, including onchain
+          fees and potential onchain channel reserves.
+        </p>
+        <div className="flex flex-row gap-2 items-center">
+          <Input
+            type="text"
+            value={onchainAddress}
+            readOnly
+            className="flex-1"
+          />
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={() => {
+              copyToClipboard(onchainAddress);
+              toast({ title: "Copied to clipboard." });
+            }}
+          >
+            <Copy className="w-4 h-4" />
+          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="secondary" size="icon">
+                <QrCode className="w-4 h-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Deposit bitcoin</DialogTitle>
+                <DialogDescription>
+                  Scan this QR code with your wallet to send funds.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-row justify-center p-3">
+                <a href={`bitcoin:${onchainAddress}`} target="_blank">
+                  <QRCode value={onchainAddress} />
+                </a>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <LoadingButton
+                  variant="secondary"
+                  size="icon"
+                  onClick={getNewAddress}
+                  loading={isLoading}
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </LoadingButton>
+              </TooltipTrigger>
+              <TooltipContent>Generate a new address</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex flex-row items-center gap-2">
-              <Loading /> Waiting for your transaction
-            </CardTitle>
-            <CardDescription>
-              Send a bitcoin transaction to the address provided above. You'll
-              be redirected as soon as the transaction is seen in the mempool.
-            </CardDescription>
-          </CardHeader>
-          {unspentAmount > 0 &&
-            <CardContent>{unspentAmount} sats deposited</CardContent>
-          }
-        </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex flex-row items-center gap-2">
+            <Loading /> Waiting for your transaction
+          </CardTitle>
+          <CardDescription>
+            Send a bitcoin transaction to the address provided above. You'll
+            be redirected as soon as the transaction is seen in the mempool.
+          </CardDescription>
+        </CardHeader>
+        {unspentAmount > 0 &&
+          <CardContent>{unspentAmount} sats deposited</CardContent>
+        }
+      </Card>
     </div >
   );
 }
+
+function PayBitcoinChannelOrderWithSpendableFundsPreview({
+  order,
+}: {
+  order: NewChannelOrder;
+}) {
+  if (order.paymentMethod !== "onchain") {
+    throw new Error("incorrect payment method");
+  }
+
+  return (
+    <div className="flex flex-row gap-2 items-center text-sm">
+      <CheckCircle2 className="w-4 h-4 shrink-0" />
+      <p className="text-muted-foreground ">Funds available</p>
+    </div>
+  );
+}
+
 
 function PayBitcoinChannelOrderWithSpendableFunds({
   order,
@@ -471,10 +470,10 @@ function PayBitcoinChannelOrderWithSpendableFunds({
       toast({
         title: "Channel opening transaction published!",
       });
-      useChannelOrderStore.getState().updateOrder({
-        fundingTxId: openChannelResponse.fundingTxId,
-        status: "opening",
-      });
+
+      order = { ...order, status: "opening", fundingTxId: openChannelResponse.fundingTxId };
+      useChannelOrderStore.getState().updateOrder(order);
+
     } catch (error) {
       console.error(error);
       alert("Something went wrong: " + error);
@@ -491,16 +490,9 @@ function PayBitcoinChannelOrderWithSpendableFunds({
   }, [openChannel, order.amount, pubkey]);
 
   return (
-    <div className="flex flex-col gap-5">
-      <AppHeader
-        title="Opening channel"
-        description="Your funds have been successfully deposited"
-      />
-
-      <div className="flex flex-col gap-5">
-        <Loading />
-        <p>Please wait...</p>
-      </div>
+    <div className="flex flex-row gap-1">
+      <Loading />
+      <p>Please wait while a channel is being opened</p>
     </div>
   );
 }
@@ -587,20 +579,12 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <AppHeader
-        title={"Buy an Instant Channel"}
-        description={
-          wrappedInvoiceResponse
-            ? "Complete Payment to open an instant channel to your node"
-            : "Please wait, loading..."
-        }
-      />
       {!wrappedInvoiceResponse && <Loading />}
 
       {wrappedInvoiceResponse && (
         <>
-          <div className="max-w-md flex flex-col gap-5">
-            <div className="border rounded-lg">
+          <div className="flex flex-col gap-5">
+            {/* <div className="border rounded-lg">
               <Table>
                 <TableBody>
                   <TableRow>
@@ -625,7 +609,7 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
                   </TableRow>
                 </TableBody>
               </Table>
-            </div>
+            </div> */}
             <Payment
               invoice={wrappedInvoiceResponse.invoice}
               payment={newChannel ? { preimage: "dummy preimage" } : undefined}
