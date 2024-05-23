@@ -40,6 +40,7 @@ import { Intro } from "src/screens/Intro";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
 import { CurrentChannelOrder } from "src/screens/channels/CurrentChannelOrder";
 import { Success } from "src/screens/onboarding/Success";
+import BuyBitcoin from "src/screens/onchain/BuyBitcoin";
 import DepositBitcoin from "src/screens/onchain/DepositBitcoin";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 import DebugTools from "src/screens/settings/DebugTools";
@@ -94,6 +95,7 @@ function App() {
                   path="onchain/deposit-bitcoin"
                   element={<DepositBitcoin />}
                 />
+                <Route path="onchain/buy-bitcoin" element={<BuyBitcoin />} />
               </Route>
               <Route path="peers" element={<DefaultRedirect />}>
                 <Route path="new" element={<ConnectPeer />} />

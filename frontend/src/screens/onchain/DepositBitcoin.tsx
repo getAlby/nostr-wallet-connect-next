@@ -91,7 +91,7 @@ export default function DepositBitcoin() {
         title="Deposit Bitcoin to Savings Balance"
         description="Deposit bitcoin to on-chain address below to add it to your savings balance, which you can use to open new lightning channels."
         contentRight={
-          <Link to="/apps/new">
+          <Link to="/channels/onchain/buy-bitcoin">
             <Button>
               <CreditCard className="h-4 w-4 mr-2" />
               Buy Bitcoin
