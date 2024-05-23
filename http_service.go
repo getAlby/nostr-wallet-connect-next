@@ -95,7 +95,7 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.POST("/api/wallet/new-address", httpSvc.newOnchainAddressHandler, authMiddleware)
 	e.POST("/api/wallet/redeem-onchain-funds", httpSvc.redeemOnchainFundsHandler, authMiddleware)
 	e.POST("/api/wallet/sign-message", httpSvc.signMessageHandler, authMiddleware)
-	e.POST("/api/request-wallet-sync", httpSvc.requestWalletSyncHandler, authMiddleware)
+	e.POST("/api/wallet/sync", httpSvc.walletSyncHandler, authMiddleware)
 	e.GET("/api/balances", httpSvc.balancesHandler, authMiddleware)
 	e.POST("/api/reset-router", httpSvc.resetRouterHandler, authMiddleware)
 	e.POST("/api/stop", httpSvc.stopHandler, authMiddleware)
@@ -383,8 +383,8 @@ func (httpSvc *HttpService) balancesHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, balances)
 }
 
-func (httpSvc *HttpService) requestWalletSyncHandler(c echo.Context) error {
-	httpSvc.api.RequestWalletSync()
+func (httpSvc *HttpService) walletSyncHandler(c echo.Context) error {
+	httpSvc.api.SyncWallet()
 
 	return c.NoContent(http.StatusNoContent)
 }

@@ -13,7 +13,7 @@ export function useSyncWallet() {
 
     const intervalId = setInterval(async () => {
       try {
-        await request("/api/request-wallet-sync", {
+        await request("/api/wallet/sync", {
           method: "POST",
           headers: {
             "X-CSRF-Token": csrf,

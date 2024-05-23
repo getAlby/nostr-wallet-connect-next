@@ -1248,7 +1248,7 @@ func (api *API) GetNetworkGraph(nodeIds []string) (models.NetworkGraphResponse, 
 	return api.svc.lnClient.GetNetworkGraph(nodeIds)
 }
 
-func (api *API) RequestWalletSync() {
+func (api *API) SyncWallet() {
 	api.svc.lastWalletSyncRequest = time.Now()
 }
 
