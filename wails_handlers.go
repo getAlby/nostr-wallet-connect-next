@@ -228,6 +228,9 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		res := WailsRequestRouterResponse{Body: nil, Error: ""}
 		return res
+	case "/api/request-wallet-sync":
+		app.api.RequestWalletSync()
+		return WailsRequestRouterResponse{Body: nil, Error: ""}
 	case "/api/stop":
 		err := app.api.Stop()
 		if err != nil {
