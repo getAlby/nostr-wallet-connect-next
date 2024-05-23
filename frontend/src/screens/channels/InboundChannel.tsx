@@ -20,7 +20,7 @@ export default function InboundChannel() {
             How do you want to increase your receiving capacity?
           </p>
           <CardButton title="Request a channel from a partner provider" description="Pay one of our partner providers to open a channel to you" to="/channels/new" />
-          <CardButton title="Request a channel from a friend" description="Ask your friends or family to open a lightning channel to you" to="/channels/new" />
+          {/* <CardButton title="Request a channel from a friend" description="Ask your friends or family to open a lightning channel to you" to="/channels/new" /> */}
           <CardButton title="Swap out to on-chain address" description="Move your bitcoin from spending balance to savings balance" to="/channels/onchain/new-address" />
         </div>
 
