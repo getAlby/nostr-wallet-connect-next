@@ -19,6 +19,7 @@ type NodeInfo struct {
 	BlockHash   string
 }
 
+// TODO: use uint for fields that cannot be negative
 type Transaction struct {
 	Type            string      `json:"type"`
 	Invoice         string      `json:"invoice"`
@@ -41,7 +42,7 @@ type NodeConnectionInfo struct {
 }
 
 type LNClient interface {
-	SendPaymentSync(ctx context.Context, payReq string) (preimage string, err error)
+	SendPaymentSync(ctx context.Context, payReq string) (*Nip47PayInvoiceResponse, error)
 	SendKeysend(ctx context.Context, amount int64, destination, preimage string, customRecords []TLVRecord) (preImage string, err error)
 	GetBalance(ctx context.Context) (balance int64, err error)
 	GetInfo(ctx context.Context) (info *NodeInfo, err error)
@@ -56,7 +57,7 @@ type LNClient interface {
 	OpenChannel(ctx context.Context, openChannelRequest *OpenChannelRequest) (*OpenChannelResponse, error)
 	CloseChannel(ctx context.Context, closeChannelRequest *CloseChannelRequest) (*CloseChannelResponse, error)
 	GetNewOnchainAddress(ctx context.Context) (string, error)
-	ResetRouter(ctx context.Context) error
+	ResetRouter(ctx context.Context, key string) error
 	GetOnchainBalance(ctx context.Context) (*OnchainBalanceResponse, error)
 	GetBalances(ctx context.Context) (*BalancesResponse, error)
 	RedeemOnchainFunds(ctx context.Context, toAddress string) (txId string, err error)
@@ -65,6 +66,7 @@ type LNClient interface {
 	ListPeers(ctx context.Context) ([]PeerDetails, error)
 	GetLogOutput(ctx context.Context, maxLen int) ([]byte, error)
 	SignMessage(ctx context.Context, message string) (string, error)
+	GetStorageDir() (string, error)
 }
 
 type Channel struct {
@@ -127,6 +129,11 @@ type LightningBalanceResponse struct {
 	NextMaxReceivable    int64 `json:"nextMaxReceivable"`
 	NextMaxSpendableMPP  int64 `json:"nextMaxSpendableMPP"`
 	NextMaxReceivableMPP int64 `json:"nextMaxReceivableMPP"`
+}
+
+type Nip47PayInvoiceResponse struct {
+	Preimage string  `json:"preimage"`
+	Fee      *uint64 `json:"fee"`
 }
 
 type BalancesResponse struct {

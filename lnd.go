@@ -193,12 +193,14 @@ func (svc *LNDService) LookupInvoice(ctx context.Context, paymentHash string) (t
 	return transaction, nil
 }
 
-func (svc *LNDService) SendPaymentSync(ctx context.Context, payReq string) (preimage string, err error) {
+func (svc *LNDService) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.Nip47PayInvoiceResponse, error) {
 	resp, err := svc.client.SendPaymentSync(ctx, &lnrpc.SendRequest{PaymentRequest: payReq})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return hex.EncodeToString(resp.PaymentPreimage), nil
+	return &lnclient.Nip47PayInvoiceResponse{
+		Preimage: hex.EncodeToString(resp.PaymentPreimage),
+	}, nil
 }
 
 func (svc *LNDService) SendKeysend(ctx context.Context, amount int64, destination, preimage string, custom_records []lnclient.TLVRecord) (respPreimage string, err error) {
@@ -434,9 +436,14 @@ func lndInvoiceToTransaction(invoice *lnrpc.Invoice) *Nip47Transaction {
 	}
 }
 
-func (svc *LNDService) ResetRouter(ctx context.Context) error {
+func (svc *LNDService) ResetRouter(ctx context.Context, key string) error {
 	return nil
 }
+
+func (svc *LNDService) GetStorageDir() (string, error) {
+	return "", nil
+}
+
 func (svc *LNDService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
 	return nil, nil
 }
