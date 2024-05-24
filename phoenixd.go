@@ -111,37 +111,30 @@ func (svc *PhoenixService) GetBalances(ctx context.Context) (*lnclient.BalancesR
 }
 
 func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
-	// querying a large number of incoices seems slow in phoenixd thus we limit the amount of invoices we look for by querying by day
-	// see make invoice call where the externalid is set
-	today := time.Now().UTC().Format("2006-02-01")
-	url := svc.Address + "/payments/incoming?externalId=" + today
+	incomingUrl := svc.Address + "/payments/incoming?from=" + strconv.FormatUint(from*1000, 100) + "&to=" + strconv.FormatUint(until*1000, 10) + "&offset=" + strconv.FormatUint(offset, 10) + "&all=" +  strconv.FormatBool(unpaid)
 
 	svc.Logger.WithFields(logrus.Fields{
-		"externalId": today,
-		"url":        url,
-	}).Infof("Fetching tranasctions: %s", url)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+		"url":        incomingUrl,
+	}).Infof("Fetching incoming tranasctions: %s", incomingUrl)
+	incomingReq, err := http.NewRequest(http.MethodGet, incomingUrl, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Basic "+svc.Authorization)
+	incomingReq.Header.Add("Authorization", "Basic "+svc.Authorization)
 	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Do(req)
+
+	incomingResp, err := client.Do(incomingReq)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer incomingResp.Body.Close()
 
-	var incomingRes []InvoiceResponse
-	if err := json.NewDecoder(resp.Body).Decode(&incomingRes); err != nil {
+	var incomingPayments []InvoiceResponse
+	if err := json.NewDecoder(incomingResp.Body).Decode(&incomingPayments); err != nil {
 		return nil, err
 	}
 	transactions = []Nip47Transaction{}
-	for _, invoice := range incomingRes {
-		//we only want paid invoices
-		if invoice.IsPaid != true {
-			continue
-		}
+	for _, invoice := range incomingPayments {
 		var settledAt *int64
 		if invoice.CompletedAt != 0 {
 			settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
@@ -160,6 +153,48 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 		}
 		transactions = append(transactions, transaction)
 	}
+
+	// get outgoing payments
+	outgoingUrl := svc.Address + "/payments/outgoing?from=" + strconv.FormatUint(from*1000, 100) + "&to=" + strconv.FormatUint(until*1000, 10) + "&offset=" + strconv.FormatUint(offset, 10)
+
+	svc.Logger.WithFields(logrus.Fields{
+		"url":        outgoingUrl,
+	}).Infof("Fetching incoming tranasctions: %s", outgoingUrl)
+	outgoingReq, err := http.NewRequest(http.MethodGet, outgoingUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+	outgoingReq.Header.Add("Authorization", "Basic "+svc.Authorization)
+	outgoingResp, err := client.Do(outgoingReq)
+	if err != nil {
+		return nil, err
+	}
+	defer outgoingResp.Body.Close()
+
+	var outgoingPayments []InvoiceResponse
+	if err := json.NewDecoder(outgoingResp.Body).Decode(&outgoingPayments); err != nil {
+		return nil, err
+	}
+	for _, invoice := range outgoingPayments {
+		var settledAt *int64
+		if invoice.CompletedAt != 0 {
+			settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
+			settledAt = &settledAtUnix
+		}
+		transaction := Nip47Transaction{
+			Type:        "outgoing",
+			Invoice:     invoice.Invoice,
+			Preimage:    invoice.Preimage,
+			PaymentHash: invoice.PaymentHash,
+			Amount:      invoice.ReceivedSat * 1000,
+			FeesPaid:    invoice.Fees * 1000,
+			CreatedAt:   time.UnixMilli(invoice.CreatedAt).Unix(),
+			Description: invoice.Description,
+			SettledAt:   settledAt,
+		}
+		transactions = append(transactions, transaction)
+	}
+
 	// sort by created date descending
 	sort.SliceStable(transactions, func(i, j int) bool {
 		return transactions[i].CreatedAt > transactions[j].CreatedAt
@@ -205,11 +240,13 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	amountSat := strconv.FormatInt(amount/1000, 10)
 	form.Add("amountSat", amountSat)
 	form.Add("description", description)
+	form.Add("descriptionHash", descriptionHash)
 	today := time.Now().UTC().Format("2006-02-01") // querying is too slow so we limit the invoices we query with the date - see list transactions
 	form.Add("externalId", today)                  // for some resone phoenixd requires an external id to query a list of invoices. thus we set this to nwc
 	svc.Logger.WithFields(logrus.Fields{
 		"externalId": today,
 		"amountSat":  amountSat,
+		"descriptionHash": descriptionHash,
 	}).Infof("Requesting phoenix invoice")
 	req, err := http.NewRequest(http.MethodPost, svc.Address+"/createinvoice", strings.NewReader(form.Encode()))
 	if err != nil {
@@ -302,8 +339,10 @@ func (svc *PhoenixService) SendPaymentSync(ctx context.Context, payReq string) (
 		return nil, err
 	}
 
+	fee := uint64(payRes.RoutingFeeSat) * 1000
 	return &lnclient.Nip47PayInvoiceResponse{
 		Preimage: payRes.PaymentPreimage,
+		Fee: &fee,
 	}, nil
 }
 
@@ -324,7 +363,25 @@ func (svc *PhoenixService) Shutdown() error {
 }
 
 func (svc *PhoenixService) GetNodeConnectionInfo(ctx context.Context) (nodeConnectionInfo *lnclient.NodeConnectionInfo, err error) {
-	return &lnclient.NodeConnectionInfo{}, nil
+	req, err := http.NewRequest(http.MethodGet, svc.Address+"/getinfo", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", "Basic "+svc.Authorization)
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var infoRes InfoResponse
+	if err := json.NewDecoder(resp.Body).Decode(&infoRes); err != nil {
+		return nil, err
+	}
+	return &lnclient.NodeConnectionInfo{
+		Pubkey: infoRes.NodeId,
+	}, nil
 }
 
 func (svc *PhoenixService) ConnectPeer(ctx context.Context, connectPeerRequest *lnclient.ConnectPeerRequest) error {
