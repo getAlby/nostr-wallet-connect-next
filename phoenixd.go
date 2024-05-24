@@ -279,14 +279,17 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	form := url.Values{}
 	amountSat := strconv.FormatInt(amount/1000, 10)
 	form.Add("amountSat", amountSat)
-	form.Add("description", description)
-	form.Add("descriptionHash", descriptionHash)
+	if descriptionHash != "" {
+		form.Add("descriptionHash", descriptionHash)
+	} else if description != "" {
+		form.Add("description", description)
+	}
+
 	today := time.Now().UTC().Format("2006-02-01") // querying is too slow so we limit the invoices we query with the date - see list transactions
 	form.Add("externalId", today)                  // for some resone phoenixd requires an external id to query a list of invoices. thus we set this to nwc
 	svc.Logger.WithFields(logrus.Fields{
 		"externalId":      today,
 		"amountSat":       amountSat,
-		"descriptionHash": descriptionHash,
 	}).Infof("Requesting phoenix invoice")
 	req, err := http.NewRequest(http.MethodPost, svc.Address+"/createinvoice", strings.NewReader(form.Encode()))
 	if err != nil {
