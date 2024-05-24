@@ -281,28 +281,30 @@ func (svc *PhoenixService) LookupInvoice(ctx context.Context, paymentHash string
 	return transaction, nil
 }
 
-func (svc *PhoenixService) SendPaymentSync(ctx context.Context, payReq string) (preimage string, err error) {
+func (svc *PhoenixService) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.Nip47PayInvoiceResponse, error) {
 	form := url.Values{}
 	form.Add("invoice", payReq)
 	req, err := http.NewRequest(http.MethodPost, svc.Address+"/payinvoice", strings.NewReader(form.Encode()))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	req.Header.Add("Authorization", "Basic "+svc.Authorization)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	client := &http.Client{Timeout: 90 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	var payRes PayResponse
 	if err := json.NewDecoder(resp.Body).Decode(&payRes); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return payRes.PaymentPreimage, nil
+	return &lnclient.Nip47PayInvoiceResponse{
+		Preimage: payRes.PaymentPreimage,
+	}, nil
 }
 
 func (svc *PhoenixService) SendKeysend(ctx context.Context, amount int64, destination, preimage string, custom_records []lnclient.TLVRecord) (respPreimage string, err error) {
@@ -313,7 +315,7 @@ func (svc *PhoenixService) RedeemOnchainFunds(ctx context.Context, toAddress str
 	return "", errors.New("not implemented")
 }
 
-func (svc *PhoenixService) ResetRouter(ctx context.Context) error {
+func (svc *PhoenixService) ResetRouter(ctx context.Context, key string) error {
 	return errors.New("not implemented")
 }
 
@@ -366,4 +368,8 @@ func (svc *PhoenixService) GetLogOutput(ctx context.Context, maxLen int) ([]byte
 
 func (svc *PhoenixService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
 	return nil, nil
+}
+
+func (svc *PhoenixService) GetStorageDir() (string, error) {
+	return "", nil
 }
