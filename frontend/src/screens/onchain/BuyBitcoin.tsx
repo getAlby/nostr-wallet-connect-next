@@ -80,47 +80,47 @@ export default function BuyBitcoin() {
       label: "USD - American Dollar",
     },
     {
-      value: "2",
+      value: "ars",
       label: "ARS - Argentine Peso",
     },
     {
-      value: "3",
+      value: "aud",
       label: "AUD - Australian Dollar",
     },
     {
-      value: "4",
+      value: "thb",
       label: "THB - Baht",
     },
     {
-      value: "5",
+      value: "bbd",
       label: "BBD - Barbados Dollar",
     },
     {
-      value: "6",
+      value: "bzd",
       label: "BZD - Belize Dollar",
     },
     {
-      value: "7",
+      value: "bmd",
       label: "BMD - Bermudian Dollar",
     },
     {
-      value: "8",
+      value: "brl",
       label: "BRL - Brazilian Real",
     },
     {
-      value: "9",
+      value: "bnd",
       label: "BND - Brunei Dollar",
     },
     {
-      value: "10",
+      value: "bgn",
       label: "BGN - Bulgarian Lev",
     },
     {
-      value: "11",
+      value: "cad",
       label: "CAD - Canadian Dollar",
     },
     {
-      value: "12",
+      value: "xaf",
       label: "XAF - CFA Franc BEAC",
     },
   ];
@@ -309,10 +309,8 @@ export default function BuyBitcoin() {
     </div>
   );
   function StepButtons(props: StepButtonProps) {
-    const { nextStep, prevStep, isLastStep, isOptionalStep, isDisabledStep } =
-      useStepper();
+    const { nextStep, isLastStep } = useStepper();
 
-    console.log(isLastStep);
     return (
       <div className="w-full flex mt-4 mb-4">
         {!props.blockNext && (
@@ -323,7 +321,10 @@ export default function BuyBitcoin() {
                 const response = (await apiRequest(
                   `/api/alby/topup?&currency=${value}`,
                   "POST",
-                  { amount: parseInt(amount), address: onchainAddress }
+                  {
+                    amount: parseInt(amount),
+                    address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+                  }
                 )) as { url: string };
 
                 setProviderUrl(response.url);

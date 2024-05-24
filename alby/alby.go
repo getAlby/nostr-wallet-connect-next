@@ -268,7 +268,7 @@ func (svc *AlbyOAuthService) GetTopupUrl(ctx context.Context, amount int64, addr
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/internal/topups", svc.appConfig.AlbyAPIURL), nil)
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/internal/topups", svc.appConfig.AlbyAPIURL), body)
 	if err != nil {
 		svc.logger.WithError(err).Error("Error creating request /topups")
 		return nil, err
@@ -281,6 +281,14 @@ func (svc *AlbyOAuthService) GetTopupUrl(ctx context.Context, amount int64, addr
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to fetch /topups")
 		return nil, err
+	}
+
+	if res.StatusCode >= 300 {
+		svc.logger.WithFields(logrus.Fields{
+			"body":       res.Body,
+			"statusCode": res.StatusCode,
+		}).Error("fee endpoint returned non-success code")
+		return nil, fmt.Errorf("failed to retrieve topup url %s", res.Body)
 	}
 
 	svc.logger.Info(res)
