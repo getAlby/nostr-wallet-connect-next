@@ -1,4 +1,6 @@
+import { PlusCircle } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { Button } from "src/components/ui/button";
 import { Checkbox } from "src/components/ui/checkbox";
 import { Label } from "src/components/ui/label";
 import {
@@ -187,8 +189,8 @@ const Permissions: React.FC<PermissionsProps> = ({
                                   }
                                   className={`col-span-2 md:col-span-1 cursor-pointer rounded border-2 ${permissions.maxAmount ==
                                     budgetOptions[budget]
-                                    ? "border-indigo-500 dark:border-indigo-400 text-indigo-500 bg-indigo-100 dark:bg-indigo-900"
-                                    : "border-gray-200 dark:border-gray-400"
+                                    ? "border-primary"
+                                    : "border-muted"
                                     } text-center py-4 dark:text-white`}
                                 >
                                   {budget}
@@ -246,17 +248,16 @@ const Permissions: React.FC<PermissionsProps> = ({
 
       {(isNew ? !permissions.expiresAt || days : isEditing) ? (
         <>
-          <div
-            onClick={() => setExpireOptions(true)}
-            className={`${expireOptions ? "hidden" : ""
-              } cursor-pointer text-sm font-medium text-indigo-500`}
-          >
-            + Add connection expiry time
-          </div>
+          {!expireOptions &&
+            <Button type="button" variant="secondary" onClick={() => setExpireOptions(true)}>
+              <PlusCircle className="w-4 h-4 mr-2" />
+              Add expiration time
+            </Button>
+          }
 
           {expireOptions && (
-            <div>
-              <p className="text-lg font-medium mb-2">Connection expiry time</p>
+            <div className="mt-5">
+              <p className="font-medium text-sm mb-2">Connection expiry time</p>
               {!isNew && (
                 <p className="mb-2 text-muted-foreground text-sm">
                   Expires:{" "}
@@ -274,8 +275,8 @@ const Permissions: React.FC<PermissionsProps> = ({
                       key={expiry}
                       onClick={() => handleDaysChange(expiryOptions[expiry])}
                       className={cn("cursor-pointer rounded border-2 text-center py-4", days == expiryOptions[expiry]
-                        ? "border-indigo-500 dark:border-indigo-400 text-indigo-500 bg-indigo-100 dark:bg-indigo-900"
-                        : "border-gray-200 dark:border-gray-400"
+                        ? "border-primary"
+                        : "border-muted"
                       )}
                     >
                       {expiry}
@@ -296,8 +297,9 @@ const Permissions: React.FC<PermissionsProps> = ({
               : "This app will never expire"}
           </p>
         </>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 
