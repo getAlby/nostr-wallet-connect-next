@@ -1,6 +1,7 @@
-import { Check, ChevronsUpDown, CreditCard } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
+import MoonPay from "src/assets/providers/moonpay.png";
 import AppHeader from "src/components/AppHeader";
 import {
   Breadcrumb,
@@ -19,6 +20,8 @@ import {
   CommandItem,
   CommandList,
 } from "src/components/ui/command";
+import { Input } from "src/components/ui/input";
+import { Label } from "src/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -39,9 +42,9 @@ export default function BuyBitcoin() {
 
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("usd");
-  const [paymentMethod, setPaymentMethod] = React.useState("credit_debit_card");
-
-  let urlWithSignature = "";
+  const [amount, setAmount] = React.useState("250");
+  const [provider, setProvider] = React.useState("moonpay");
+  const [providerUrl, setProviderUrl] = React.useState("");
 
   async function apiRequest(
     endpoint: string,
@@ -147,7 +150,6 @@ export default function BuyBitcoin() {
       }
       localStorage.setItem(localStorageKeys.onchainAddress, response.address);
       setOnchainAddress(response.address);
-      const originalUrl = `https://buy.moonpay.com/?apiKey=pk_live_vAllifniSt1auV36zH9bBFZMcrKQqkB&currencyCode=btc&baseCurrencyAmount=90&baseCurrencyCode=${value}&paymentMethod=${paymentMethod}&redirectURL=https%3A%2F%2Fportfolio.metamask.io%2Fbuy%2Forder-process%2Fmoonpay-b&walletAddress=${onchainAddress}`;
     } catch (error) {
       alert("Failed to request a new address: " + error);
     } finally {
@@ -158,7 +160,10 @@ export default function BuyBitcoin() {
     const existingAddress = localStorage.getItem(
       localStorageKeys.onchainAddress
     );
-
+    if (existingAddress) {
+      setOnchainAddress(existingAddress);
+      return;
+    }
     getNewAddress();
   }, [getNewAddress]);
 
@@ -197,8 +202,8 @@ export default function BuyBitcoin() {
                 <p className="text-muted-foreground">
                   How much bitcoin you’d like add to your savings balance?
                 </p>
-                <div className="grid gap-2">
-                  <p className="text-sm text-foreground font-bold">Currency</p>
+                <div className="grid gap-2 p-2">
+                  <Label>Currency</Label>
                   <Popover open={open} onOpenChange={setOpen}>
                     <PopoverTrigger asChild>
                       <Button
@@ -250,47 +255,56 @@ export default function BuyBitcoin() {
                   </Popover>
                 </div>
 
-                <div className="grid gap-2">
-                  <p className="text-sm text-foreground font-bold">
-                    Payment Methods
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div
-                      onClick={() => setPaymentMethod("credit_debit_card")}
-                      className={cn(
-                        "cursor-pointer rounded border-2 text-center py-4 flex flex-col gap-2 items-center",
-                        paymentMethod == "credit_debit_card"
-                          ? "border-foreground"
-                          : "border-muted"
-                      )}
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      <p className="text-sm text-foreground">
-                        Credit/debit card
-                      </p>
-                    </div>
-                    <div
-                      onClick={() => setPaymentMethod("ach_bank_transfer")}
-                      className={cn(
-                        "cursor-pointer rounded border-2 text-center py-4 flex flex-col gap-2 items-center",
-                        paymentMethod == "ach_bank_transfer"
-                          ? "border-foreground"
-                          : "border-muted"
-                      )}
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      <p className="text-sm text-foreground">Wire Transfer</p>
-                    </div>
-                  </div>
+                <div className="grid gap-1.5 p-2">
+                  <Label htmlFor="amount">Enter Amount</Label>
+                  <Input
+                    name="amount"
+                    autoFocus
+                    onChange={(e) => setAmount(e.target.value)}
+                    value={amount}
+                    type="text"
+                    placeholder="amount"
+                  />
                 </div>
               </div>
+
               <StepButtons />
             </Step>
             <Step id="finaliseOrder" key="finaliseOrder" label="Finalise Order">
-              <StepButtons></StepButtons>
+              <div className="grid gap-4">
+                <p className="text-muted-foreground">
+                  Continue with one of our available partner providers.
+                </p>
+
+                <div
+                  onClick={() => setProvider("moonpay")}
+                  className={cn(
+                    "cursor-pointer rounded border-2 text-center p-2 flex flex-row gap-2 items-center",
+                    provider == "moonpay" ? "border-foreground" : "border-muted"
+                  )}
+                >
+                  <img src={MoonPay} className="h-10 w-10" />
+                  <h2 className="text-lg text-foreground leading-6">Moonpay</h2>
+                </div>
+              </div>
+
+              <StepButtons />
             </Step>
           </Stepper>
         </div>
+
+        {providerUrl && (
+          <div className="mx-auto w-full">
+            <iframe
+              allow="accelerometer; autoplay; camera; gyroscope; payment"
+              src={providerUrl}
+              height="720"
+              className="w-full sm:w-[500px] outline-0 rounded-md shadow mx-auto"
+            >
+              <p>Your browser does not support iframes.</p>
+            </iframe>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -304,15 +318,19 @@ export default function BuyBitcoin() {
         {!props.blockNext && (
           <Button
             size="sm"
-            onClick={() =>
-              isLastStep
-                ? window.open(
-                    `https://buy.moonpay.com/?apiKey=pk_live_vAllifniSt1auV36zH9bBFZMcrKQqkB&currencyCode=btc&baseCurrencyAmount=90&baseCurrencyCode=${value}&paymentMethod=${paymentMethod}&redirectURL=https%3A%2F%2Fportfolio.metamask.io%2Fbuy%2Forder-process%2Fmoonpay-b&walletAddress=${onchainAddress}&signature=${encodeURIComponent(
-                      "NyTHEgO3aQ712o6XKgyvnc8AmilUj6Y8o58aZDgE3bM="
-                    )}`
-                  )
-                : nextStep()
-            }
+            onClick={async () => {
+              if (isLastStep) {
+                const response = (await apiRequest(
+                  `/api/alby/topup?&currency=${value}`,
+                  "POST",
+                  { amount: parseInt(amount), address: onchainAddress }
+                )) as { url: string };
+
+                setProviderUrl(response.url);
+              } else {
+                nextStep();
+              }
+            }}
             type="button"
           >
             Next

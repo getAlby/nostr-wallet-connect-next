@@ -25,6 +25,7 @@ func NewAlbyHttpService(albyOAuthSvc *AlbyOAuthService, logger *logrus.Logger) *
 func (albyHttpSvc *AlbyHttpService) RegisterSharedRoutes(e *echo.Echo, authMiddleware func(next echo.HandlerFunc) echo.HandlerFunc) {
 	e.GET("/api/alby/callback", albyHttpSvc.albyCallbackHandler, authMiddleware)
 	e.GET("/api/alby/me", albyHttpSvc.albyMeHandler, authMiddleware)
+	e.POST("/api/alby/topup", albyHttpSvc.albyTopupHandler, authMiddleware)
 	e.GET("/api/alby/balance", albyHttpSvc.albyBalanceHandler, authMiddleware)
 	e.POST("/api/alby/pay", albyHttpSvc.albyPayHandler, authMiddleware)
 	e.POST("/api/alby/link-account", albyHttpSvc.albyLinkAccountHandler, authMiddleware)
@@ -65,6 +66,25 @@ func (albyHttpSvc *AlbyHttpService) albyMeHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, me)
+}
+
+func (albyHttpSvc *AlbyHttpService) albyTopupHandler(c echo.Context) error {
+	var topupParams api.AlbyTopupRequest
+	if err := c.Bind(&topupParams); err != nil {
+		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+			Message: fmt.Sprintf("Bad request: %s", err.Error()),
+		})
+	}
+
+	topup, err := albyHttpSvc.albyOAuthSvc.GetTopupUrl(c.Request().Context(), topupParams.Amount, topupParams.Address)
+	if err != nil {
+		albyHttpSvc.logger.WithError(err).Error("Failed to request alby /topups endpoint")
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: fmt.Sprintf("Failed to request alby topups endpoint: %s", err.Error()),
+		})
+	}
+
+	return c.JSON(http.StatusOK, topup)
 }
 
 func (albyHttpSvc *AlbyHttpService) albyBalanceHandler(c echo.Context) error {

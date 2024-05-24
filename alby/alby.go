@@ -39,6 +39,10 @@ type AlbyMe struct {
 	SharedNode       bool   `json:"shared_node"`
 }
 
+type AlbyTopup struct {
+	Url string `json:"url"`
+}
+
 type AlbyBalance struct {
 	Balance  int64  `json:"balance"`
 	Unit     string `json:"unit"`
@@ -235,6 +239,62 @@ func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 
 	svc.logger.WithFields(logrus.Fields{"me": me}).Info("Alby me response")
 	return me, nil
+}
+
+func (svc *AlbyOAuthService) GetTopupUrl(ctx context.Context, amount int64, address string) (*AlbyTopup, error) {
+
+	token, err := svc.fetchUserToken(ctx)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to fetch user token")
+		return nil, err
+	}
+
+	client := svc.oauthConf.Client(ctx, token)
+
+	type TopupParams struct {
+		Address string `json:"address"`
+		Amount  int64  `json:"amount"`
+	}
+
+	body := bytes.NewBuffer([]byte{})
+	payload := &TopupParams{
+		Address: address,
+		Amount:  amount,
+	}
+	err = json.NewEncoder(body).Encode(payload)
+
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to encode request payload")
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/internal/topups", svc.appConfig.AlbyAPIURL), nil)
+	if err != nil {
+		svc.logger.WithError(err).Error("Error creating request /topups")
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", "NWC-next")
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := client.Do(req)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to fetch /topups")
+		return nil, err
+	}
+
+	svc.logger.Info(res)
+
+	topup := &AlbyTopup{}
+
+	err = json.NewDecoder(res.Body).Decode(topup)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to decode API response")
+		return nil, err
+	}
+
+	svc.logger.WithFields(logrus.Fields{"topup": topup}).Info("Alby topup response")
+	return topup, nil
 }
 
 func (svc *AlbyOAuthService) GetBalance(ctx context.Context) (*AlbyBalance, error) {

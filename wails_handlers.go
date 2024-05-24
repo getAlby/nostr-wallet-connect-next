@@ -156,6 +156,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 		return WailsRequestRouterResponse{Body: me, Error: ""}
+
 	case "/api/alby/balance":
 		balance, err := app.svc.AlbyOAuthSvc.GetBalance(ctx)
 		if err != nil {

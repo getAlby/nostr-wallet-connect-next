@@ -194,6 +194,11 @@ type AlbyPayRequest struct {
 	Invoice string `json:"invoice"`
 }
 
+type AlbyTopupRequest struct {
+	Amount  int64  `json:"amount"`
+	Address string `json:"address"`
+}
+
 type ResetRouterRequest struct {
 	Key string `json:"key"`
 }
