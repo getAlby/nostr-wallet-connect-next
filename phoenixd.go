@@ -30,6 +30,17 @@ type InvoiceResponse struct {
 	CreatedAt   int64  `json:"createdAt"`
 }
 
+type OutgoingPaymentResponse struct {
+	PaymentHash string `json:"paymentHash"`
+	Preimage    string `json:"preimage"`
+	Invoice     string `json:"invoice"`
+	IsPaid      bool   `json:"isPaid"`
+	Sent        int64  `json:"sent"`
+	Fees        int64  `json:"fees"`
+	CompletedAt int64  `json:"completedAt"`
+	CreatedAt   int64  `json:"createdAt"`
+}
+
 type PayResponse struct {
 	PaymentHash     string `json:"paymentHash"`
 	PaymentId       string `json:"paymentId"`
@@ -129,7 +140,7 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 	incomingUrl := svc.Address + "/payments/incoming?" + incomingQuery.Encode()
 
 	svc.Logger.WithFields(logrus.Fields{
-		"url":        incomingUrl,
+		"url": incomingUrl,
 	}).Infof("Fetching incoming tranasctions: %s", incomingUrl)
 	incomingReq, err := http.NewRequest(http.MethodGet, incomingUrl, nil)
 	if err != nil {
@@ -188,7 +199,7 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 	outgoingUrl := svc.Address + "/payments/outgoing?" + outgoingQuery.Encode()
 
 	svc.Logger.WithFields(logrus.Fields{
-		"url":        outgoingUrl,
+		"url": outgoingUrl,
 	}).Infof("Fetching outgoing tranasctions: %s", outgoingUrl)
 	outgoingReq, err := http.NewRequest(http.MethodGet, outgoingUrl, nil)
 	if err != nil {
@@ -201,7 +212,7 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 	}
 	defer outgoingResp.Body.Close()
 
-	var outgoingPayments []InvoiceResponse
+	var outgoingPayments []OutgoingPaymentResponse
 	if err := json.NewDecoder(outgoingResp.Body).Decode(&outgoingPayments); err != nil {
 		return nil, err
 	}
@@ -216,10 +227,9 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 			Invoice:     invoice.Invoice,
 			Preimage:    invoice.Preimage,
 			PaymentHash: invoice.PaymentHash,
-			Amount:      invoice.ReceivedSat * 1000,
+			Amount:      invoice.Sent * 1000,
 			FeesPaid:    invoice.Fees * 1000,
 			CreatedAt:   time.UnixMilli(invoice.CreatedAt).Unix(),
-			Description: invoice.Description,
 			SettledAt:   settledAt,
 		}
 		transactions = append(transactions, transaction)
@@ -274,8 +284,8 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	today := time.Now().UTC().Format("2006-02-01") // querying is too slow so we limit the invoices we query with the date - see list transactions
 	form.Add("externalId", today)                  // for some resone phoenixd requires an external id to query a list of invoices. thus we set this to nwc
 	svc.Logger.WithFields(logrus.Fields{
-		"externalId": today,
-		"amountSat":  amountSat,
+		"externalId":      today,
+		"amountSat":       amountSat,
 		"descriptionHash": descriptionHash,
 	}).Infof("Requesting phoenix invoice")
 	req, err := http.NewRequest(http.MethodPost, svc.Address+"/createinvoice", strings.NewReader(form.Encode()))
@@ -372,7 +382,7 @@ func (svc *PhoenixService) SendPaymentSync(ctx context.Context, payReq string) (
 	fee := uint64(payRes.RoutingFeeSat) * 1000
 	return &lnclient.Nip47PayInvoiceResponse{
 		Preimage: payRes.PaymentPreimage,
-		Fee: &fee,
+		Fee:      &fee,
 	}, nil
 }
 
