@@ -111,7 +111,7 @@ func (svc *PhoenixService) GetBalances(ctx context.Context) (*lnclient.BalancesR
 }
 
 func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
-	incomingUrl := svc.Address + "/payments/incoming?from=" + strconv.FormatUint(from*1000, 100) + "&to=" + strconv.FormatUint(until*1000, 10) + "&offset=" + strconv.FormatUint(offset, 10) + "&all=" +  strconv.FormatBool(unpaid)
+	incomingUrl := svc.Address + "/payments/incoming?from=" + strconv.FormatUint(from*1000, 10) + "&to=" + strconv.FormatUint(until*1000, 10) + "&offset=" + strconv.FormatUint(offset, 10) + "&all=" +  strconv.FormatBool(unpaid)
 
 	svc.Logger.WithFields(logrus.Fields{
 		"url":        incomingUrl,
@@ -155,7 +155,7 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 	}
 
 	// get outgoing payments
-	outgoingUrl := svc.Address + "/payments/outgoing?from=" + strconv.FormatUint(from*1000, 100) + "&to=" + strconv.FormatUint(until*1000, 10) + "&offset=" + strconv.FormatUint(offset, 10)
+	outgoingUrl := svc.Address + "/payments/outgoing?from=" + strconv.FormatUint(from*1000, 10) + "&to=" + strconv.FormatUint(until*1000, 10) + "&offset=" + strconv.FormatUint(offset, 10)
 
 	svc.Logger.WithFields(logrus.Fields{
 		"url":        outgoingUrl,
