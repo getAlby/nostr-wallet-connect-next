@@ -111,7 +111,22 @@ func (svc *PhoenixService) GetBalances(ctx context.Context) (*lnclient.BalancesR
 }
 
 func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
-	incomingUrl := svc.Address + "/payments/incoming?from=" + strconv.FormatUint(from*1000, 10) + "&to=" + strconv.FormatUint(until*1000, 10) + "&offset=" + strconv.FormatUint(offset, 10) + "&all=" +  strconv.FormatBool(unpaid)
+	incomingQuery := url.Values{}
+	if from != 0 {
+		incomingQuery.Add("from", strconv.FormatUint(from*1000, 10))
+	}
+	if until != 0 {
+		incomingQuery.Add("to", strconv.FormatUint(until*1000, 10))
+	}
+	if limit != 0 {
+		incomingQuery.Add("limit", strconv.FormatUint(limit, 10))
+	}
+	if offset != 0 {
+		incomingQuery.Add("offset", strconv.FormatUint(offset, 10))
+	}
+	incomingQuery.Add("all", strconv.FormatBool(unpaid))
+
+	incomingUrl := svc.Address + "/payments/incoming?" + incomingQuery.Encode()
 
 	svc.Logger.WithFields(logrus.Fields{
 		"url":        incomingUrl,
@@ -155,11 +170,26 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 	}
 
 	// get outgoing payments
-	outgoingUrl := svc.Address + "/payments/outgoing?from=" + strconv.FormatUint(from*1000, 10) + "&to=" + strconv.FormatUint(until*1000, 10) + "&offset=" + strconv.FormatUint(offset, 10)
+	outgoingQuery := url.Values{}
+	if from != 0 {
+		outgoingQuery.Add("from", strconv.FormatUint(from*1000, 10))
+	}
+	if until != 0 {
+		outgoingQuery.Add("to", strconv.FormatUint(until*1000, 10))
+	}
+	if limit != 0 {
+		outgoingQuery.Add("limit", strconv.FormatUint(limit, 10))
+	}
+	if offset != 0 {
+		outgoingQuery.Add("offset", strconv.FormatUint(offset, 10))
+	}
+	outgoingQuery.Add("all", strconv.FormatBool(unpaid))
+
+	outgoingUrl := svc.Address + "/payments/outgoing?" + outgoingQuery.Encode()
 
 	svc.Logger.WithFields(logrus.Fields{
 		"url":        outgoingUrl,
-	}).Infof("Fetching incoming tranasctions: %s", outgoingUrl)
+	}).Infof("Fetching outgoing tranasctions: %s", outgoingUrl)
 	outgoingReq, err := http.NewRequest(http.MethodGet, outgoingUrl, nil)
 	if err != nil {
 		return nil, err
