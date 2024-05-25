@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	b64 "encoding/base64"
 	"errors"
 	"net/http"
 	"net/url"
@@ -71,8 +72,8 @@ type PhoenixService struct {
 }
 
 func NewPhoenixService(svc *Service, address string, authorization string) (result lnclient.LNClient, err error) {
-
-	phoenixService := &PhoenixService{Logger: svc.Logger, db: svc.db, Address: address, Authorization: authorization}
+  authorizationBase64 := b64.StdEncoding.EncodeToString([]byte(":" + authorization))
+	phoenixService := &PhoenixService{Logger: svc.Logger, db: svc.db, Address: address, Authorization: authorizationBase64}
 
 	return phoenixService, nil
 }
