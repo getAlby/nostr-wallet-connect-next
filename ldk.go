@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -15,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getAlby/ldk-node-go/ldk_node"
-	// "github.com/getAlby/nostr-wallet-connect/ldk_node"
+	//"github.com/getAlby/ldk-node-go/ldk_node"
+	"github.com/getAlby/nostr-wallet-connect/ldk_node"
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
 
@@ -147,7 +146,7 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 				if event == nil {
 					// if there is no event, wait before polling again to avoid 100% CPU usage
 					// TODO: remove this and use WaitNextEvent()
-					time.Sleep(time.Duration(1) * time.Millisecond)
+					time.Sleep(time.Duration(5000) * time.Millisecond)
 					continue
 				}
 
@@ -171,7 +170,7 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 		"status": node.Status(),
 	}).Info("Started LDK node. Syncing wallet...")
 
-	syncStartTime := time.Now()
+	/*syncStartTime := time.Now()
 	err = node.SyncWallets()
 	if err != nil {
 		svc.Logger.WithError(err).Error("Failed to sync LDK wallets")
@@ -188,9 +187,9 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 		"nodeId":   nodeId,
 		"status":   node.Status(),
 		"duration": math.Ceil(time.Since(syncStartTime).Seconds()),
-	}).Info("LDK node synced successfully")
+	}).Info("LDK node synced successfully")*/
 
-	if ls.network == "bitcoin" {
+	/*if ls.network == "bitcoin" {
 		// try to connect to some peers to retrieve P2P gossip data. TODO: Remove once LDK can correctly do gossip with CLN and Eclair nodes
 		peers := []string{
 			"031b301307574bbe9b9ac7b79cbe1700e31e544513eae0b5d7497483083f99e581@45.79.192.236:9735",   // Olympus
@@ -253,7 +252,7 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 				}).Info("LDK node synced successfully")
 			}
 		}
-	}()
+	}()*/
 
 	return &ls, nil
 }
@@ -1037,7 +1036,7 @@ func (gs *LDKService) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, er
 }
 
 func (ls *LDKService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
-	graph := ls.node.NetworkGraph()
+	/*graph := ls.node.NetworkGraph()
 
 	type NodeInfoWithId struct {
 		Node   *ldk_node.NodeInfo `json:"node"`
@@ -1066,7 +1065,8 @@ func (ls *LDKService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphRe
 		"nodes":    nodes,
 		"channels": channels,
 	}
-	return networkGraph, nil
+	return networkGraph, nil*/
+	return nil, nil
 }
 
 func (gs *LDKService) GetLogOutput(ctx context.Context, maxLen int) ([]byte, error) {
