@@ -72,7 +72,7 @@ function SidebarHint() {
     );
   }
 
-  if (info?.showBackupReminder) {
+  if (info?.backendType === "LDK" && info?.showBackupReminder) {
     return (
       <SidebarHintCard
         icon={ShieldAlert}
