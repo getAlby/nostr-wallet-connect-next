@@ -60,7 +60,7 @@ function SidebarHint() {
   }
 
   // User has no channels yet
-  if (channels?.length === 0) {
+  if ((info?.backendType === "LDK" || info?.backendType === "GREENLIGHT") && channels?.length === 0) {
     return (
       <SidebarHintCard
         icon={Zap}
