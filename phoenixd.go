@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	b64 "encoding/base64"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -72,7 +72,7 @@ type PhoenixService struct {
 }
 
 func NewPhoenixService(svc *Service, address string, authorization string) (result lnclient.LNClient, err error) {
-  authorizationBase64 := b64.StdEncoding.EncodeToString([]byte(":" + authorization))
+	authorizationBase64 := b64.StdEncoding.EncodeToString([]byte(":" + authorization))
 	phoenixService := &PhoenixService{Logger: svc.Logger, db: svc.db, Address: address, Authorization: authorizationBase64}
 
 	return phoenixService, nil
@@ -291,8 +291,8 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	today := time.Now().UTC().Format("2006-02-01") // querying is too slow so we limit the invoices we query with the date - see list transactions
 	form.Add("externalId", today)                  // for some resone phoenixd requires an external id to query a list of invoices. thus we set this to nwc
 	svc.Logger.WithFields(logrus.Fields{
-		"externalId":      today,
-		"amountSat":       amountSat,
+		"externalId": today,
+		"amountSat":  amountSat,
 	}).Infof("Requesting phoenix invoice")
 	req, err := http.NewRequest(http.MethodPost, svc.Address+"/createinvoice", strings.NewReader(form.Encode()))
 	if err != nil {
