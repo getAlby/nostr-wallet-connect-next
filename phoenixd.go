@@ -400,8 +400,8 @@ func (svc *PhoenixService) RedeemOnchainFunds(ctx context.Context, toAddress str
 	return "", errors.New("not implemented")
 }
 
-func (svc *PhoenixService) ResetRouter(ctx context.Context, key string) error {
-	return errors.New("not implemented")
+func (svc *PhoenixService) ResetRouter(key string) error {
+	return nil
 }
 
 func (svc *PhoenixService) Shutdown() error {
@@ -475,4 +475,8 @@ func (svc *PhoenixService) GetNodeStatus(ctx context.Context) (nodeStatus *lncli
 
 func (svc *PhoenixService) GetStorageDir() (string, error) {
 	return "", nil
+}
+
+func (svc *PhoenixService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
+	return nil, nil
 }
