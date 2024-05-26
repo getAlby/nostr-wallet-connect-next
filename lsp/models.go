@@ -1,5 +1,10 @@
-// TODO: move to lsp/models.go
 package lsp
+
+import (
+	"context"
+
+	"github.com/getAlby/nostr-wallet-connect/models/api"
+)
 
 type LSP struct {
 	Pubkey  string
@@ -69,4 +74,8 @@ func AlbyMutinynetPlebsLSP() LSP {
 		LspType: LSP_TYPE_PMLSP,
 	}
 	return lsp
+}
+
+type LSPService interface {
+	NewInstantChannelInvoice(ctx context.Context, request *api.NewInstantChannelInvoiceRequest) (*api.NewInstantChannelInvoiceResponse, error)
 }

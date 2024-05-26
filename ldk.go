@@ -21,9 +21,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/lsp"
 	"github.com/getAlby/nostr-wallet-connect/models/config"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
-	"github.com/getAlby/nostr-wallet-connect/models/lsp"
 )
 
 type LDKService struct {

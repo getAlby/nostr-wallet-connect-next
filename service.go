@@ -40,6 +40,7 @@ const (
 	logFilename = "nwc.log"
 )
 
+// TODO: move to service/
 type Service struct {
 	// config from .env only. Fetch dynamic config from db
 	cfg                    *Config
@@ -259,6 +260,10 @@ func (svc *Service) createFilters(identityPubkey string) nostr.Filters {
 
 func (svc *Service) noticeHandler(notice string) {
 	svc.Logger.Infof("Received a notice %s", notice)
+}
+
+func (svc *Service) GetLNClient() lnclient.LNClient {
+	return svc.lnClient
 }
 
 func (svc *Service) StartSubscription(ctx context.Context, sub *nostr.Subscription) error {

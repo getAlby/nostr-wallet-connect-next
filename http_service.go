@@ -485,7 +485,7 @@ func (httpSvc *HttpService) newInstantChannelInvoiceHandler(c echo.Context) erro
 		})
 	}
 
-	newWrappedInvoiceResponse, err := httpSvc.api.NewInstantChannelInvoice(ctx, &newWrappedInvoiceRequest)
+	newWrappedInvoiceResponse, err := httpSvc.api.lspSvc.NewInstantChannelInvoice(ctx, &newWrappedInvoiceRequest)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
