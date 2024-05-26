@@ -310,6 +310,15 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 		return WailsRequestRouterResponse{Body: *signMessageResponse, Error: ""}
+	// TODO: review naming
+	case "/api/instant-channel-invoices":
+		newInstantChannelRequest := &api.NewInstantChannelInvoiceRequest{}
+		err := json.Unmarshal([]byte(body), newInstantChannelRequest)
+		newInstantChannelResponseResponse, err := app.api.lspSvc.NewInstantChannelInvoice(ctx, newInstantChannelRequest)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: *newInstantChannelResponseResponse, Error: ""}
 	case "/api/peers":
 		switch method {
 		case "GET":
