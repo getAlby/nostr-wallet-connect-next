@@ -284,6 +284,8 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 		form.Add("descriptionHash", descriptionHash)
 	} else if description != "" {
 		form.Add("description", description)
+	} else {
+		form.Add("description", "invoice")
 	}
 
 	today := time.Now().UTC().Format("2006-02-01") // querying is too slow so we limit the invoices we query with the date - see list transactions
