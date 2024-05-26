@@ -1316,7 +1316,7 @@ func (mln *MockLn) GetOnchainBalance(ctx context.Context) (*lnclient.OnchainBala
 func (mln *MockLn) RedeemOnchainFunds(ctx context.Context, toAddress string) (txId string, err error) {
 	return "", nil
 }
-func (mln *MockLn) ResetRouter(ctx context.Context, key string) error {
+func (mln *MockLn) ResetRouter(key string) error {
 	return nil
 }
 func (mln *MockLn) SendPaymentProbes(ctx context.Context, invoice string) error {
@@ -1338,5 +1338,8 @@ func (mln *MockLn) GetStorageDir() (string, error) {
 	return "", nil
 }
 func (mln *MockLn) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return nil, nil
+}
+func (mln *MockLn) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
 	return nil, nil
 }

@@ -318,18 +318,21 @@ func (api *API) GetChannelPeerSuggestions(ctx context.Context) ([]alby.ChannelPe
 	return api.svc.AlbyOAuthSvc.GetChannelPeerSuggestions(ctx)
 }
 
-func (api *API) ResetRouter(ctx context.Context, key string) error {
+func (api *API) ResetRouter(key string, stopApp bool) error {
 	if api.svc.lnClient == nil {
 		return errors.New("LNClient not started")
 	}
-	err := api.svc.lnClient.ResetRouter(ctx, key)
+	err := api.svc.lnClient.ResetRouter(key)
 	if err != nil {
 		return err
 	}
 
-	// Because the above method has to stop the node to reset the router,
-	// We also need to stop the lnclient and ask the user to start it again
-	return api.Stop()
+	if stopApp {
+		// Because the above method has to stop the node to reset the router,
+		// We also need to stop the lnclient and ask the user to start it again
+		return api.Stop()
+	}
+	return nil
 }
 
 func (api *API) ChangeUnlockPassword(changeUnlockPasswordRequest *models.ChangeUnlockPasswordRequest) error {
@@ -350,12 +353,16 @@ func (api *API) ChangeUnlockPassword(changeUnlockPasswordRequest *models.ChangeU
 }
 
 func (api *API) Stop() error {
+	api.svc.Logger.Info("Running Stop command")
 	if api.svc.lnClient == nil {
 		return errors.New("LNClient not started")
 	}
 	// stop the lnclient
 	// The user will be forced to re-enter their unlock password to restart the node
 	err := api.svc.StopLNClient()
+	if err != nil {
+		api.svc.Logger.WithError(err).Error("Failed to stop LNClient")
+	}
 	return err
 }
 
@@ -394,13 +401,19 @@ func (api *API) OpenChannel(ctx context.Context, openChannelRequest *models.Open
 	return api.svc.lnClient.OpenChannel(ctx, openChannelRequest)
 }
 
-func (api *API) CloseChannel(ctx context.Context, peerId, channelId string) (*models.CloseChannelResponse, error) {
+func (api *API) CloseChannel(ctx context.Context, peerId, channelId string, force bool) (*models.CloseChannelResponse, error) {
 	if api.svc.lnClient == nil {
 		return nil, errors.New("LNClient not started")
 	}
+	api.svc.Logger.WithFields(logrus.Fields{
+		"peer_id":    peerId,
+		"channel_id": channelId,
+		"force":      force,
+	}).Info("Closing channel")
 	return api.svc.lnClient.CloseChannel(ctx, &lnclient.CloseChannelRequest{
 		NodeId:    peerId,
 		ChannelId: channelId,
+		Force:     force,
 	})
 }
 
@@ -1228,6 +1241,17 @@ func (api *API) SendSpontaneousPaymentProbes(ctx context.Context, sendSpontaneou
 	return &models.SendSpontaneousPaymentProbesResponse{Error: errMessage}, nil
 }
 
+func (api *API) GetNetworkGraph(nodeIds []string) (models.NetworkGraphResponse, error) {
+	if api.svc.lnClient == nil {
+		return nil, errors.New("LNClient not started")
+	}
+	return api.svc.lnClient.GetNetworkGraph(nodeIds)
+}
+
+func (api *API) SyncWallet() {
+	api.svc.lastWalletSyncRequest = time.Now()
+}
+
 func (api *API) GetLogOutput(ctx context.Context, logType string, getLogRequest *models.GetLogOutputRequest) (*models.GetLogOutputResponse, error) {
 	var err error
 	var logData []byte
@@ -1277,6 +1301,8 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 		api.svc.Logger.WithField("path", lnStorageDir).Info("Found node storage dir")
 	}
 
+	// Reset the routing data to decrease the LDK DB size
+	api.ResetRouter("ALL", false)
 	// Stop the app to ensure no new requests are processed.
 	api.svc.StopApp()
 	db, err := api.svc.db.DB()
@@ -1339,6 +1365,7 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 	api.svc.Logger.WithField("nwc.db", dbFilePath).Info("adding nwc db to zip")
 	err = addFileToZip(dbFilePath, "nwc.db")
 	if err != nil {
+		api.svc.Logger.WithError(err).Error("Failed to zip nwc db")
 		return fmt.Errorf("failed to write nwc db file to zip: %w", err)
 	}
 
@@ -1346,12 +1373,14 @@ func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io
 		api.svc.Logger.WithField("fileToArchive", fileToArchive).Info("adding file to zip")
 		relPath, err := filepath.Rel(workDir, fileToArchive)
 		if err != nil {
+			api.svc.Logger.WithError(err).Error("Failed to get relative path of input file")
 			return fmt.Errorf("failed to get relative path of input file: %w", err)
 		}
 
 		// Ensure forward slashes for zip format compatibility.
 		err = addFileToZip(fileToArchive, filepath.ToSlash(relPath))
 		if err != nil {
+			api.svc.Logger.WithError(err).Error("Failed to write file to zip")
 			return fmt.Errorf("failed to write input file to zip: %w", err)
 		}
 	}

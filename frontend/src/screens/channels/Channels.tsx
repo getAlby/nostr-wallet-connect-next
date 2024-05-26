@@ -48,6 +48,7 @@ import { useChannels } from "src/hooks/useChannels";
 import { useInfo } from "src/hooks/useInfo";
 import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo.ts";
 import { useRedeemOnchainFunds } from "src/hooks/useRedeemOnchainFunds.ts";
+import { useSyncWallet } from "src/hooks/useSyncWallet.ts";
 import { copyToClipboard } from "src/lib/clipboard.ts";
 import { formatAmount } from "src/lib/utils.ts";
 import { CloseChannelResponse, Node } from "src/types";
@@ -55,6 +56,7 @@ import { request } from "src/utils/request";
 import { useCSRF } from "../../hooks/useCSRF.ts";
 
 export default function Channels() {
+  useSyncWallet();
   const { data: channels, mutate: reloadChannels } = useChannels();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
   const { data: balances } = useBalances();
@@ -117,18 +119,30 @@ export default function Channels() {
 
       if (
         !confirm(
-          `Are you sure you want to close the channel with ${nodes.find((node) => node.public_key === nodeId)?.alias ||
-          "Unknown Node"
+          `Are you sure you want to close the channel with ${
+            nodes.find((node) => node.public_key === nodeId)?.alias ||
+            "Unknown Node"
           }?\n\nNode ID: ${nodeId}\n\nChannel ID: ${channelId}`
         )
       ) {
         return;
       }
 
+      const closeType = prompt(
+        "Select way to close the channel. Type 'force close' if you want to force close the channel. Note: your channel balance will be locked for up to two weeks if you force close.",
+        "normal close"
+      );
+      if (!closeType) {
+        console.error("Cancelled close channel");
+        return;
+      }
+
       console.log(`🎬 Closing channel with ${nodeId}`);
 
       const closeChannelResponse = await request<CloseChannelResponse>(
-        `/api/peers/${nodeId}/channels/${channelId}`,
+        `/api/peers/${nodeId}/channels/${channelId}?force=${
+          closeType === "force close"
+        }`,
         {
           method: "DELETE",
           headers: {
@@ -142,12 +156,17 @@ export default function Channels() {
         throw new Error("Error closing channel");
       }
 
-      await reloadChannels();
-
-      console.log(
-        "Closed channel",
-        channels?.find((c) => c.id === channelId && c.remotePubkey === nodeId)
+      const closedChannel = channels?.find(
+        (c) => c.id === channelId && c.remotePubkey === nodeId
       );
+      console.log("Closed channel", closedChannel);
+      if (closedChannel) {
+        prompt(
+          "Closed channel. Copy channel funding TX to view on mempool",
+          closedChannel.fundingTxId
+        );
+      }
+      await reloadChannels();
       toast({ title: "Sucessfully closed channel." });
     } catch (error) {
       console.error(error);
@@ -259,17 +278,15 @@ export default function Channels() {
                       On-Chain Address
                     </Link>
                   </DropdownMenuItem>
-                  {(info?.backendType === "LDK" ||
-                    info?.backendType === "GREENLIGHT") &&
-                    (balances?.onchain.spendable || 0) > ONCHAIN_DUST_SATS && (
-                      <DropdownMenuItem
-                        onClick={redeemOnchainFunds.redeemFunds}
-                        disabled={redeemOnchainFunds.isLoading}
-                      >
-                        Redeem Onchain Funds
-                        {redeemOnchainFunds.isLoading && <Loading />}
-                      </DropdownMenuItem>
-                    )}
+                  {(balances?.onchain.spendable || 0) > ONCHAIN_DUST_SATS && (
+                    <DropdownMenuItem
+                      onClick={redeemOnchainFunds.redeemFunds}
+                      disabled={redeemOnchainFunds.isLoading}
+                    >
+                      Redeem Onchain Funds
+                      {redeemOnchainFunds.isLoading && <Loading />}
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuGroup>
                 {info?.backendType === "LDK" && (
                   <>
