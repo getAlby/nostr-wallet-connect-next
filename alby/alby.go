@@ -291,8 +291,6 @@ func (svc *AlbyOAuthService) GetTopupUrl(ctx context.Context, amount int64, addr
 		return nil, fmt.Errorf("failed to retrieve topup url %s", res.Body)
 	}
 
-	svc.logger.Info(res)
-
 	topup := &AlbyTopup{}
 
 	err = json.NewDecoder(res.Body).Decode(topup)
