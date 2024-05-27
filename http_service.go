@@ -58,7 +58,7 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
 		TokenLookup: "header:X-CSRF-Token",
 	}))
-	e.Use(session.Middleware(sessions.NewCookieStore([]byte(httpSvc.svc.cfg.CookieSecret))))
+	e.Use(session.Middleware(sessions.NewCookieStore([]byte(httpSvc.svc.cfg.GetCookieSecret()))))
 
 	authMiddleware := httpSvc.validateUserMiddleware
 	e.GET("/api/apps", httpSvc.appsListHandler, authMiddleware)
@@ -303,7 +303,7 @@ func (httpSvc *HttpService) resetRouterHandler(c echo.Context) error {
 		})
 	}
 
-	err := httpSvc.api.ResetRouter(resetRouterRequest.Key, true)
+	err := httpSvc.api.ResetRouter(resetRouterRequest.Key)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -749,7 +749,7 @@ func (httpSvc *HttpService) createBackupHandler(c echo.Context) error {
 	}
 
 	var buffer bytes.Buffer
-	err := httpSvc.api.CreateBackup(&backupRequest, &buffer)
+	err := httpSvc.api.backupSvc.CreateBackup(&backupRequest, &buffer)
 	if err != nil {
 		return c.String(500, fmt.Sprintf("Failed to create backup: %v", err))
 	}
@@ -787,7 +787,7 @@ func (httpSvc *HttpService) restoreBackupHandler(c echo.Context) error {
 	}
 	defer file.Close()
 
-	err = httpSvc.api.RestoreBackup(password, file)
+	err = httpSvc.api.backupSvc.RestoreBackup(password, file)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Message: fmt.Sprintf("Failed to restore backup: %v", err),

@@ -29,8 +29,8 @@ import (
 	alby "github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/events"
 
+	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/migrations"
-	"github.com/getAlby/nostr-wallet-connect/models/config"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
@@ -42,8 +42,8 @@ const (
 
 // TODO: move to service/
 type Service struct {
-	// config from .env only. Fetch dynamic config from db
-	cfg                    *Config
+	// config from .GetEnv() only. Fetch dynamic config from db
+	cfg                    config.Config
 	db                     *gorm.DB
 	lnClient               lnclient.LNClient
 	Logger                 *logrus.Logger
@@ -58,8 +58,8 @@ type Service struct {
 
 // TODO: move to service.go
 func NewService(ctx context.Context) (*Service, error) {
-	// Load config from environment variables / .env file
-	godotenv.Load(".env")
+	// Load config from environment variables / .GetEnv() file
+	godotenv.Load(".GetEnv()")
 	appConfig := &config.AppConfig{}
 	err := envconfig.Process("", appConfig)
 	if err != nil {
@@ -128,8 +128,7 @@ func NewService(ctx context.Context) (*Service, error) {
 		return nil, err
 	}
 
-	cfg := &Config{}
-	cfg.Init(db, appConfig, logger)
+	cfg := config.NewConfig(db, appConfig, logger)
 
 	eventPublisher := events.NewEventPublisher(logger)
 
@@ -152,7 +151,7 @@ func NewService(ctx context.Context) (*Service, error) {
 		nip47NotificationQueue: nip47NotificationQueue,
 	}
 	// FIXME: tangled dependency
-	svc.AlbyOAuthSvc = alby.NewAlbyOAuthService(logger, cfg, cfg.Env, NewAPI(svc))
+	svc.AlbyOAuthSvc = alby.NewAlbyOAuthService(logger, cfg, cfg.GetEnv(), NewAPI(svc))
 
 	eventPublisher.RegisterSubscriber(svc.AlbyOAuthSvc)
 
@@ -208,20 +207,20 @@ func (svc *Service) launchLNBackend(ctx context.Context, encryptionKey string) e
 		lnClient, err = NewLNDService(ctx, svc, LNDAddress, LNDCertHex, LNDMacaroonHex)
 	case config.LDKBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
-		LDKWorkdir := path.Join(svc.cfg.Env.Workdir, "ldk")
+		LDKWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "ldk")
 
-		lnClient, err = NewLDKService(ctx, svc, Mnemonic, LDKWorkdir, svc.cfg.Env.LDKNetwork, svc.cfg.Env.LDKEsploraServer, svc.cfg.Env.LDKGossipSource)
+		lnClient, err = NewLDKService(ctx, svc, Mnemonic, LDKWorkdir, svc.cfg.GetEnv().LDKNetwork, svc.cfg.GetEnv().LDKEsploraServer, svc.cfg.GetEnv().LDKGossipSource)
 	case config.GreenlightBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
-		GreenlightWorkdir := path.Join(svc.cfg.Env.Workdir, "greenlight")
+		GreenlightWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "greenlight")
 
 		lnClient, err = NewGreenlightService(svc, Mnemonic, GreenlightInviteCode, GreenlightWorkdir, encryptionKey)
 	case config.BreezBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		BreezAPIKey, _ := svc.cfg.Get("BreezAPIKey", encryptionKey)
 		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
-		BreezWorkdir := path.Join(svc.cfg.Env.Workdir, "breez")
+		BreezWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "breez")
 
 		lnClient, err = NewBreezService(svc.Logger, Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
 	default:
@@ -372,7 +371,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		return
 	}
 
-	ss, err := nip04.ComputeSharedSecret(event.PubKey, svc.cfg.NostrSecretKey)
+	ss, err := nip04.ComputeSharedSecret(event.PubKey, svc.cfg.GetNostrSecretKey())
 	if err != nil {
 		svc.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
@@ -480,7 +479,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	}).Info("App found for nostr event")
 
 	//to be extra safe, decrypt using the key found from the app
-	ss, err = nip04.ComputeSharedSecret(app.NostrPubkey, svc.cfg.NostrSecretKey)
+	ss, err = nip04.ComputeSharedSecret(app.NostrPubkey, svc.cfg.GetNostrSecretKey())
 	if err != nil {
 		svc.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
@@ -618,13 +617,13 @@ func (svc *Service) createResponse(initialEvent *nostr.Event, content interface{
 	allTags = append(allTags, tags...)
 
 	resp := &nostr.Event{
-		PubKey:    svc.cfg.NostrPublicKey,
+		PubKey:    svc.cfg.GetNostrPublicKey(),
 		CreatedAt: nostr.Now(),
 		Kind:      nip47.RESPONSE_KIND,
 		Tags:      allTags,
 		Content:   msg,
 	}
-	err = resp.Sign(svc.cfg.NostrSecretKey)
+	err = resp.Sign(svc.cfg.GetNostrSecretKey())
 	if err != nil {
 		return nil, err
 	}
@@ -751,9 +750,9 @@ func (svc *Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay) er
 	ev.Kind = nip47.INFO_EVENT_KIND
 	ev.Content = nip47.CAPABILITIES
 	ev.CreatedAt = nostr.Now()
-	ev.PubKey = svc.cfg.NostrPublicKey
+	ev.PubKey = svc.cfg.GetNostrPublicKey()
 	ev.Tags = nostr.Tags{[]string{"notifications", nip47.NOTIFICATION_TYPES}}
-	err := ev.Sign(svc.cfg.NostrSecretKey)
+	err := ev.Sign(svc.cfg.GetNostrSecretKey())
 	if err != nil {
 		return err
 	}
@@ -765,7 +764,7 @@ func (svc *Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay) er
 }
 
 func (svc *Service) LogFilePath() string {
-	return filepath.Join(svc.cfg.Env.Workdir, logDir, logFilename)
+	return filepath.Join(svc.cfg.GetEnv().Workdir, logDir, logFilename)
 }
 
 func finishRestoreNode(logger *logrus.Logger, workDir string) {
@@ -805,4 +804,21 @@ func finishRestoreNode(logger *logrus.Logger, workDir string) {
 		}
 		logger.WithField("restoreDir", restoreDir).Info("removed restore directory")
 	}
+}
+
+func (svc *Service) StopDb() error {
+	db, err := svc.db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get database connection: %w", err)
+	}
+
+	err = db.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close database connection: %w", err)
+	}
+	return nil
+}
+
+func (svc *Service) GetConfig() config.Config {
+	return svc.cfg
 }

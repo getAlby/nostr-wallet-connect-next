@@ -20,9 +20,9 @@ import (
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
 
+	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lsp"
-	"github.com/getAlby/nostr-wallet-connect/models/config"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 )
 
@@ -78,7 +78,7 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 
 	config.ListeningAddresses = &listeningAddresses
 	config.LogDirPath = &logDirPath
-	logLevel, err := strconv.Atoi(svc.cfg.Env.LDKLogLevel)
+	logLevel, err := strconv.Atoi(svc.cfg.GetEnv().LDKLogLevel)
 	if err == nil {
 		config.LogLevel = ldk_node.LogLevel(logLevel)
 	}

@@ -222,7 +222,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 
-		err = app.api.ResetRouter(resetRouterRequest.Key, true)
+		err = app.api.ResetRouter(resetRouterRequest.Key)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
@@ -546,7 +546,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			UnlockPassword: backupRequest.UnlockPassword,
 		}
 
-		err = app.api.CreateBackup(&backupReq, backupFile)
+		err = app.api.backupSvc.CreateBackup(&backupReq, backupFile)
 
 		if err != nil {
 			app.svc.Logger.WithFields(logrus.Fields{
@@ -594,7 +594,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 
 		defer backupFile.Close()
 
-		err = app.api.RestoreBackup(restoreRequest.UnlockPassword, backupFile)
+		err = app.api.backupSvc.RestoreBackup(restoreRequest.UnlockPassword, backupFile)
 		if err != nil {
 			app.svc.Logger.WithFields(logrus.Fields{
 				"route":  route,

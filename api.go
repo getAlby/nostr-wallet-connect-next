@@ -1,12 +1,7 @@
 package main
 
 import (
-	"archive/zip"
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -14,35 +9,34 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/pbkdf2"
 	"gorm.io/gorm"
 
 	"github.com/getAlby/nostr-wallet-connect/alby"
+	"github.com/getAlby/nostr-wallet-connect/backup"
+	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/lsp"
 	models "github.com/getAlby/nostr-wallet-connect/models/api"
-	"github.com/getAlby/nostr-wallet-connect/models/config"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 
 type API struct {
-	svc    *Service
-	lspSvc lsp.LSPService
+	svc       *Service
+	lspSvc    lsp.LSPService
+	backupSvc backup.BackupService
 }
 
 func NewAPI(svc *Service) *API {
 
 	return &API{
-		svc:    svc,
-		lspSvc: lsp.NewLSPService(svc, svc.Logger),
+		svc:       svc,
+		lspSvc:    lsp.NewLSPService(svc, svc.Logger),
+		backupSvc: backup.NewBackupService(svc, svc.Logger),
 	}
 }
 
@@ -123,7 +117,7 @@ func (api *API) CreateApp(createAppRequest *models.CreateAppRequest) (*models.Cr
 		if err == nil {
 			query := returnToUrl.Query()
 			query.Add("relay", relayUrl)
-			query.Add("pubkey", api.svc.cfg.NostrPublicKey)
+			query.Add("pubkey", api.svc.cfg.GetNostrPublicKey())
 			// if user.LightningAddress != "" {
 			// 	query.Add("lud16", user.LightningAddress)
 			// }
@@ -136,7 +130,7 @@ func (api *API) CreateApp(createAppRequest *models.CreateAppRequest) (*models.Cr
 	// if user.LightningAddress != "" {
 	// 	lud16 = fmt.Sprintf("&lud16=%s", user.LightningAddress)
 	// }
-	responseBody.PairingUri = fmt.Sprintf("nostr+walletconnect://%s?relay=%s&secret=%s%s", api.svc.cfg.NostrPublicKey, relayUrl, pairingSecretKey, lud16)
+	responseBody.PairingUri = fmt.Sprintf("nostr+walletconnect://%s?relay=%s&secret=%s%s", api.svc.GetConfig().GetNostrPublicKey(), relayUrl, pairingSecretKey, lud16)
 	return responseBody, nil
 }
 
@@ -317,7 +311,7 @@ func (api *API) GetChannelPeerSuggestions(ctx context.Context) ([]alby.ChannelPe
 	return api.svc.AlbyOAuthSvc.GetChannelPeerSuggestions(ctx)
 }
 
-func (api *API) ResetRouter(key string, stopApp bool) error {
+func (api *API) ResetRouter(key string) error {
 	if api.svc.lnClient == nil {
 		return errors.New("LNClient not started")
 	}
@@ -326,12 +320,9 @@ func (api *API) ResetRouter(key string, stopApp bool) error {
 		return err
 	}
 
-	if stopApp {
-		// Because the above method has to stop the node to reset the router,
-		// We also need to stop the lnclient and ask the user to start it again
-		return api.Stop()
-	}
-	return nil
+	// Because the above method has to stop the node to reset the router,
+	// We also need to stop the lnclient and ask the user to start it again
+	return api.Stop()
 }
 
 func (api *API) ChangeUnlockPassword(changeUnlockPasswordRequest *models.ChangeUnlockPasswordRequest) error {
@@ -339,7 +330,7 @@ func (api *API) ChangeUnlockPassword(changeUnlockPasswordRequest *models.ChangeU
 		return errors.New("LNClient not started")
 	}
 
-	err := api.svc.cfg.ChangeUnlockPassword(changeUnlockPasswordRequest.CurrentUnlockPassword, changeUnlockPasswordRequest.NewUnlockPassword)
+	err := api.svc.GetConfig().ChangeUnlockPassword(changeUnlockPasswordRequest.CurrentUnlockPassword, changeUnlockPasswordRequest.NewUnlockPassword)
 
 	if err != nil {
 		api.svc.Logger.WithError(err).Error("failed to change unlock password")
@@ -468,7 +459,7 @@ func (api *API) GetBalances(ctx context.Context) (*models.BalancesResponse, erro
 }
 
 func (api *API) RequestMempoolApi(endpoint string) (interface{}, error) {
-	url := api.svc.cfg.Env.MempoolApi + endpoint
+	url := api.svc.GetConfig().GetEnv().MempoolApi + endpoint
 
 	client := http.Client{
 		Timeout: time.Second * 10,
@@ -519,7 +510,7 @@ func (api *API) GetInfo(ctx context.Context) (*models.InfoResponse, error) {
 	info.Running = api.svc.lnClient != nil
 	info.BackendType = backendType
 	info.AlbyAuthUrl = api.svc.AlbyOAuthSvc.GetAuthUrl()
-	info.OAuthRedirect = !api.svc.cfg.Env.IsDefaultClientId()
+	info.OAuthRedirect = !api.svc.GetConfig().GetEnv().IsDefaultClientId()
 	albyUserIdentifier, err := api.svc.AlbyOAuthSvc.GetUserIdentifier()
 	if err != nil {
 		api.svc.Logger.WithError(err).Error("Failed to get alby user identifier")
@@ -595,7 +586,9 @@ func (api *API) Setup(ctx context.Context, setupRequest *models.SetupRequest) er
 		return errors.New("setup already completed")
 	}
 
-	api.svc.cfg.SavePasswordCheck(setupRequest.UnlockPassword)
+	api.svc.cfg.Setup(setupRequest.UnlockPassword)
+
+	// TODO: move all below code to cfg.Setup()
 
 	// update next backup reminder
 	api.svc.cfg.SetUpdate("NextBackupReminder", setupRequest.NextBackupReminder, "")
@@ -691,201 +684,6 @@ func (api *API) GetLogOutput(ctx context.Context, logType string, getLogRequest 
 	return &models.GetLogOutputResponse{Log: string(logData)}, nil
 }
 
-func (api *API) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io.Writer) error {
-	var err error
-
-	if !api.svc.cfg.CheckUnlockPassword(basicBackupRequest.UnlockPassword) {
-		return errors.New("invalid unlock password")
-	}
-
-	workDir, err := filepath.Abs(api.svc.cfg.Env.Workdir)
-	if err != nil {
-		return fmt.Errorf("failed to get absolute workdir: %w", err)
-	}
-
-	lnStorageDir := ""
-
-	if api.svc.lnClient != nil {
-		lnStorageDir, err = api.svc.lnClient.GetStorageDir()
-		if err != nil {
-			return fmt.Errorf("failed to get storage dir: %w", err)
-		}
-		api.svc.Logger.WithField("path", lnStorageDir).Info("Found node storage dir")
-	}
-
-	// Reset the routing data to decrease the LDK DB size
-	api.ResetRouter("ALL", false)
-	// Stop the app to ensure no new requests are processed.
-	api.svc.StopApp()
-	db, err := api.svc.db.DB()
-	if err != nil {
-		return fmt.Errorf("failed to get database connection: %w", err)
-	}
-
-	// Closing the database leaves the service in an inconsistent state,
-	// but that should not be a problem since the app is not expected
-	// to be used after its data is exported.
-	err = db.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close database connection: %w", err)
-	}
-
-	var filesToArchive []string
-
-	if lnStorageDir != "" {
-		lnFiles, err := filepath.Glob(filepath.Join(workDir, lnStorageDir, "*"))
-		if err != nil {
-			return fmt.Errorf("failed to list files in the LNClient storage directory: %w", err)
-		}
-		api.svc.Logger.WithField("lnFiles", lnFiles).Info("Listed node storage dir")
-
-		// Avoid backing up log files.
-		slices.DeleteFunc(lnFiles, func(s string) bool {
-			return filepath.Ext(s) == ".log"
-		})
-
-		filesToArchive = append(filesToArchive, lnFiles...)
-	}
-
-	cw, err := encryptingWriter(w, basicBackupRequest.UnlockPassword)
-	if err != nil {
-		return fmt.Errorf("failed to create encrypted writer: %w", err)
-	}
-
-	zw := zip.NewWriter(cw)
-	defer zw.Close()
-
-	addFileToZip := func(fsPath, zipPath string) error {
-		inF, err := os.Open(fsPath)
-		if err != nil {
-			return fmt.Errorf("failed to open source file for reading: %w", err)
-		}
-		defer inF.Close()
-
-		outW, err := zw.Create(zipPath)
-		if err != nil {
-			return fmt.Errorf("failed to create zip entry: %w", err)
-		}
-
-		_, err = io.Copy(outW, inF)
-		return err
-	}
-
-	// Locate the main database file.
-	dbFilePath := api.svc.cfg.Env.DatabaseUri
-	// Add the database file to the archive.
-	api.svc.Logger.WithField("nwc.db", dbFilePath).Info("adding nwc db to zip")
-	err = addFileToZip(dbFilePath, "nwc.db")
-	if err != nil {
-		api.svc.Logger.WithError(err).Error("Failed to zip nwc db")
-		return fmt.Errorf("failed to write nwc db file to zip: %w", err)
-	}
-
-	for _, fileToArchive := range filesToArchive {
-		api.svc.Logger.WithField("fileToArchive", fileToArchive).Info("adding file to zip")
-		relPath, err := filepath.Rel(workDir, fileToArchive)
-		if err != nil {
-			api.svc.Logger.WithError(err).Error("Failed to get relative path of input file")
-			return fmt.Errorf("failed to get relative path of input file: %w", err)
-		}
-
-		// Ensure forward slashes for zip format compatibility.
-		err = addFileToZip(fileToArchive, filepath.ToSlash(relPath))
-		if err != nil {
-			api.svc.Logger.WithError(err).Error("Failed to write file to zip")
-			return fmt.Errorf("failed to write input file to zip: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (api *API) RestoreBackup(password string, r io.Reader) error {
-	workDir, err := filepath.Abs(api.svc.cfg.Env.Workdir)
-	if err != nil {
-		return fmt.Errorf("failed to get absolute workdir: %w", err)
-	}
-
-	if strings.HasPrefix(api.svc.cfg.Env.DatabaseUri, "file:") {
-		return errors.New("cannot restore backup when database path is a file URI")
-	}
-
-	cr, err := decryptingReader(r, password)
-	if err != nil {
-		return fmt.Errorf("failed to create decrypted reader: %w", err)
-	}
-
-	tmpF, err := os.CreateTemp("", "nwc-*.bkp")
-	if err != nil {
-		return fmt.Errorf("failed to create temporary output file: %w", err)
-	}
-	tmpName := tmpF.Name()
-	defer os.Remove(tmpName)
-	defer tmpF.Close()
-
-	zipSize, err := io.Copy(tmpF, cr)
-	if err != nil {
-		return fmt.Errorf("failed to decrypt backup data into temporary file: %w", err)
-	}
-
-	if err = tmpF.Sync(); err != nil {
-		return fmt.Errorf("failed to flush temporary file: %w", err)
-	}
-
-	if _, err = tmpF.Seek(0, 0); err != nil {
-		return fmt.Errorf("failed to seek to beginning of temporary file: %w", err)
-	}
-
-	zr, err := zip.NewReader(tmpF, zipSize)
-	if err != nil {
-		return fmt.Errorf("failed to create zip reader: %w", err)
-	}
-
-	extractZipEntry := func(zipFile *zip.File) error {
-		fsFilePath := filepath.Join(workDir, "restore", filepath.FromSlash(zipFile.Name))
-
-		if err = os.MkdirAll(filepath.Dir(fsFilePath), 0700); err != nil {
-			return fmt.Errorf("failed to create directory for zip entry: %w", err)
-		}
-
-		inF, err := zipFile.Open()
-		if err != nil {
-			return fmt.Errorf("failed to open zip entry for reading: %w", err)
-		}
-		defer inF.Close()
-
-		outF, err := os.OpenFile(fsFilePath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
-		if err != nil {
-			return fmt.Errorf("failed to create destination file: %w", err)
-		}
-		defer outF.Close()
-
-		if _, err = io.Copy(outF, inF); err != nil {
-			return fmt.Errorf("failed to write zip entry to destination file: %w", err)
-		}
-
-		return nil
-	}
-
-	api.svc.Logger.WithField("count", len(zr.File)).Info("Extracting files")
-	for _, f := range zr.File {
-		api.svc.Logger.WithField("file", f.Name).Info("Extracting file")
-		if err = extractZipEntry(f); err != nil {
-			return fmt.Errorf("failed to extract zip entry: %w", err)
-		}
-	}
-	api.svc.Logger.WithField("count", len(zr.File)).Info("Extracted files")
-
-	go func() {
-		api.svc.Logger.Info("Backup restored. Shutting down Alby Hub...")
-		// schedule node shutdown after a few seconds to ensure frontend updates
-		time.Sleep(5 * time.Second)
-		os.Exit(0)
-	}()
-
-	return nil
-}
-
 func (api *API) parseExpiresAt(expiresAtString string) (*time.Time, error) {
 	var expiresAt *time.Time
 	if expiresAtString != "" {
@@ -899,66 +697,4 @@ func (api *API) parseExpiresAt(expiresAtString string) (*time.Time, error) {
 		expiresAt = &expiresAtValue
 	}
 	return expiresAt, nil
-}
-
-func encryptingWriter(w io.Writer, password string) (io.Writer, error) {
-	salt := make([]byte, 8)
-	if _, err := rand.Read(salt); err != nil {
-		return nil, fmt.Errorf("failed to generate salt: %w", err)
-	}
-
-	encKey := pbkdf2.Key([]byte(password), salt, 4096, 32, sha256.New)
-	block, err := aes.NewCipher(encKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create AES cipher: %w", err)
-	}
-
-	iv := make([]byte, aes.BlockSize)
-	if _, err = rand.Read(iv); err != nil {
-		return nil, fmt.Errorf("failed to generate IV: %w", err)
-	}
-
-	_, err = w.Write(salt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to write salt: %w", err)
-	}
-
-	_, err = w.Write(iv)
-	if err != nil {
-		return nil, fmt.Errorf("failed to write IV: %w", err)
-	}
-
-	stream := cipher.NewOFB(block, iv)
-	cw := &cipher.StreamWriter{
-		S: stream,
-		W: w,
-	}
-
-	return cw, nil
-}
-
-func decryptingReader(r io.Reader, password string) (io.Reader, error) {
-	salt := make([]byte, 8)
-	if _, err := io.ReadFull(r, salt); err != nil {
-		return nil, fmt.Errorf("failed to read salt: %w", err)
-	}
-
-	iv := make([]byte, aes.BlockSize)
-	if _, err := io.ReadFull(r, iv); err != nil {
-		return nil, fmt.Errorf("failed to read IV: %w", err)
-	}
-
-	encKey := pbkdf2.Key([]byte(password), salt, 4096, 32, sha256.New)
-	block, err := aes.NewCipher(encKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create AES cipher: %w", err)
-	}
-
-	stream := cipher.NewOFB(block, iv)
-	cr := &cipher.StreamReader{
-		S: stream,
-		R: r,
-	}
-
-	return cr, nil
 }

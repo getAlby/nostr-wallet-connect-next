@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 
+	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/migrations"
-	"github.com/getAlby/nostr-wallet-connect/models/config"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
@@ -381,7 +381,7 @@ func TestCreateResponse(t *testing.T) {
 
 	reqEvent.ID = "12345"
 
-	ss, err := nip04.ComputeSharedSecret(reqPubkey, svc.cfg.NostrSecretKey)
+	ss, err := nip04.ComputeSharedSecret(reqPubkey, svc.cfg.GetNostrSecretKey())
 	assert.NoError(t, err)
 
 	nip47Response := &Nip47Response{
@@ -394,7 +394,7 @@ func TestCreateResponse(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, reqPubkey, res.Tags.GetFirst([]string{"p"}).Value())
 	assert.Equal(t, reqEvent.ID, res.Tags.GetFirst([]string{"e"}).Value())
-	assert.Equal(t, svc.cfg.NostrPublicKey, res.PubKey)
+	assert.Equal(t, svc.cfg.GetNostrPublicKey(), res.PubKey)
 
 	decrypted, err := nip04.Decrypt(res.Content, ss)
 	assert.NoError(t, err)
@@ -1203,24 +1203,25 @@ func createTestService(ln *MockLn) (svc *Service, err error) {
 	logger.SetOutput(os.Stdout)
 	logger.SetLevel(logrus.InfoLevel)
 
-	err = migrations.Migrate(gormDb, &config.AppConfig{
+	appConfig := &config.AppConfig{
 		Workdir: ".test",
-	}, logger)
-	if err != nil {
-		return nil, err
 	}
-	sk := nostr.GeneratePrivateKey()
-	pk, err := nostr.GetPublicKey(sk)
+
+	err = migrations.Migrate(gormDb, appConfig, logger)
 	if err != nil {
 		return nil, err
 	}
 
+	cfg := config.NewConfig(
+		gormDb,
+		appConfig,
+		logger,
+	)
+
+	cfg.Start("")
+
 	return &Service{
-		cfg: &Config{
-			db:             gormDb,
-			NostrSecretKey: sk,
-			NostrPublicKey: pk,
-		},
+		cfg:            cfg,
 		db:             gormDb,
 		lnClient:       ln,
 		Logger:         logger,
@@ -1235,7 +1236,7 @@ func createApp(svc *Service) (app *App, ss []byte, err error) {
 		return nil, nil, err
 	}
 
-	ss, err = nip04.ComputeSharedSecret(svc.cfg.NostrPublicKey, senderPrivkey)
+	ss, err = nip04.ComputeSharedSecret(svc.cfg.GetNostrPublicKey(), senderPrivkey)
 	if err != nil {
 		return nil, nil, err
 	}

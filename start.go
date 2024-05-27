@@ -7,31 +7,28 @@ import (
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip19"
+	"github.com/sirupsen/logrus"
 
 	"github.com/getAlby/nostr-wallet-connect/events"
 )
 
 func (svc *Service) StartNostr(ctx context.Context, encryptionKey string) error {
 	relayUrl, _ := svc.cfg.Get("Relay", encryptionKey)
-	nostrSecretKey, _ := svc.cfg.Get("NostrSecretKey", encryptionKey)
-	if nostrSecretKey == "" {
-		nostrSecretKey = nostr.GeneratePrivateKey()
-		svc.cfg.SetUpdate("NostrSecretKey", nostrSecretKey, encryptionKey)
-	}
-	nostrPublicKey, err := nostr.GetPublicKey(nostrSecretKey)
-	if err != nil {
-		svc.Logger.Errorf("Error converting nostr privkey to pubkey: %v", err)
-		return err
-	}
-	svc.cfg.NostrSecretKey = nostrSecretKey
-	svc.cfg.NostrPublicKey = nostrPublicKey
 
-	npub, err := nip19.EncodePublicKey(svc.cfg.NostrPublicKey)
+	err := svc.cfg.Start(encryptionKey)
 	if err != nil {
-		svc.Logger.Fatalf("Error converting nostr privkey to pubkey: %v", err)
+		svc.Logger.WithError(err).Fatal("Failed to start config")
 	}
 
-	svc.Logger.Infof("Starting nostr-wallet-connect. npub: %s hex: %s", npub, svc.cfg.NostrPublicKey)
+	npub, err := nip19.EncodePublicKey(svc.cfg.GetNostrPublicKey())
+	if err != nil {
+		svc.Logger.WithError(err).Fatal("Error converting nostr privkey to pubkey")
+	}
+
+	svc.Logger.WithFields(logrus.Fields{
+		"npub": npub,
+		"hex":  svc.cfg.GetNostrPublicKey(),
+	}).Info("Starting nostr-wallet-connect")
 	svc.wg.Add(1)
 	go func() {
 		//Start infinite loop which will be only broken by canceling ctx (SIGINT)
@@ -78,7 +75,7 @@ func (svc *Service) StartNostr(ctx context.Context, encryptionKey string) error 
 			}
 
 			svc.Logger.Info("Subscribing to events")
-			sub, err := relay.Subscribe(ctx, svc.createFilters(svc.cfg.NostrPublicKey))
+			sub, err := relay.Subscribe(ctx, svc.createFilters(svc.cfg.GetNostrPublicKey()))
 			if err != nil {
 				svc.Logger.WithError(err).Error("Failed to subscribe to events")
 				continue
@@ -129,6 +126,7 @@ func (svc *Service) StartApp(encryptionKey string) error {
 	return nil
 }
 
+// TODO: remove and call StopLNClient() instead
 func (svc *Service) StopApp() {
 	if svc.appCancelFn != nil {
 		svc.appCancelFn()

@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/models/api"
-	"github.com/getAlby/nostr-wallet-connect/models/config"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"

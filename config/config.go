@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"crypto/rand"
@@ -7,16 +7,16 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/getAlby/nostr-wallet-connect/models/config"
 	dbModels "github.com/getAlby/nostr-wallet-connect/models/db"
 )
 
-type Config struct {
-	Env            *config.AppConfig
+type config struct {
+	Env            *AppConfig
 	CookieSecret   string
 	NostrSecretKey string
 	NostrPublicKey string
@@ -28,7 +28,13 @@ const (
 	unlockPasswordCheck = "THIS STRING SHOULD MATCH IF PASSWORD IS CORRECT"
 )
 
-func (cfg *Config) Init(db *gorm.DB, env *config.AppConfig, logger *logrus.Logger) {
+func NewConfig(db *gorm.DB, env *AppConfig, logger *logrus.Logger) *config {
+	cfg := &config{}
+	cfg.init(db, env, logger)
+	return cfg
+}
+
+func (cfg *config) init(db *gorm.DB, env *AppConfig, logger *logrus.Logger) {
 	cfg.db = db
 	cfg.Env = env
 	cfg.logger = logger
@@ -70,15 +76,23 @@ func (cfg *Config) Init(db *gorm.DB, env *config.AppConfig, logger *logrus.Logge
 	}
 }
 
-func (cfg *Config) GetNostrPublicKey() string {
+func (cfg *config) GetNostrPublicKey() string {
 	return cfg.NostrPublicKey
 }
 
-func (cfg *Config) Get(key string, encryptionKey string) (string, error) {
+func (cfg *config) GetNostrSecretKey() string {
+	return cfg.NostrSecretKey
+}
+
+func (cfg *config) GetCookieSecret() string {
+	return cfg.CookieSecret
+}
+
+func (cfg *config) Get(key string, encryptionKey string) (string, error) {
 	return cfg.get(key, encryptionKey, cfg.db)
 }
 
-func (cfg *Config) get(key string, encryptionKey string, db *gorm.DB) (string, error) {
+func (cfg *config) get(key string, encryptionKey string, db *gorm.DB) (string, error) {
 	var userConfig dbModels.UserConfig
 	err := db.Where(&dbModels.UserConfig{Key: key}).Limit(1).Find(&userConfig).Error
 	if err != nil {
@@ -96,7 +110,7 @@ func (cfg *Config) get(key string, encryptionKey string, db *gorm.DB) (string, e
 	return value, nil
 }
 
-func (cfg *Config) set(key string, value string, clauses clause.OnConflict, encryptionKey string, db *gorm.DB) error {
+func (cfg *config) set(key string, value string, clauses clause.OnConflict, encryptionKey string, db *gorm.DB) error {
 	if encryptionKey != "" {
 		encrypted, err := AesGcmEncrypt(value, encryptionKey)
 		if err != nil {
@@ -113,7 +127,7 @@ func (cfg *Config) set(key string, value string, clauses clause.OnConflict, encr
 	return nil
 }
 
-func (cfg *Config) SetIgnore(key string, value string, encryptionKey string) {
+func (cfg *config) SetIgnore(key string, value string, encryptionKey string) {
 	clauses := clause.OnConflict{
 		Columns:   []clause.Column{{Name: "key"}},
 		DoNothing: true,
@@ -124,7 +138,7 @@ func (cfg *Config) SetIgnore(key string, value string, encryptionKey string) {
 	}
 }
 
-func (cfg *Config) SetUpdate(key string, value string, encryptionKey string) {
+func (cfg *config) SetUpdate(key string, value string, encryptionKey string) {
 	clauses := clause.OnConflict{
 		Columns:   []clause.Column{{Name: "key"}},
 		DoUpdates: clause.AssignmentColumns([]string{"value"}),
@@ -135,7 +149,7 @@ func (cfg *Config) SetUpdate(key string, value string, encryptionKey string) {
 	}
 }
 
-func (cfg *Config) ChangeUnlockPassword(currentUnlockPassword string, newUnlockPassword string) error {
+func (cfg *config) ChangeUnlockPassword(currentUnlockPassword string, newUnlockPassword string) error {
 	if !cfg.CheckUnlockPassword(currentUnlockPassword) {
 		return errors.New("incorrect password")
 	}
@@ -179,14 +193,35 @@ func (cfg *Config) ChangeUnlockPassword(currentUnlockPassword string, newUnlockP
 	return nil
 }
 
-func (cfg *Config) CheckUnlockPassword(encryptionKey string) bool {
+func (cfg *config) CheckUnlockPassword(encryptionKey string) bool {
 	decryptedValue, err := cfg.Get("UnlockPasswordCheck", encryptionKey)
 
 	return err == nil && (decryptedValue == "" || decryptedValue == unlockPasswordCheck)
 }
 
-func (cfg *Config) SavePasswordCheck(encryptionKey string) {
+func (cfg *config) Setup(encryptionKey string) {
 	cfg.SetUpdate("UnlockPasswordCheck", unlockPasswordCheck, encryptionKey)
+}
+
+func (cfg *config) Start(encryptionKey string) error {
+	nostrSecretKey, _ := cfg.Get("NostrSecretKey", encryptionKey)
+
+	if nostrSecretKey == "" {
+		nostrSecretKey = nostr.GeneratePrivateKey()
+		cfg.SetUpdate("NostrSecretKey", nostrSecretKey, encryptionKey)
+	}
+	nostrPublicKey, err := nostr.GetPublicKey(nostrSecretKey)
+	if err != nil {
+		cfg.logger.WithError(err).Error("Error converting nostr privkey to pubkey")
+		return err
+	}
+	cfg.NostrSecretKey = nostrSecretKey
+	cfg.NostrPublicKey = nostrPublicKey
+	return nil
+}
+
+func (cfg *config) GetEnv() *AppConfig {
+	return cfg.Env
 }
 
 func randomHex(n int) (string, error) {

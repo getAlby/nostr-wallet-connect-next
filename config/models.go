@@ -1,4 +1,3 @@
-// TODO: move to config/models.go
 package config
 
 const (
@@ -42,4 +41,11 @@ type Config interface {
 	SetIgnore(key string, value string, encryptionKey string)
 	SetUpdate(key string, value string, encryptionKey string)
 	GetNostrPublicKey() string
+	GetNostrSecretKey() string
+	GetCookieSecret() string
+	CheckUnlockPassword(password string) bool
+	GetEnv() *AppConfig
+	ChangeUnlockPassword(currentUnlockPassword string, newUnlockPassword string) error
+	Setup(encryptionKey string)
+	Start(encryptionKey string) error
 }

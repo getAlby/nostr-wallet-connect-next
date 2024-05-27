@@ -80,7 +80,7 @@ func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *App, n
 		"appId":        app.ID,
 	}).Info("Notifying subscriber")
 
-	ss, err := nip04.ComputeSharedSecret(app.NostrPubkey, notifier.svc.cfg.NostrSecretKey)
+	ss, err := nip04.ComputeSharedSecret(app.NostrPubkey, notifier.svc.cfg.GetNostrSecretKey())
 	if err != nil {
 		notifier.svc.Logger.WithFields(logrus.Fields{
 			"notification": notification,
@@ -110,13 +110,13 @@ func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *App, n
 	allTags = append(allTags, tags...)
 
 	event := &nostr.Event{
-		PubKey:    notifier.svc.cfg.NostrPublicKey,
+		PubKey:    notifier.svc.cfg.GetNostrPublicKey(),
 		CreatedAt: nostr.Now(),
 		Kind:      nip47.NOTIFICATION_KIND,
 		Tags:      allTags,
 		Content:   msg,
 	}
-	err = event.Sign(notifier.svc.cfg.NostrSecretKey)
+	err = event.Sign(notifier.svc.cfg.GetNostrSecretKey())
 	if err != nil {
 		notifier.svc.Logger.WithFields(logrus.Fields{
 			"notification": notification,
