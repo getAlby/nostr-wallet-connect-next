@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/nbd-wtf/go-nostr"
@@ -60,7 +61,7 @@ func (notifier *Nip47Notifier) ConsumeEvent(ctx context.Context, event *events.E
 }
 
 func (notifier *Nip47Notifier) notifySubscribers(ctx context.Context, notification *Nip47Notification, tags nostr.Tags) {
-	apps := []App{}
+	apps := []db.App{}
 
 	// TODO: join apps and permissions
 	notifier.svc.db.Find(&apps)
@@ -74,7 +75,7 @@ func (notifier *Nip47Notifier) notifySubscribers(ctx context.Context, notificati
 	}
 }
 
-func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *App, notification *Nip47Notification, tags nostr.Tags) {
+func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App, notification *Nip47Notification, tags nostr.Tags) {
 	notifier.svc.Logger.WithFields(logrus.Fields{
 		"notification": notification,
 		"appId":        app.ID,

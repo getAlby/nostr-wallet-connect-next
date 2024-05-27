@@ -4,13 +4,14 @@ import (
 	"context"
 	"sync"
 
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
 
-func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *RequestEvent, app *App, publishResponse func(*Nip47Response, nostr.Tags)) {
+func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Nip47Response, nostr.Tags)) {
 
 	multiPayParams := &Nip47MultiPayKeysendParams{}
 	resp := svc.decodeNip47Request(nip47Request, requestEvent, app, multiPayParams)
@@ -38,7 +39,7 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 				return
 			}
 
-			payment := Payment{App: *app, RequestEvent: *requestEvent, Amount: uint(keysendInfo.Amount / 1000)}
+			payment := db.Payment{App: *app, RequestEvent: *requestEvent, Amount: uint(keysendInfo.Amount / 1000)}
 			mu.Lock()
 			insertPaymentResult := svc.db.Create(&payment)
 			mu.Unlock()

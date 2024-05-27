@@ -4,21 +4,23 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/getAlby/nostr-wallet-connect/models/api"
+	"github.com/getAlby/nostr-wallet-connect/config"
 	models "github.com/getAlby/nostr-wallet-connect/models/http"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
 
 type AlbyHttpService struct {
-	albyOAuthSvc *AlbyOAuthService
+	albyOAuthSvc AlbyOAuthService
 	logger       *logrus.Logger
+	appConfig    *config.AppConfig
 }
 
-func NewAlbyHttpService(albyOAuthSvc *AlbyOAuthService, logger *logrus.Logger) *AlbyHttpService {
+func NewAlbyHttpService(albyOAuthSvc AlbyOAuthService, logger *logrus.Logger, appConfig *config.AppConfig) *AlbyHttpService {
 	return &AlbyHttpService{
 		albyOAuthSvc: albyOAuthSvc,
 		logger:       logger,
+		appConfig:    appConfig,
 	}
 }
 
@@ -41,15 +43,15 @@ func (albyHttpSvc *AlbyHttpService) albyCallbackHandler(c echo.Context) error {
 		})
 	}
 
-	if albyHttpSvc.albyOAuthSvc.appConfig.IsDefaultClientId() {
+	if albyHttpSvc.appConfig.IsDefaultClientId() {
 		// do not redirect if using default OAuth client
 		// redirect will be handled by the frontend instead
 		return c.NoContent(http.StatusNoContent)
 	}
 
-	redirectUrl := albyHttpSvc.albyOAuthSvc.appConfig.FrontendUrl
+	redirectUrl := albyHttpSvc.appConfig.FrontendUrl
 	if redirectUrl == "" {
-		redirectUrl = albyHttpSvc.albyOAuthSvc.appConfig.BaseUrl
+		redirectUrl = albyHttpSvc.appConfig.BaseUrl
 	}
 
 	return c.Redirect(http.StatusFound, redirectUrl)
@@ -76,13 +78,13 @@ func (albyHttpSvc *AlbyHttpService) albyBalanceHandler(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, &api.AlbyBalanceResponse{
+	return c.JSON(http.StatusOK, &AlbyBalanceResponse{
 		Sats: balance.Balance,
 	})
 }
 
 func (albyHttpSvc *AlbyHttpService) albyPayHandler(c echo.Context) error {
-	var payRequest api.AlbyPayRequest
+	var payRequest AlbyPayRequest
 	if err := c.Bind(&payRequest); err != nil {
 		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Message: fmt.Sprintf("Bad request: %s", err.Error()),

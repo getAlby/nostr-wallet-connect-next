@@ -8,23 +8,24 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/getAlby/nostr-wallet-connect/config"
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
-	"github.com/getAlby/nostr-wallet-connect/models/api"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )
 
-type AlbyOAuthService struct {
+type albyOAuthService struct {
 	appConfig *config.AppConfig
 	config    config.Config
 	oauthConf *oauth2.Config
 	logger    *logrus.Logger
-	api       api.API
+	dbSvc     db.DBService
 }
 
 // TODO: move to models/alby
@@ -63,7 +64,7 @@ const (
 	userIdentifierKey    = "AlbyUserIdentifier"
 )
 
-func NewAlbyOAuthService(logger *logrus.Logger, kvStore config.Config, appConfig *config.AppConfig, api api.API) *AlbyOAuthService {
+func NewAlbyOAuthService(logger *logrus.Logger, config config.Config, appConfig *config.AppConfig, dbSvc db.DBService) *albyOAuthService {
 	conf := &oauth2.Config{
 		ClientID:     appConfig.AlbyClientId,
 		ClientSecret: appConfig.AlbyClientSecret,
@@ -81,17 +82,17 @@ func NewAlbyOAuthService(logger *logrus.Logger, kvStore config.Config, appConfig
 		conf.RedirectURL = appConfig.BaseUrl + "/api/alby/callback"
 	}
 
-	albyOAuthSvc := &AlbyOAuthService{
+	albyOAuthSvc := &albyOAuthService{
 		appConfig: appConfig,
 		oauthConf: conf,
-		config:    kvStore,
+		config:    config,
 		logger:    logger,
-		api:       api,
+		dbSvc:     dbSvc,
 	}
 	return albyOAuthSvc
 }
 
-func (svc *AlbyOAuthService) CallbackHandler(ctx context.Context, code string) error {
+func (svc *albyOAuthService) CallbackHandler(ctx context.Context, code string) error {
 	token, err := svc.oauthConf.Exchange(ctx, code)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to exchange token")
@@ -122,7 +123,7 @@ func (svc *AlbyOAuthService) CallbackHandler(ctx context.Context, code string) e
 	return nil
 }
 
-func (svc *AlbyOAuthService) GetUserIdentifier() (string, error) {
+func (svc *albyOAuthService) GetUserIdentifier() (string, error) {
 	userIdentifier, err := svc.config.Get(userIdentifierKey, "")
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to fetch user identifier from user configs")
@@ -131,7 +132,7 @@ func (svc *AlbyOAuthService) GetUserIdentifier() (string, error) {
 	return userIdentifier, nil
 }
 
-func (svc *AlbyOAuthService) IsConnected(ctx context.Context) bool {
+func (svc *albyOAuthService) IsConnected(ctx context.Context) bool {
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to check fetch token")
@@ -139,7 +140,7 @@ func (svc *AlbyOAuthService) IsConnected(ctx context.Context) bool {
 	return token != nil
 }
 
-func (svc *AlbyOAuthService) saveToken(token *oauth2.Token) {
+func (svc *albyOAuthService) saveToken(token *oauth2.Token) {
 	svc.config.SetUpdate(accessTokenExpiryKey, strconv.FormatInt(token.Expiry.Unix(), 10), "")
 	svc.config.SetUpdate(accessTokenKey, token.AccessToken, "")
 	svc.config.SetUpdate(refreshTokenKey, token.RefreshToken, "")
@@ -147,7 +148,7 @@ func (svc *AlbyOAuthService) saveToken(token *oauth2.Token) {
 
 var tokenMutex sync.Mutex
 
-func (svc *AlbyOAuthService) fetchUserToken(ctx context.Context) (*oauth2.Token, error) {
+func (svc *albyOAuthService) fetchUserToken(ctx context.Context) (*oauth2.Token, error) {
 	tokenMutex.Lock()
 	defer tokenMutex.Unlock()
 	accessToken, err := svc.config.Get(accessTokenKey, "")
@@ -202,8 +203,7 @@ func (svc *AlbyOAuthService) fetchUserToken(ctx context.Context) (*oauth2.Token,
 	return newToken, nil
 }
 
-func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
-
+func (svc *albyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to fetch user token")
@@ -237,7 +237,7 @@ func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 	return me, nil
 }
 
-func (svc *AlbyOAuthService) GetBalance(ctx context.Context) (*AlbyBalance, error) {
+func (svc *albyOAuthService) GetBalance(ctx context.Context) (*AlbyBalance, error) {
 
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
@@ -271,7 +271,7 @@ func (svc *AlbyOAuthService) GetBalance(ctx context.Context) (*AlbyBalance, erro
 	return balance, nil
 }
 
-func (svc *AlbyOAuthService) SendPayment(ctx context.Context, invoice string) error {
+func (svc *albyOAuthService) SendPayment(ctx context.Context, invoice string) error {
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to fetch user token")
@@ -356,27 +356,28 @@ func (svc *AlbyOAuthService) SendPayment(ctx context.Context, invoice string) er
 	return nil
 }
 
-func (svc *AlbyOAuthService) GetAuthUrl() string {
+func (svc *albyOAuthService) GetAuthUrl() string {
 	if svc.appConfig.AlbyClientId == "" || svc.appConfig.AlbyClientSecret == "" {
 		svc.logger.Fatalf("No ALBY_OAUTH_CLIENT_ID or ALBY_OAUTH_CLIENT_SECRET set")
 	}
 	return svc.oauthConf.AuthCodeURL("unused")
 }
 
-func (svc *AlbyOAuthService) LinkAccount(ctx context.Context) error {
+func (svc *albyOAuthService) LinkAccount(ctx context.Context) error {
 	connectionPubkey, err := svc.createAlbyAccountNWCNode(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to create alby account nwc node")
 		return err
 	}
 
-	app, err := svc.api.CreateApp(&api.CreateAppRequest{
-		Name:           "getalby.com",
-		Pubkey:         connectionPubkey,
-		MaxAmount:      1_000_000,
-		BudgetRenewal:  nip47.BUDGET_RENEWAL_MONTHLY,
-		RequestMethods: nip47.CAPABILITIES,
-	})
+	app, _, err := svc.dbSvc.CreateApp(
+		"getalby.com",
+		connectionPubkey,
+		1_000_000,
+		nip47.BUDGET_RENEWAL_MONTHLY,
+		nil,
+		strings.Split(nip47.CAPABILITIES, " "),
+	)
 
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to create app connection")
@@ -396,7 +397,7 @@ func (svc *AlbyOAuthService) LinkAccount(ctx context.Context) error {
 	return nil
 }
 
-func (svc *AlbyOAuthService) ConsumeEvent(ctx context.Context, event *events.Event, globalProperties map[string]interface{}) error {
+func (svc *albyOAuthService) ConsumeEvent(ctx context.Context, event *events.Event, globalProperties map[string]interface{}) error {
 	// TODO: rename this config option to be specific to the alby API
 	if !svc.appConfig.LogEvents {
 		svc.logger.WithField("event", event).Debug("Skipped sending to alby events API")
@@ -481,7 +482,7 @@ func (svc *AlbyOAuthService) ConsumeEvent(ctx context.Context, event *events.Eve
 	return nil
 }
 
-func (svc *AlbyOAuthService) createAlbyAccountNWCNode(ctx context.Context) (string, error) {
+func (svc *albyOAuthService) createAlbyAccountNWCNode(ctx context.Context) (string, error) {
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to fetch user token")
@@ -548,7 +549,7 @@ func (svc *AlbyOAuthService) createAlbyAccountNWCNode(ctx context.Context) (stri
 	return responsePayload.Pubkey, nil
 }
 
-func (svc *AlbyOAuthService) activateAlbyAccountNWCNode(ctx context.Context) error {
+func (svc *albyOAuthService) activateAlbyAccountNWCNode(ctx context.Context) error {
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to fetch user token")
@@ -583,7 +584,7 @@ func (svc *AlbyOAuthService) activateAlbyAccountNWCNode(ctx context.Context) err
 	return nil
 }
 
-func (svc *AlbyOAuthService) GetChannelPeerSuggestions(ctx context.Context) ([]ChannelPeerSuggestion, error) {
+func (svc *albyOAuthService) GetChannelPeerSuggestions(ctx context.Context) ([]ChannelPeerSuggestion, error) {
 
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {

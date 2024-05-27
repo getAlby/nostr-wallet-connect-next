@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/nbd-wtf/go-nostr"
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
 )
 
-func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *RequestEvent, app *App, publishResponse func(*Nip47Response, nostr.Tags)) {
+func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Nip47Response, nostr.Tags)) {
 
 	lookupInvoiceParams := &Nip47LookupInvoiceParams{}
 	resp := svc.decodeNip47Request(nip47Request, requestEvent, app, lookupInvoiceParams)

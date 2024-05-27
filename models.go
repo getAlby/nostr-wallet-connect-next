@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 )
@@ -17,67 +16,6 @@ const (
 	RESPONSE_EVENT_STATE_PUBLISH_FAILED      = "failed"
 	RESPONSE_EVENT_STATE_PUBLISH_UNCONFIRMED = "unconfirmed"
 )
-
-// TODO: move to models/db
-type App struct {
-	ID          uint
-	Name        string `validate:"required"`
-	Description string
-	NostrPubkey string `validate:"required"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-}
-
-// TODO: move to models/db
-type AppPermission struct {
-	ID            uint
-	AppId         uint `validate:"required"`
-	App           App
-	RequestMethod string `validate:"required"`
-	MaxAmount     int
-	BudgetRenewal string
-	ExpiresAt     *time.Time
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-}
-
-// TODO: move to models/db
-type RequestEvent struct {
-	ID        uint
-	AppId     *uint
-	App       App
-	NostrId   string `validate:"required"`
-	Content   string
-	State     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-// TODO: move to models/db
-type ResponseEvent struct {
-	ID        uint
-	NostrId   string `validate:"required"`
-	RequestId uint   `validate:"required"`
-	Content   string
-	State     string
-	RepliedAt time.Time
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-// TODO: move to models/db
-type Payment struct {
-	ID             uint
-	AppId          uint `validate:"required"`
-	App            App
-	RequestEventId uint `validate:"required"`
-	RequestEvent   RequestEvent
-	Amount         uint // in sats
-	PaymentRequest string
-	Preimage       *string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-}
 
 // TODO: move to models/Nip47
 type Nip47Transaction = lnclient.Transaction

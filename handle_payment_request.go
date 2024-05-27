@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/nbd-wtf/go-nostr"
@@ -12,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *RequestEvent, app *App, publishResponse func(*Nip47Response, nostr.Tags)) {
+func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Nip47Response, nostr.Tags)) {
 
 	payParams := &Nip47PayParams{}
 	resp := svc.decodeNip47Request(nip47Request, requestEvent, app, payParams)
@@ -48,7 +49,7 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *Nip
 		return
 	}
 
-	payment := Payment{App: *app, RequestEvent: *requestEvent, PaymentRequest: bolt11, Amount: uint(paymentRequest.MSatoshi / 1000)}
+	payment := db.Payment{App: *app, RequestEvent: *requestEvent, PaymentRequest: bolt11, Amount: uint(paymentRequest.MSatoshi / 1000)}
 	err = svc.db.Create(&payment).Error
 	if err != nil {
 		publishResponse(&Nip47Response{

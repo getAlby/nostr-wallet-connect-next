@@ -43,8 +43,9 @@ type Config interface {
 	GetNostrPublicKey() string
 	GetNostrSecretKey() string
 	GetCookieSecret() string
-	CheckUnlockPassword(password string) bool
+	GetRelayUrl() string
 	GetEnv() *AppConfig
+	CheckUnlockPassword(password string) bool
 	ChangeUnlockPassword(currentUnlockPassword string, newUnlockPassword string) error
 	Setup(encryptionKey string)
 	Start(encryptionKey string) error

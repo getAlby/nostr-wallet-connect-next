@@ -13,7 +13,7 @@ import (
 )
 
 func (svc *Service) StartNostr(ctx context.Context, encryptionKey string) error {
-	relayUrl, _ := svc.cfg.Get("Relay", encryptionKey)
+	relayUrl := svc.cfg.GetRelayUrl()
 
 	err := svc.cfg.Start(encryptionKey)
 	if err != nil {

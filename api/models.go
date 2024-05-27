@@ -1,14 +1,50 @@
-// TODO: move to api/models.go
 package api
 
 import (
+	"context"
 	"time"
 
+	"github.com/getAlby/nostr-wallet-connect/alby"
+	"github.com/getAlby/nostr-wallet-connect/backup"
+	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/lsp"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 )
 
 type API interface {
 	CreateApp(createAppRequest *CreateAppRequest) (*CreateAppResponse, error)
+	UpdateApp(userApp *db.App, updateAppRequest *UpdateAppRequest) error
+	DeleteApp(userApp *db.App) error
+	GetApp(userApp *db.App) *App
+	ListApps() ([]App, error)
+	ListChannels(ctx context.Context) ([]lnclient.Channel, error)
+	GetChannelPeerSuggestions(ctx context.Context) ([]alby.ChannelPeerSuggestion, error)
+	ResetRouter(key string) error
+	ChangeUnlockPassword(changeUnlockPasswordRequest *ChangeUnlockPasswordRequest) error
+	Stop() error
+	GetNodeConnectionInfo(ctx context.Context) (*lnclient.NodeConnectionInfo, error)
+	GetNodeStatus(ctx context.Context) (*lnclient.NodeStatus, error)
+	ListPeers(ctx context.Context) ([]lnclient.PeerDetails, error)
+	ConnectPeer(ctx context.Context, connectPeerRequest *ConnectPeerRequest) error
+	OpenChannel(ctx context.Context, openChannelRequest *OpenChannelRequest) (*OpenChannelResponse, error)
+	CloseChannel(ctx context.Context, peerId, channelId string, force bool) (*CloseChannelResponse, error)
+	GetNewOnchainAddress(ctx context.Context) (*NewOnchainAddressResponse, error)
+	SignMessage(ctx context.Context, message string) (*SignMessageResponse, error)
+	RedeemOnchainFunds(ctx context.Context, toAddress string) (*RedeemOnchainFundsResponse, error)
+	GetBalances(ctx context.Context) (*BalancesResponse, error)
+	RequestMempoolApi(endpoint string) (interface{}, error)
+	GetInfo(ctx context.Context) (*InfoResponse, error)
+	GetEncryptedMnemonic() *EncryptedMnemonicResponse
+	SetNextBackupReminder(backupReminderRequest *BackupReminderRequest) error
+	Start(startRequest *StartRequest) error
+	Setup(ctx context.Context, setupRequest *SetupRequest) error
+	SendPaymentProbes(ctx context.Context, sendPaymentProbesRequest *SendPaymentProbesRequest) (*SendPaymentProbesResponse, error)
+	SendSpontaneousPaymentProbes(ctx context.Context, sendSpontaneousPaymentProbesRequest *SendSpontaneousPaymentProbesRequest) (*SendSpontaneousPaymentProbesResponse, error)
+	GetNetworkGraph(nodeIds []string) (NetworkGraphResponse, error)
+	SyncWallet()
+	GetLogOutput(ctx context.Context, logType string, getLogRequest *GetLogOutputRequest) (*GetLogOutputResponse, error)
+	GetLSPService() lsp.LSPService
+	GetBackupService() backup.BackupService
 }
 
 type App struct {
@@ -120,16 +156,6 @@ type OpenChannelRequest = lnclient.OpenChannelRequest
 type OpenChannelResponse = lnclient.OpenChannelResponse
 type CloseChannelResponse = lnclient.CloseChannelResponse
 
-type NewInstantChannelInvoiceRequest struct {
-	Amount uint64 `json:"amount"`
-	LSP    string `json:"lsp"`
-}
-
-type NewInstantChannelInvoiceResponse struct {
-	Invoice string `json:"invoice"`
-	Fee     uint64 `json:"fee"`
-}
-
 type RedeemOnchainFundsRequest struct {
 	ToAddress string `json:"toAddress"`
 }
@@ -183,15 +209,6 @@ type SignMessageRequest struct {
 type SignMessageResponse struct {
 	Message   string `json:"message"`
 	Signature string `json:"signature"`
-}
-
-// TODO: move to different file
-type AlbyBalanceResponse struct {
-	Sats int64 `json:"sats"`
-}
-
-type AlbyPayRequest struct {
-	Invoice string `json:"invoice"`
 }
 
 type ResetRouterRequest struct {

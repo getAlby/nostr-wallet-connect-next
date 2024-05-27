@@ -2,8 +2,6 @@ package lsp
 
 import (
 	"context"
-
-	"github.com/getAlby/nostr-wallet-connect/models/api"
 )
 
 type LSP struct {
@@ -77,5 +75,15 @@ func AlbyMutinynetPlebsLSP() LSP {
 }
 
 type LSPService interface {
-	NewInstantChannelInvoice(ctx context.Context, request *api.NewInstantChannelInvoiceRequest) (*api.NewInstantChannelInvoiceResponse, error)
+	NewInstantChannelInvoice(ctx context.Context, request *NewInstantChannelInvoiceRequest) (*NewInstantChannelInvoiceResponse, error)
+}
+
+type NewInstantChannelInvoiceRequest struct {
+	Amount uint64 `json:"amount"`
+	LSP    string `json:"lsp"`
+}
+
+type NewInstantChannelInvoiceResponse struct {
+	Invoice string `json:"invoice"`
+	Fee     uint64 `json:"fee"`
 }

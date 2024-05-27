@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/nbd-wtf/go-nostr"
@@ -24,7 +25,7 @@ func TestSendNotification(t *testing.T) {
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.NOTIFICATIONS_PERMISSION,

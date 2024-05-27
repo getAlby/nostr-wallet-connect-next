@@ -15,16 +15,18 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/getAlby/nostr-wallet-connect/alby"
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/lsp"
 	models "github.com/getAlby/nostr-wallet-connect/models/http"
 
+	"github.com/getAlby/nostr-wallet-connect/api"
 	"github.com/getAlby/nostr-wallet-connect/frontend"
-	"github.com/getAlby/nostr-wallet-connect/models/api"
 )
 
 type HttpService struct {
 	svc         *Service
-	api         *API
+	api         api.API
 	albyHttpSvc *alby.AlbyHttpService
 }
 
@@ -36,8 +38,8 @@ const (
 func NewHttpService(svc *Service) *HttpService {
 	return &HttpService{
 		svc:         svc,
-		api:         NewAPI(svc),
-		albyHttpSvc: alby.NewAlbyHttpService(svc.AlbyOAuthSvc, svc.Logger),
+		api:         api.NewAPI(svc, svc.Logger, svc.db),
+		albyHttpSvc: alby.NewAlbyHttpService(svc.albyOAuthSvc, svc.Logger, svc.cfg.GetEnv()),
 	}
 }
 
@@ -478,14 +480,14 @@ func (httpSvc *HttpService) closeChannelHandler(c echo.Context) error {
 func (httpSvc *HttpService) newInstantChannelInvoiceHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	var newWrappedInvoiceRequest api.NewInstantChannelInvoiceRequest
+	var newWrappedInvoiceRequest lsp.NewInstantChannelInvoiceRequest
 	if err := c.Bind(&newWrappedInvoiceRequest); err != nil {
 		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
 			Message: fmt.Sprintf("Bad request: %s", err.Error()),
 		})
 	}
 
-	newWrappedInvoiceResponse, err := httpSvc.api.lspSvc.NewInstantChannelInvoice(ctx, &newWrappedInvoiceRequest)
+	newWrappedInvoiceResponse, err := httpSvc.api.GetLSPService().NewInstantChannelInvoice(ctx, &newWrappedInvoiceRequest)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -564,7 +566,7 @@ func (httpSvc *HttpService) appsListHandler(c echo.Context) error {
 }
 
 func (httpSvc *HttpService) appsShowHandler(c echo.Context) error {
-	app := App{}
+	app := db.App{}
 	findResult := httpSvc.svc.db.Where("nostr_pubkey = ?", c.Param("pubkey")).First(&app)
 
 	if findResult.RowsAffected == 0 {
@@ -586,7 +588,7 @@ func (httpSvc *HttpService) appsUpdateHandler(c echo.Context) error {
 		})
 	}
 
-	app := App{}
+	app := db.App{}
 	findResult := httpSvc.svc.db.Where("nostr_pubkey = ?", c.Param("pubkey")).First(&app)
 
 	if findResult.RowsAffected == 0 {
@@ -614,7 +616,7 @@ func (httpSvc *HttpService) appsDeleteHandler(c echo.Context) error {
 			Message: "Invalid pubkey parameter",
 		})
 	}
-	app := App{}
+	app := db.App{}
 	result := httpSvc.svc.db.Where("nostr_pubkey = ?", pubkey).First(&app)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -749,7 +751,7 @@ func (httpSvc *HttpService) createBackupHandler(c echo.Context) error {
 	}
 
 	var buffer bytes.Buffer
-	err := httpSvc.api.backupSvc.CreateBackup(&backupRequest, &buffer)
+	err := httpSvc.api.GetBackupService().CreateBackup(backupRequest.UnlockPassword, &buffer)
 	if err != nil {
 		return c.String(500, fmt.Sprintf("Failed to create backup: %v", err))
 	}
@@ -787,7 +789,7 @@ func (httpSvc *HttpService) restoreBackupHandler(c echo.Context) error {
 	}
 	defer file.Close()
 
-	err = httpSvc.api.backupSvc.RestoreBackup(password, file)
+	err = httpSvc.api.GetBackupService().RestoreBackup(password, file)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 			Message: fmt.Sprintf("Failed to restore backup: %v", err),

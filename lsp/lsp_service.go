@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getAlby/nostr-wallet-connect/models/api"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/service"
 	"github.com/sirupsen/logrus"
@@ -37,7 +36,7 @@ func NewLSPService(svc service.Service, logger *logrus.Logger) *lspService {
 	}
 }
 
-func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *api.NewInstantChannelInvoiceRequest) (*api.NewInstantChannelInvoiceResponse, error) {
+func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *NewInstantChannelInvoiceRequest) (*NewInstantChannelInvoiceResponse, error) {
 	var selectedLsp LSP
 	switch request.LSP {
 	case "VOLTAGE":
@@ -123,7 +122,7 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *api
 		return nil, err
 	}
 
-	newChannelResponse := &api.NewInstantChannelInvoiceResponse{
+	newChannelResponse := &NewInstantChannelInvoiceResponse{
 		Invoice: invoice,
 		Fee:     fee,
 	}

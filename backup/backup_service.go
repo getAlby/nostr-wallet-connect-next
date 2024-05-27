@@ -20,8 +20,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 
-	models "github.com/getAlby/nostr-wallet-connect/models/api"
-
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -37,10 +35,10 @@ func NewBackupService(svc service.Service, logger *logrus.Logger) *backupService
 	}
 }
 
-func (bs *backupService) CreateBackup(basicBackupRequest *models.BasicBackupRequest, w io.Writer) error {
+func (bs *backupService) CreateBackup(unlockPassword string, w io.Writer) error {
 	var err error
 
-	if !bs.svc.GetConfig().CheckUnlockPassword(basicBackupRequest.UnlockPassword) {
+	if !bs.svc.GetConfig().CheckUnlockPassword(unlockPassword) {
 		return errors.New("invalid unlock password")
 	}
 
@@ -95,7 +93,7 @@ func (bs *backupService) CreateBackup(basicBackupRequest *models.BasicBackupRequ
 		filesToArchive = append(filesToArchive, lnFiles...)
 	}
 
-	cw, err := encryptingWriter(w, basicBackupRequest.UnlockPassword)
+	cw, err := encryptingWriter(w, unlockPassword)
 	if err != nil {
 		return fmt.Errorf("failed to create encrypted writer: %w", err)
 	}
@@ -148,7 +146,7 @@ func (bs *backupService) CreateBackup(basicBackupRequest *models.BasicBackupRequ
 	return nil
 }
 
-func (bs *backupService) RestoreBackup(password string, r io.Reader) error {
+func (bs *backupService) RestoreBackup(unlockPassword string, r io.Reader) error {
 	workDir, err := filepath.Abs(bs.svc.GetConfig().GetEnv().Workdir)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute workdir: %w", err)
@@ -158,7 +156,7 @@ func (bs *backupService) RestoreBackup(password string, r io.Reader) error {
 		return errors.New("cannot restore backup when database path is a file URI")
 	}
 
-	cr, err := decryptingReader(r, password)
+	cr, err := decryptingReader(r, unlockPassword)
 	if err != nil {
 		return fmt.Errorf("failed to create decrypted reader: %w", err)
 	}

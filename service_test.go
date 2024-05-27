@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/getAlby/nostr-wallet-connect/config"
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/migrations"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
@@ -287,7 +288,7 @@ func TestHasPermission_Expired(t *testing.T) {
 
 	budgetRenewal := "never"
 	expiresAt := time.Now().Add(-24 * time.Hour)
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.PAY_INVOICE_METHOD,
@@ -316,7 +317,7 @@ func TestHasPermission_Exceeded(t *testing.T) {
 
 	budgetRenewal := "never"
 	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.PAY_INVOICE_METHOD,
@@ -345,7 +346,7 @@ func TestHasPermission_OK(t *testing.T) {
 
 	budgetRenewal := "never"
 	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.PAY_INVOICE_METHOD,
@@ -432,7 +433,7 @@ func TestHandleMultiPayInvoiceEvent(t *testing.T) {
 		PubKey:  app.NostrPubkey,
 		Content: payload,
 	}
-	requestEvent := &RequestEvent{
+	requestEvent := &db.RequestEvent{
 		Content: reqEvent.Content,
 	}
 
@@ -460,7 +461,7 @@ func TestHandleMultiPayInvoiceEvent(t *testing.T) {
 	maxAmount := 1000
 	budgetRenewal := "never"
 	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.PAY_INVOICE_METHOD,
@@ -508,7 +509,7 @@ func TestHandleMultiPayInvoiceEvent(t *testing.T) {
 
 	// budget overflow
 	newMaxAmount := 500
-	err = svc.db.Model(&AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", newMaxAmount).Error
+	err = svc.db.Model(&db.AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", newMaxAmount).Error
 	assert.NoError(t, err)
 
 	err = json.Unmarshal([]byte(nip47MultiPayOneOverflowingBudgetJson), request)
@@ -556,7 +557,7 @@ func TestHandleMultiPayKeysendEvent(t *testing.T) {
 		PubKey:  app.NostrPubkey,
 		Content: payload,
 	}
-	requestEvent := &RequestEvent{
+	requestEvent := &db.RequestEvent{
 		Content: reqEvent.Content,
 	}
 
@@ -585,7 +586,7 @@ func TestHandleMultiPayKeysendEvent(t *testing.T) {
 	// because we need the same permission for keysend although
 	// it works even with nip47.PAY_KEYSEND_METHOD, see
 	// https://github.com/getAlby/nostr-wallet-connect/issues/189
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.PAY_INVOICE_METHOD,
@@ -612,7 +613,7 @@ func TestHandleMultiPayKeysendEvent(t *testing.T) {
 
 	// budget overflow
 	newMaxAmount := 500
-	err = svc.db.Model(&AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", newMaxAmount).Error
+	err = svc.db.Model(&db.AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", newMaxAmount).Error
 	assert.NoError(t, err)
 
 	err = json.Unmarshal([]byte(nip47MultiPayKeysendOneOverflowingBudgetJson), request)
@@ -656,7 +657,7 @@ func TestHandleGetBalanceEvent(t *testing.T) {
 		PubKey:  app.NostrPubkey,
 		Content: payload,
 	}
-	requestEvent := &RequestEvent{
+	requestEvent := &db.RequestEvent{
 		Content: reqEvent.Content,
 	}
 
@@ -678,7 +679,7 @@ func TestHandleGetBalanceEvent(t *testing.T) {
 
 	// with permission
 	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.GET_BALANCE_METHOD,
@@ -697,7 +698,7 @@ func TestHandleGetBalanceEvent(t *testing.T) {
 	// create pay_invoice permission
 	maxAmount := 1000
 	budgetRenewal := "never"
-	appPermission = &AppPermission{
+	appPermission = &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.PAY_INVOICE_METHOD,
@@ -739,7 +740,7 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 		PubKey:  app.NostrPubkey,
 		Content: payload,
 	}
-	requestEvent := &RequestEvent{
+	requestEvent := &db.RequestEvent{
 		Content: reqEvent.Content,
 	}
 
@@ -760,7 +761,7 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 	maxAmount := 1000
 	budgetRenewal := "never"
 	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.PAY_INVOICE_METHOD,
@@ -810,7 +811,7 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 
 	// budget overflow
 	newMaxAmount := 100
-	err = svc.db.Model(&AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", newMaxAmount).Error
+	err = svc.db.Model(&db.AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", newMaxAmount).Error
 	assert.NoError(t, err)
 
 	err = json.Unmarshal([]byte(nip47PayJson), request)
@@ -829,7 +830,7 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 
 	// budget expiry
 	newExpiry := time.Now().Add(-24 * time.Hour)
-	err = svc.db.Model(&AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", maxAmount).Update("expires_at", newExpiry).Error
+	err = svc.db.Model(&db.AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", maxAmount).Update("expires_at", newExpiry).Error
 	assert.NoError(t, err)
 
 	reqEvent.ID = "pay_invoice_with_budget_expiry"
@@ -840,7 +841,7 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 	assert.Equal(t, nip47.ERROR_EXPIRED, responses[0].Error.Code)
 
 	// check again
-	err = svc.db.Model(&AppPermission{}).Where("app_id = ?", app.ID).Update("expires_at", nil).Error
+	err = svc.db.Model(&db.AppPermission{}).Where("app_id = ?", app.ID).Update("expires_at", nil).Error
 	assert.NoError(t, err)
 
 	reqEvent.ID = "pay_invoice_after_change"
@@ -873,7 +874,7 @@ func TestHandlePayKeysendEvent(t *testing.T) {
 		PubKey:  app.NostrPubkey,
 		Content: payload,
 	}
-	requestEvent := &RequestEvent{
+	requestEvent := &db.RequestEvent{
 		Content: reqEvent.Content,
 	}
 
@@ -897,7 +898,7 @@ func TestHandlePayKeysendEvent(t *testing.T) {
 	// because we need the same permission for keysend although
 	// it works even with nip47.PAY_KEYSEND_METHOD, see
 	// https://github.com/getAlby/nostr-wallet-connect/issues/189
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.PAY_INVOICE_METHOD,
@@ -917,7 +918,7 @@ func TestHandlePayKeysendEvent(t *testing.T) {
 
 	// budget overflow
 	newMaxAmount := 100
-	err = svc.db.Model(&AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", newMaxAmount).Error
+	err = svc.db.Model(&db.AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", newMaxAmount).Error
 	assert.NoError(t, err)
 
 	err = json.Unmarshal([]byte(nip47KeysendJson), request)
@@ -957,7 +958,7 @@ func TestHandleLookupInvoiceEvent(t *testing.T) {
 		PubKey:  app.NostrPubkey,
 		Content: payload,
 	}
-	requestEvent := &RequestEvent{
+	requestEvent := &db.RequestEvent{
 		Content: reqEvent.Content,
 	}
 
@@ -976,7 +977,7 @@ func TestHandleLookupInvoiceEvent(t *testing.T) {
 
 	// with permission
 	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.LOOKUP_INVOICE_METHOD,
@@ -1024,7 +1025,7 @@ func TestHandleMakeInvoiceEvent(t *testing.T) {
 		PubKey:  app.NostrPubkey,
 		Content: payload,
 	}
-	requestEvent := &RequestEvent{
+	requestEvent := &db.RequestEvent{
 		Content: reqEvent.Content,
 	}
 
@@ -1043,7 +1044,7 @@ func TestHandleMakeInvoiceEvent(t *testing.T) {
 
 	// with permission
 	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.MAKE_INVOICE_METHOD,
@@ -1082,7 +1083,7 @@ func TestHandleListTransactionsEvent(t *testing.T) {
 		PubKey:  app.NostrPubkey,
 		Content: payload,
 	}
-	requestEvent := &RequestEvent{
+	requestEvent := &db.RequestEvent{
 		Content: reqEvent.Content,
 	}
 
@@ -1101,7 +1102,7 @@ func TestHandleListTransactionsEvent(t *testing.T) {
 
 	// with permission
 	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.LIST_TRANSACTIONS_METHOD,
@@ -1150,7 +1151,7 @@ func TestHandleGetInfoEvent(t *testing.T) {
 		PubKey:  app.NostrPubkey,
 		Content: payload,
 	}
-	requestEvent := &RequestEvent{
+	requestEvent := &db.RequestEvent{
 		Content: reqEvent.Content,
 	}
 
@@ -1168,7 +1169,7 @@ func TestHandleGetInfoEvent(t *testing.T) {
 	assert.Equal(t, nip47.ERROR_RESTRICTED, responses[0].Error.Code)
 
 	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &AppPermission{
+	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.GET_INFO_METHOD,
@@ -1229,7 +1230,7 @@ func createTestService(ln *MockLn) (svc *Service, err error) {
 	}, nil
 }
 
-func createApp(svc *Service) (app *App, ss []byte, err error) {
+func createApp(svc *Service) (app *db.App, ss []byte, err error) {
 	senderPrivkey := nostr.GeneratePrivateKey()
 	senderPubkey, err := nostr.GetPublicKey(senderPrivkey)
 	if err != nil {
@@ -1241,7 +1242,7 @@ func createApp(svc *Service) (app *App, ss []byte, err error) {
 		return nil, nil, err
 	}
 
-	app = &App{Name: "test", NostrPubkey: senderPubkey}
+	app = &db.App{Name: "test", NostrPubkey: senderPubkey}
 	err = svc.db.Create(app).Error
 	if err != nil {
 		return nil, nil, err

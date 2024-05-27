@@ -28,8 +28,10 @@ import (
 
 	alby "github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/utils"
 
 	"github.com/getAlby/nostr-wallet-connect/config"
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/migrations"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
@@ -41,13 +43,14 @@ const (
 )
 
 // TODO: move to service/
+// TODO: do not expose service struct
 type Service struct {
 	// config from .GetEnv() only. Fetch dynamic config from db
 	cfg                    config.Config
 	db                     *gorm.DB
 	lnClient               lnclient.LNClient
 	Logger                 *logrus.Logger
-	AlbyOAuthSvc           *alby.AlbyOAuthService
+	albyOAuthSvc           alby.AlbyOAuthService
 	EventPublisher         events.EventPublisher
 	ctx                    context.Context
 	wg                     *sync.WaitGroup
@@ -108,27 +111,27 @@ func NewService(ctx context.Context) (*Service, error) {
 		}
 	}
 
-	var db *gorm.DB
+	var gormDB *gorm.DB
 	var sqlDb *sql.DB
-	db, err = gorm.Open(sqlite.Open(appConfig.DatabaseUri), &gorm.Config{})
+	gormDB, err = gorm.Open(sqlite.Open(appConfig.DatabaseUri), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
 	// Enable foreign keys for sqlite
-	db.Exec("PRAGMA foreign_keys=ON;")
-	sqlDb, err = db.DB()
+	gormDB.Exec("PRAGMA foreign_keys=ON;")
+	sqlDb, err = gormDB.DB()
 	if err != nil {
 		return nil, err
 	}
 	sqlDb.SetMaxOpenConns(1)
 
-	err = migrations.Migrate(db, appConfig, logger)
+	err = migrations.Migrate(gormDB, appConfig, logger)
 	if err != nil {
 		logger.WithError(err).Error("Failed to migrate")
 		return nil, err
 	}
 
-	cfg := config.NewConfig(db, appConfig, logger)
+	cfg := config.NewConfig(gormDB, appConfig, logger)
 
 	eventPublisher := events.NewEventPublisher(logger)
 
@@ -143,17 +146,16 @@ func NewService(ctx context.Context) (*Service, error) {
 	var wg sync.WaitGroup
 	svc := &Service{
 		cfg:                    cfg,
-		db:                     db,
+		db:                     gormDB,
 		ctx:                    ctx,
 		wg:                     &wg,
 		Logger:                 logger,
 		EventPublisher:         eventPublisher,
 		nip47NotificationQueue: nip47NotificationQueue,
+		albyOAuthSvc:           alby.NewAlbyOAuthService(logger, cfg, cfg.GetEnv(), db.NewDBService(gormDB, logger)),
 	}
-	// FIXME: tangled dependency
-	svc.AlbyOAuthSvc = alby.NewAlbyOAuthService(logger, cfg, cfg.GetEnv(), NewAPI(svc))
 
-	eventPublisher.RegisterSubscriber(svc.AlbyOAuthSvc)
+	eventPublisher.RegisterSubscriber(svc.albyOAuthSvc)
 
 	eventPublisher.Publish(&events.Event{
 		Event: "nwc_started",
@@ -301,12 +303,12 @@ func (svc *Service) StartSubscription(ctx context.Context, sub *nostr.Subscripti
 	return nil
 }
 
-func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, requestEvent *RequestEvent, resp *nostr.Event, app *App) error {
+func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, requestEvent *db.RequestEvent, resp *nostr.Event, app *db.App) error {
 	var appId *uint
 	if app != nil {
 		appId = &app.ID
 	}
-	responseEvent := ResponseEvent{NostrId: resp.ID, RequestId: requestEvent.ID, Content: resp.Content, State: "received"}
+	responseEvent := db.ResponseEvent{NostrId: resp.ID, RequestId: requestEvent.ID, Content: resp.Content, State: "received"}
 	err := svc.db.Create(&responseEvent).Error
 	if err != nil {
 		svc.Logger.WithFields(logrus.Fields{
@@ -362,7 +364,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	}).Info("Processing Event")
 
 	// make sure we don't know the event, yet
-	requestEvent := RequestEvent{}
+	requestEvent := db.RequestEvent{}
 	findEventResult := svc.db.Where("nostr_id = ?", event.ID).Find(&requestEvent)
 	if findEventResult.RowsAffected != 0 {
 		svc.Logger.WithFields(logrus.Fields{
@@ -381,7 +383,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	}
 
 	// store request event
-	requestEvent = RequestEvent{AppId: nil, NostrId: event.ID, Content: event.Content, State: REQUEST_EVENT_STATE_HANDLER_EXECUTING}
+	requestEvent = db.RequestEvent{AppId: nil, NostrId: event.ID, Content: event.Content, State: REQUEST_EVENT_STATE_HANDLER_EXECUTING}
 	err = svc.db.Create(&requestEvent).Error
 	if err != nil {
 		svc.Logger.WithFields(logrus.Fields{
@@ -405,8 +407,8 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		return
 	}
 
-	app := App{}
-	err = svc.db.First(&app, &App{
+	app := db.App{}
+	err = svc.db.First(&app, &db.App{
 		NostrPubkey: event.PubKey,
 	}).Error
 	if err != nil {
@@ -630,9 +632,9 @@ func (svc *Service) createResponse(initialEvent *nostr.Event, content interface{
 	return resp, nil
 }
 
-func (svc *Service) GetMethods(app *App) []string {
-	appPermissions := []AppPermission{}
-	svc.db.Find(&appPermissions, &AppPermission{
+func (svc *Service) GetMethods(app *db.App) []string {
+	appPermissions := []db.AppPermission{}
+	svc.db.Find(&appPermissions, &db.AppPermission{
 		AppId: app.ID,
 	})
 	requestMethods := make([]string, 0, len(appPermissions))
@@ -647,7 +649,7 @@ func (svc *Service) GetMethods(app *App) []string {
 	return requestMethods
 }
 
-func (svc *Service) decodeNip47Request(nip47Request *Nip47Request, requestEvent *RequestEvent, app *App, methodParams interface{}) *Nip47Response {
+func (svc *Service) decodeNip47Request(nip47Request *Nip47Request, requestEvent *db.RequestEvent, app *db.App, methodParams interface{}) *Nip47Response {
 	err := json.Unmarshal(nip47Request.Params, methodParams)
 	if err != nil {
 		svc.Logger.WithFields(logrus.Fields{
@@ -664,7 +666,7 @@ func (svc *Service) decodeNip47Request(nip47Request *Nip47Request, requestEvent 
 	return nil
 }
 
-func (svc *Service) checkPermission(nip47Request *Nip47Request, requestNostrEventId string, app *App, amount int64) *Nip47Response {
+func (svc *Service) checkPermission(nip47Request *Nip47Request, requestNostrEventId string, app *db.App, amount int64) *Nip47Response {
 	hasPermission, code, message := svc.hasPermission(app, nip47Request.Method, amount)
 	if !hasPermission {
 		svc.Logger.WithFields(logrus.Fields{
@@ -696,14 +698,14 @@ func (svc *Service) checkPermission(nip47Request *Nip47Request, requestNostrEven
 	return nil
 }
 
-func (svc *Service) hasPermission(app *App, requestMethod string, amount int64) (result bool, code string, message string) {
+func (svc *Service) hasPermission(app *db.App, requestMethod string, amount int64) (result bool, code string, message string) {
 	switch requestMethod {
 	case nip47.PAY_INVOICE_METHOD, nip47.PAY_KEYSEND_METHOD, nip47.MULTI_PAY_INVOICE_METHOD, nip47.MULTI_PAY_KEYSEND_METHOD:
 		requestMethod = nip47.PAY_INVOICE_METHOD
 	}
 
-	appPermission := AppPermission{}
-	findPermissionResult := svc.db.Find(&appPermission, &AppPermission{
+	appPermission := db.AppPermission{}
+	findPermissionResult := svc.db.Find(&appPermission, &db.AppPermission{
 		AppId:         app.ID,
 		RequestMethod: requestMethod,
 	})
@@ -736,12 +738,13 @@ func (svc *Service) hasPermission(app *App, requestMethod string, amount int64) 
 	return true, "", ""
 }
 
-func (svc *Service) GetBudgetUsage(appPermission *AppPermission) int64 {
+// TODO: move somewhere else
+func (svc *Service) GetBudgetUsage(appPermission *db.AppPermission) int64 {
 	var result struct {
 		Sum uint
 	}
 	// TODO: discard failed payments from this check instead of checking payments that have a preimage
-	svc.db.Table("payments").Select("SUM(amount) as sum").Where("app_id = ? AND preimage IS NOT NULL AND created_at > ?", appPermission.AppId, GetStartOfBudget(appPermission.BudgetRenewal, appPermission.App.CreatedAt)).Scan(&result)
+	svc.db.Table("payments").Select("SUM(amount) as sum").Where("app_id = ? AND preimage IS NOT NULL AND created_at > ?", appPermission.AppId, utils.GetStartOfBudget(appPermission.BudgetRenewal, appPermission.App.CreatedAt)).Scan(&result)
 	return int64(result.Sum)
 }
 
@@ -763,7 +766,7 @@ func (svc *Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay) er
 	return nil
 }
 
-func (svc *Service) LogFilePath() string {
+func (svc *Service) GetLogFilePath() string {
 	return filepath.Join(svc.cfg.GetEnv().Workdir, logDir, logFilename)
 }
 
@@ -821,4 +824,12 @@ func (svc *Service) StopDb() error {
 
 func (svc *Service) GetConfig() config.Config {
 	return svc.cfg
+}
+
+func (svc *Service) UpdateLastWalletSyncRequest() {
+	svc.lastWalletSyncRequest = time.Now()
+}
+
+func (svc *Service) GetAlbyOAuthSvc() alby.AlbyOAuthService {
+	return svc.albyOAuthSvc
 }

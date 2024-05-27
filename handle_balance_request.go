@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
@@ -12,7 +13,7 @@ const (
 	MSAT_PER_SAT = 1000
 )
 
-func (svc *Service) HandleGetBalanceEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *RequestEvent, app *App, publishResponse func(*Nip47Response, nostr.Tags)) {
+func (svc *Service) HandleGetBalanceEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Nip47Response, nostr.Tags)) {
 
 	resp := svc.checkPermission(nip47Request, requestEvent.NostrId, app, 0)
 	if resp != nil {
@@ -45,7 +46,7 @@ func (svc *Service) HandleGetBalanceEvent(ctx context.Context, nip47Request *Nip
 		Balance: balance,
 	}
 
-	appPermission := AppPermission{}
+	appPermission := db.AppPermission{}
 	svc.db.Where("app_id = ? AND request_method = ?", app.ID, nip47.PAY_INVOICE_METHOD).First(&appPermission)
 
 	maxAmount := appPermission.MaxAmount

@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	dbModels "github.com/getAlby/nostr-wallet-connect/models/db"
+	dbModels "github.com/getAlby/nostr-wallet-connect/db"
 )
 
 type config struct {
@@ -86,6 +86,11 @@ func (cfg *config) GetNostrSecretKey() string {
 
 func (cfg *config) GetCookieSecret() string {
 	return cfg.CookieSecret
+}
+
+func (cfg *config) GetRelayUrl() string {
+	relayUrl, _ := cfg.Get("Relay", "")
+	return relayUrl
 }
 
 func (cfg *config) Get(key string, encryptionKey string) (string, error) {
