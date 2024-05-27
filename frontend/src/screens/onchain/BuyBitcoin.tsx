@@ -1,7 +1,6 @@
 import { Check, ChevronsUpDown } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
-import MoonPay from "src/assets/providers/moonpay.png";
 import AppHeader from "src/components/AppHeader";
 import {
   Breadcrumb,
@@ -22,6 +21,7 @@ import {
 } from "src/components/ui/command";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
+import { LoadingButton } from "src/components/ui/loading-button";
 import {
   Popover,
   PopoverContent,
@@ -35,15 +35,12 @@ import { GetOnchainAddressResponse } from "src/types";
 import { request } from "src/utils/request";
 
 export default function BuyBitcoin() {
-  const steps = [
-    { id: "specifyOrder" },
-    { id: "finaliseOrder" },
-  ] satisfies StepItem[];
+  const steps = [{ id: "specifyOrder" }] satisfies StepItem[];
 
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("usd");
   const [amount, setAmount] = React.useState("250");
-  const [provider, setProvider] = React.useState("moonpay");
+  const [loading, setLoading] = React.useState(false);
   const [providerUrl, setProviderUrl] = React.useState("");
 
   async function apiRequest(
@@ -223,7 +220,7 @@ export default function BuyBitcoin() {
                     <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height]">
                       <Command>
                         <CommandInput placeholder="Search option..." />
-                        <CommandEmpty>No framework found.</CommandEmpty>
+                        <CommandEmpty>NO Currency Found</CommandEmpty>
                         <CommandGroup>
                           <CommandList>
                             {currencies.map((currency) => (
@@ -270,26 +267,6 @@ export default function BuyBitcoin() {
 
               <StepButtons />
             </Step>
-            <Step id="finaliseOrder" key="finaliseOrder" label="Finalise Order">
-              <div className="grid gap-4">
-                <p className="text-muted-foreground">
-                  Continue with one of our available partner providers.
-                </p>
-
-                <div
-                  onClick={() => setProvider("moonpay")}
-                  className={cn(
-                    "cursor-pointer rounded border-2 text-center p-2 flex flex-row gap-2 items-center",
-                    provider == "moonpay" ? "border-foreground" : "border-muted"
-                  )}
-                >
-                  <img src={MoonPay} className="h-10 w-10" />
-                  <h2 className="text-lg text-foreground leading-6">Moonpay</h2>
-                </div>
-              </div>
-
-              <StepButtons />
-            </Step>
           </Stepper>
         </div>
 
@@ -314,10 +291,12 @@ export default function BuyBitcoin() {
     return (
       <div className="w-full flex mt-4 mb-4">
         {!props.blockNext && (
-          <Button
+          <LoadingButton
             size="sm"
+            loading={loading}
             onClick={async () => {
               if (isLastStep) {
+                setLoading(true);
                 const response = (await apiRequest(
                   `/api/alby/topup?&currency=${value}`,
                   "POST",
@@ -327,7 +306,9 @@ export default function BuyBitcoin() {
                   }
                 )) as { url: string };
 
+                setLoading(false);
                 setProviderUrl(response.url);
+                nextStep();
               } else {
                 nextStep();
               }
@@ -335,7 +316,7 @@ export default function BuyBitcoin() {
             type="button"
           >
             Next
-          </Button>
+          </LoadingButton>
         )}
       </div>
     );
