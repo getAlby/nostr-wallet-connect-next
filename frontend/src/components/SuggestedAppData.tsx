@@ -161,4 +161,4 @@ export const suggestedApps: SuggestedApp[] = [
         to: "https://wherostr.social/",
         logo: wherostr,
     },
-];
+].sort((a, b) => a.title.toUpperCase() > b.title.toUpperCase() ? 1 : -1);
