@@ -165,8 +165,8 @@ func NewService(ctx context.Context) (*Service, error) {
 		startProfiler(ctx, appConfig.GoProfilerAddr)
 	}
 
-	if appConfig.DdProfilerEnabled {
-		startDataDogProfiler(ctx, appConfig)
+	if appConfig.DdProfilerAgentAddr != "" {
+		startDataDogProfiler(ctx)
 	}
 
 	return svc, nil
@@ -833,35 +833,17 @@ func startProfiler(ctx context.Context, addr string) {
 	}()
 }
 
-func startDataDogProfiler(ctx context.Context, appConfig *config.AppConfig) {
-	if len(appConfig.DdProfilerTypes) == 0 {
-		panic("no DataDog profile types specified")
-	}
-
-	profTypes := make([]profiler.ProfileType, 0, len(appConfig.DdProfilerTypes))
-	for _, t := range appConfig.DdProfilerTypes {
-		profTypes = append(profTypes, profiler.ProfileType(t))
-	}
-
+func startDataDogProfiler(ctx context.Context) {
 	opts := make([]profiler.Option, 0)
 
-	if appConfig.DdProfilerAgentAddr != "" {
-		opts = append(opts, profiler.WithAPIKey(appConfig.DdProfilerAgentAddr))
-	}
-	if appConfig.DdProfilerService != "" {
-		opts = append(opts, profiler.WithService(appConfig.DdProfilerService))
-	}
-	if appConfig.DdProfilerEnv != "" {
-		opts = append(opts, profiler.WithEnv(appConfig.DdProfilerEnv))
-	}
-	if appConfig.DdProfilerVersion != "" {
-		opts = append(opts, profiler.WithVersion(appConfig.DdProfilerVersion))
-	}
-	if len(appConfig.DdProfilerTags) > 0 {
-		opts = append(opts, profiler.WithTags(appConfig.DdProfilerTags...))
-	}
-
-	opts = append(opts, profiler.WithProfileTypes(profTypes...))
+	opts = append(opts, profiler.WithProfileTypes(
+		profiler.CPUProfile,
+		profiler.HeapProfile,
+		// higher overhead
+		profiler.BlockProfile,
+		profiler.MutexProfile,
+		profiler.GoroutineProfile,
+	))
 
 	err := profiler.Start(opts...)
 	if err != nil {
