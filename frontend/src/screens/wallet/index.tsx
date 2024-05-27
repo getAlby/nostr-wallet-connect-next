@@ -35,7 +35,6 @@ import { copyToClipboard } from "src/lib/clipboard";
 function Wallet() {
   const { data: info } = useInfo();
   const { data: balances } = useBalances();
-  const { toast } = useToast();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
 
   if (!info || !balances) {
