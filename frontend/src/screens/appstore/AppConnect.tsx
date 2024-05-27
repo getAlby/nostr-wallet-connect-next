@@ -37,7 +37,7 @@ export default function AppConnect() {
 
     const timeoutId = window.setTimeout(() => {
       setTimeout(true);
-    }, 2000);
+    }, 10000);
 
     return () => window.clearTimeout(timeoutId);
   }, []);
