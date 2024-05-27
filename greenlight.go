@@ -596,7 +596,7 @@ func (gs *GreenlightService) greenlightInvoiceToTransaction(invoice *glalby.List
 	return transaction, nil
 }
 
-func (gs *GreenlightService) ResetRouter(ctx context.Context, key string) error {
+func (gs *GreenlightService) ResetRouter(key string) error {
 	return nil
 }
 
@@ -656,5 +656,9 @@ func (gs *GreenlightService) GetStorageDir() (string, error) {
 }
 
 func (gs *GreenlightService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return nil, nil
+}
+
+func (gs *GreenlightService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
 	return nil, nil
 }

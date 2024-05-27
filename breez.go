@@ -399,7 +399,7 @@ func (bs *BreezService) RedeemOnchainFunds(ctx context.Context, toAddress string
 	return hex.EncodeToString(redeemOnchainFundsResponse.Txid), nil
 }
 
-func (bs *BreezService) ResetRouter(ctx context.Context, key string) error {
+func (bs *BreezService) ResetRouter(key string) error {
 	return nil
 }
 
@@ -458,4 +458,8 @@ func (bs *BreezService) GetBalances(ctx context.Context) (*lnclient.BalancesResp
 
 func (bs *BreezService) GetStorageDir() (string, error) {
 	return "", nil
+}
+
+func (bs *BreezService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
+	return nil, nil
 }

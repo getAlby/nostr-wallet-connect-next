@@ -36,6 +36,7 @@ type AlbyMe struct {
 	Name             string `json:"name"`
 	Avatar           string `json:"avatar"`
 	KeysendPubkey    string `json:"keysend_pubkey"`
+	SharedNode       bool   `json:"shared_node"`
 }
 
 type AlbyBalance struct {
@@ -116,15 +117,6 @@ func (svc *AlbyOAuthService) CallbackHandler(ctx context.Context, code string) e
 		}
 
 		svc.config.SetUpdate(userIdentifierKey, me.Identifier, "")
-
-		// setup the Alby Account NWC node and connection
-		if svc.appConfig.ConnectAlbyAccount {
-			err = svc.connectAccount(ctx)
-			if err != nil {
-				svc.logger.WithError(err).Error("Failed to connect alby account")
-				// not sure what to do here, don't return the error for now.
-			}
-		}
 	}
 
 	return nil
@@ -220,7 +212,7 @@ func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 
 	client := svc.oauthConf.Client(ctx, token)
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/user/me", svc.appConfig.AlbyAPIURL), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/internal/users", svc.appConfig.AlbyAPIURL), nil)
 	if err != nil {
 		svc.logger.WithError(err).Error("Error creating request /me")
 		return nil, err
@@ -233,6 +225,7 @@ func (svc *AlbyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 		svc.logger.WithError(err).Error("Failed to fetch /me")
 		return nil, err
 	}
+
 	me := &AlbyMe{}
 	err = json.NewDecoder(res.Body).Decode(me)
 	if err != nil {
@@ -370,7 +363,7 @@ func (svc *AlbyOAuthService) GetAuthUrl() string {
 	return svc.oauthConf.AuthCodeURL("unused")
 }
 
-func (svc *AlbyOAuthService) connectAccount(ctx context.Context) error {
+func (svc *AlbyOAuthService) LinkAccount(ctx context.Context) error {
 	connectionPubkey, err := svc.createAlbyAccountNWCNode(ctx)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to create alby account nwc node")
@@ -403,7 +396,7 @@ func (svc *AlbyOAuthService) connectAccount(ctx context.Context) error {
 	return nil
 }
 
-func (svc *AlbyOAuthService) ConsumeEvent(ctx context.Context, event *events.Event) error {
+func (svc *AlbyOAuthService) ConsumeEvent(ctx context.Context, event *events.Event, globalProperties map[string]interface{}) error {
 	// TODO: rename this config option to be specific to the alby API
 	if !svc.appConfig.LogEvents {
 		svc.logger.WithField("event", event).Debug("Skipped sending to alby events API")
@@ -418,8 +411,42 @@ func (svc *AlbyOAuthService) ConsumeEvent(ctx context.Context, event *events.Eve
 
 	client := svc.oauthConf.Client(ctx, token)
 
+	// encode event without global properties
+	originalEventBuffer := bytes.NewBuffer([]byte{})
+	err = json.NewEncoder(originalEventBuffer).Encode(event)
+
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to encode request payload")
+		return err
+	}
+
+	type EventWithPropertiesMap struct {
+		Event      string                 `json:"event"`
+		Properties map[string]interface{} `json:"properties"`
+	}
+
+	var eventWithGlobalProperties EventWithPropertiesMap
+	err = json.Unmarshal(originalEventBuffer.Bytes(), &eventWithGlobalProperties)
+	if err != nil {
+		svc.logger.WithError(err).Error("Failed to decode request payload")
+		return err
+	}
+	if eventWithGlobalProperties.Properties == nil {
+		eventWithGlobalProperties.Properties = map[string]interface{}{}
+	}
+
+	// add global properties to each published event
+	for k, v := range globalProperties {
+		_, exists := eventWithGlobalProperties.Properties[k]
+		if exists {
+			svc.logger.WithField("key", k).Error("Key already exists in event properties, skipping global property")
+			continue
+		}
+		eventWithGlobalProperties.Properties[k] = v
+	}
+
 	body := bytes.NewBuffer([]byte{})
-	err = json.NewEncoder(body).Encode(event)
+	err = json.NewEncoder(body).Encode(eventWithGlobalProperties)
 
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to encode request payload")
@@ -438,14 +465,14 @@ func (svc *AlbyOAuthService) ConsumeEvent(ctx context.Context, event *events.Eve
 	resp, err := client.Do(req)
 	if err != nil {
 		svc.logger.WithFields(logrus.Fields{
-			"event": event,
+			"event": eventWithGlobalProperties,
 		}).WithError(err).Error("Failed to send request to /events")
 		return err
 	}
 
 	if resp.StatusCode >= 300 {
 		svc.logger.WithFields(logrus.Fields{
-			"event":  event,
+			"event":  eventWithGlobalProperties,
 			"status": resp.StatusCode,
 		}).Error("Request to /events returned non-success status")
 		return errors.New("request to /events returned non-success status")

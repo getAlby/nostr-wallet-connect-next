@@ -57,7 +57,7 @@ type LNClient interface {
 	OpenChannel(ctx context.Context, openChannelRequest *OpenChannelRequest) (*OpenChannelResponse, error)
 	CloseChannel(ctx context.Context, closeChannelRequest *CloseChannelRequest) (*CloseChannelResponse, error)
 	GetNewOnchainAddress(ctx context.Context) (string, error)
-	ResetRouter(ctx context.Context, key string) error
+	ResetRouter(key string) error
 	GetOnchainBalance(ctx context.Context) (*OnchainBalanceResponse, error)
 	GetBalances(ctx context.Context) (*BalancesResponse, error)
 	RedeemOnchainFunds(ctx context.Context, toAddress string) (txId string, err error)
@@ -67,6 +67,7 @@ type LNClient interface {
 	GetLogOutput(ctx context.Context, maxLen int) ([]byte, error)
 	SignMessage(ctx context.Context, message string) (string, error)
 	GetStorageDir() (string, error)
+	GetNetworkGraph(nodeIds []string) (NetworkGraphResponse, error)
 }
 
 type Channel struct {
@@ -105,6 +106,7 @@ type OpenChannelResponse struct {
 type CloseChannelRequest struct {
 	ChannelId string `json:"channelId"`
 	NodeId    string `json:"nodeId"`
+	Force     bool   `json:"force"`
 }
 
 type CloseChannelResponse struct {
@@ -140,3 +142,5 @@ type BalancesResponse struct {
 	Onchain   OnchainBalanceResponse   `json:"onchain"`
 	Lightning LightningBalanceResponse `json:"lightning"`
 }
+
+type NetworkGraphResponse = interface{}

@@ -99,6 +99,26 @@ export default function DebugTools() {
         >
           Get Node Status
         </Button>
+        <Button
+          onClick={() => {
+            apiRequest(`/api/balances`, "GET");
+          }}
+        >
+          Get Balances
+        </Button>
+        <Button
+          onClick={() => {
+            const nodeIds = window.prompt(
+              "Enter node IDs, comma-separated:",
+              "030a58b8653d32b99200a2334cfe913e51dc7d155aa0116c176657a4f1722677a3,03b65c19de2da9d35895b37e6fa263cefbf8d184e6b61c0713747ebf12409d219f"
+            );
+            if (nodeIds) {
+              apiRequest(`/api/node/network-graph?nodeIds=${nodeIds}`, "GET");
+            }
+          }}
+        >
+          Get Network Graph
+        </Button>
       </div>
       {apiResponse && (
         <Textarea

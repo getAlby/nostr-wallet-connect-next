@@ -52,6 +52,7 @@ type Service struct {
 	wg                     *sync.WaitGroup
 	nip47NotificationQueue nip47.Nip47NotificationQueue
 	appCancelFn            context.CancelFunc
+	lastWalletSyncRequest  time.Time
 }
 
 // TODO: move to service.go
@@ -163,6 +164,7 @@ func NewService(ctx context.Context) (*Service, error) {
 
 func (svc *Service) StopLNClient() error {
 	if svc.lnClient != nil {
+		svc.Logger.Info("Shutting down LDK client")
 		err := svc.lnClient.Shutdown()
 		if err != nil {
 			svc.Logger.WithError(err).Error("Failed to stop LN backend")
@@ -174,11 +176,13 @@ func (svc *Service) StopLNClient() error {
 			})
 			return err
 		}
+		svc.Logger.Info("Publishing node shutdown event")
 		svc.lnClient = nil
 		svc.EventPublisher.Publish(&events.Event{
 			Event: "nwc_node_stopped",
 		})
 	}
+	svc.Logger.Info("LNClient stopped successfully")
 	return nil
 }
 
@@ -223,8 +227,16 @@ func (svc *Service) launchLNBackend(ctx context.Context, encryptionKey string) e
 		svc.Logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
 	}
 	if err != nil {
-		svc.Logger.Errorf("Failed to launch LN backend: %v", err)
+		svc.Logger.WithError(err).Error("Failed to launch LN backend")
 		return err
+	}
+
+	info, err := lnClient.GetInfo(ctx)
+	if err != nil {
+		svc.Logger.WithError(err).Error("Failed to fetch node info")
+	}
+	if info != nil && info.Pubkey != "" {
+		svc.EventPublisher.SetGlobalProperty("node_id", info.Pubkey)
 	}
 
 	svc.EventPublisher.Publish(&events.Event{

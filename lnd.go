@@ -436,7 +436,7 @@ func lndInvoiceToTransaction(invoice *lnrpc.Invoice) *Nip47Transaction {
 	}
 }
 
-func (svc *LNDService) ResetRouter(ctx context.Context, key string) error {
+func (svc *LNDService) ResetRouter(key string) error {
 	return nil
 }
 
@@ -445,5 +445,9 @@ func (svc *LNDService) GetStorageDir() (string, error) {
 }
 
 func (svc *LNDService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.NodeStatus, err error) {
+	return nil, nil
+}
+
+func (svc *LNDService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
 	return nil, nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	echologrus "github.com/davrux/echo-logrus/v4"
 	"github.com/gorilla/sessions"
@@ -87,12 +88,14 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.POST("/api/instant-channel-invoices", httpSvc.newInstantChannelInvoiceHandler, authMiddleware)
 	e.GET("/api/node/connection-info", httpSvc.nodeConnectionInfoHandler, authMiddleware)
 	e.GET("/api/node/status", httpSvc.nodeStatusHandler, authMiddleware)
+	e.GET("/api/node/network-graph", httpSvc.nodeNetworkGraphHandler, authMiddleware)
 	e.GET("/api/peers", httpSvc.listPeers, authMiddleware)
 	e.POST("/api/peers", httpSvc.connectPeerHandler, authMiddleware)
 	e.DELETE("/api/peers/:peerId/channels/:channelId", httpSvc.closeChannelHandler, authMiddleware)
 	e.POST("/api/wallet/new-address", httpSvc.newOnchainAddressHandler, authMiddleware)
 	e.POST("/api/wallet/redeem-onchain-funds", httpSvc.redeemOnchainFundsHandler, authMiddleware)
 	e.POST("/api/wallet/sign-message", httpSvc.signMessageHandler, authMiddleware)
+	e.POST("/api/wallet/sync", httpSvc.walletSyncHandler, authMiddleware)
 	e.GET("/api/balances", httpSvc.balancesHandler, authMiddleware)
 	e.POST("/api/reset-router", httpSvc.resetRouterHandler, authMiddleware)
 	e.POST("/api/stop", httpSvc.stopHandler, authMiddleware)
@@ -300,9 +303,7 @@ func (httpSvc *HttpService) resetRouterHandler(c echo.Context) error {
 		})
 	}
 
-	ctx := c.Request().Context()
-
-	err := httpSvc.api.ResetRouter(ctx, resetRouterRequest.Key)
+	err := httpSvc.api.ResetRouter(resetRouterRequest.Key, true)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -354,6 +355,20 @@ func (httpSvc *HttpService) nodeStatusHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, info)
 }
 
+func (httpSvc *HttpService) nodeNetworkGraphHandler(c echo.Context) error {
+	nodeIds := strings.Split(c.QueryParam("nodeIds"), ",")
+
+	info, err := httpSvc.api.GetNetworkGraph(nodeIds)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, info)
+}
+
 func (httpSvc *HttpService) balancesHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
@@ -366,6 +381,12 @@ func (httpSvc *HttpService) balancesHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, balances)
+}
+
+func (httpSvc *HttpService) walletSyncHandler(c echo.Context) error {
+	httpSvc.api.SyncWallet()
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (httpSvc *HttpService) mempoolApiHandler(c echo.Context) error {
@@ -443,7 +464,7 @@ func (httpSvc *HttpService) openChannelHandler(c echo.Context) error {
 func (httpSvc *HttpService) closeChannelHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	closeChannelResponse, err := httpSvc.api.CloseChannel(ctx, c.Param("peerId"), c.Param("channelId"))
+	closeChannelResponse, err := httpSvc.api.CloseChannel(ctx, c.Param("peerId"), c.Param("channelId"), c.QueryParam("force") == "true")
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
