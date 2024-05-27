@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"slices"
@@ -33,6 +34,8 @@ type LDKService struct {
 	cancel              context.CancelFunc
 	network             string
 	eventPublisher      events.EventPublisher
+	syncing             bool
+	lastSync            time.Time
 }
 
 const resetRouterKey = "ResetRouter"
@@ -166,34 +169,91 @@ func NewLDKService(ctx context.Context, svc *Service, mnemonic, workDir string, 
 	svc.Logger.WithFields(logrus.Fields{
 		"nodeId": nodeId,
 		"status": node.Status(),
-	}).Info("Connected to LDK node")
+	}).Info("Started LDK node. Syncing wallet...")
 
-	walletSynced := false
-	for i := 0; i < 10; i++ {
-		svc.Logger.WithFields(logrus.Fields{
-			"nodeId":    nodeId,
-			"status":    node.Status(),
-			"iteration": i,
-		}).Info("Waiting for LDK node to sync")
-		time.Sleep(1 * time.Second)
+	syncStartTime := time.Now()
+	err = node.SyncWallets()
+	if err != nil {
+		svc.Logger.WithError(err).Error("Failed to sync LDK wallets")
+		shutdownErr := ls.Shutdown()
+		if shutdownErr != nil {
+			svc.Logger.WithError(shutdownErr).Error("Failed to shutdown LDK node")
+		}
 
-		if node.Status().LatestOnchainWalletSyncTimestamp != nil || node.Status().LatestWalletSyncTimestamp != nil {
-			svc.Logger.WithFields(logrus.Fields{
-				"nodeId":    nodeId,
-				"status":    node.Status(),
-				"iteration": i,
-			}).Info("LDK node finished sync")
-			walletSynced = true
-			break
+		return nil, err
+	}
+	ls.lastSync = time.Now()
+
+	svc.Logger.WithFields(logrus.Fields{
+		"nodeId":   nodeId,
+		"status":   node.Status(),
+		"duration": math.Ceil(time.Since(syncStartTime).Seconds()),
+	}).Info("LDK node synced successfully")
+
+	if ls.network == "bitcoin" {
+		// try to connect to some peers to retrieve P2P gossip data. TODO: Remove once LDK can correctly do gossip with CLN and Eclair nodes
+		peers := []string{
+			"031b301307574bbe9b9ac7b79cbe1700e31e544513eae0b5d7497483083f99e581@45.79.192.236:9735",   // Olympus
+			"0364913d18a19c671bb36dd04d6ad5be0fe8f2894314c36a9db3f03c2d414907e1@192.243.215.102:9735", // LQwD
+			"035e4ff418fc8b5554c5d9eea66396c227bd429a3251c8cbc711002ba215bfc226@170.75.163.209:9735",  // WoS
+			"02fcc5bfc48e83f06c04483a2985e1c390cb0f35058baa875ad2053858b8e80dbd@35.239.148.251:9735",  // Blink
+		}
+		svc.Logger.Info("Connecting to some peers to retrieve P2P gossip data")
+		for _, peer := range peers {
+			parts := strings.FieldsFunc(peer, func(r rune) bool { return r == '@' || r == ':' })
+			port, err := strconv.ParseUint(parts[2], 10, 16)
+			if err != nil {
+				svc.Logger.WithError(err).Error("Failed to parse port number")
+				continue
+			}
+			err = ls.ConnectPeer(ctx, &lnclient.ConnectPeerRequest{
+				Pubkey:  parts[0],
+				Address: parts[1],
+				Port:    uint16(port),
+			})
+			if err != nil {
+				svc.Logger.WithField("peer", peer).WithError(err).Error("Failed to connect to peer")
+			}
 		}
 	}
-	if !walletSynced {
-		svc.Logger.WithFields(logrus.Fields{
-			"nodeId": nodeId,
-			"status": node.Status(),
-		}).Error("Timed out waiting for LDK node to sync")
-		time.Sleep(1 * time.Second)
-	}
+
+	// setup background sync
+	go func() {
+		MIN_SYNC_INTERVAL := 1 * time.Minute
+		MAX_SYNC_INTERVAL := 1 * time.Hour // NOTE: this could be increased further (possibly to 6 hours)
+		for {
+			select {
+			case <-ldkCtx.Done():
+				return
+			case <-time.After(MIN_SYNC_INTERVAL):
+
+				if time.Since(ls.svc.lastWalletSyncRequest) > MIN_SYNC_INTERVAL && time.Since(ls.lastSync) < MAX_SYNC_INTERVAL {
+					// ls.svc.Logger.Debug("skipping background wallet sync")
+					continue
+				}
+
+				ls.svc.Logger.Info("Starting background wallet sync")
+				syncStartTime := time.Now()
+				ls.syncing = true
+				err = node.SyncWallets()
+				ls.syncing = false
+
+				if err != nil {
+					svc.Logger.WithError(err).Error("Failed to sync LDK wallets")
+					// try again at next MIN_SYNC_INTERVAL
+					continue
+				}
+
+				ls.lastSync = time.Now()
+
+				svc.Logger.WithFields(logrus.Fields{
+					"nodeId":   nodeId,
+					"status":   node.Status(),
+					"duration": math.Ceil(time.Since(syncStartTime).Seconds()),
+				}).Info("LDK node synced successfully")
+			}
+		}
+	}()
 
 	return &ls, nil
 }
@@ -211,6 +271,11 @@ func (ls *LDKService) Shutdown() error {
 	ls.svc.Logger.Infof("cancelling LDK context")
 	ls.cancel()
 
+	for ls.syncing {
+		ls.svc.Logger.Infof("Waiting for background sync to finish before stopping LDK node...")
+		time.Sleep(1 * time.Second)
+	}
+
 	ls.svc.Logger.Infof("stopping LDK node")
 	shutdownChannel := make(chan error)
 	go func() {
@@ -225,8 +290,8 @@ func (ls *LDKService) Shutdown() error {
 		} else {
 			ls.svc.Logger.Info("LDK stop node succeeded")
 		}
-	case <-time.After(30 * time.Second):
-		ls.svc.Logger.Error("Timeout shutting down LDK node after 30 seconds")
+	case <-time.After(120 * time.Second):
+		ls.svc.Logger.Error("Timeout shutting down LDK node after 120 seconds")
 	}
 
 	ls.svc.Logger.Infof("Destroying node object")
@@ -969,6 +1034,39 @@ func (gs *LDKService) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, er
 		})
 	}
 	return ret, nil
+}
+
+func (ls *LDKService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
+	graph := ls.node.NetworkGraph()
+
+	type NodeInfoWithId struct {
+		Node   *ldk_node.NodeInfo `json:"node"`
+		NodeId string             `json:"nodeId"`
+	}
+
+	nodes := []NodeInfoWithId{}
+	channels := []*ldk_node.ChannelInfo{}
+	for _, nodeId := range nodeIds {
+		graphNode := graph.Node(nodeId)
+		if graphNode != nil {
+			nodes = append(nodes, NodeInfoWithId{
+				Node:   graphNode,
+				NodeId: nodeId,
+			})
+		}
+		for _, channelId := range graphNode.Channels {
+			graphChannel := graph.Channel(channelId)
+			if graphChannel != nil {
+				channels = append(channels, graphChannel)
+			}
+		}
+	}
+
+	networkGraph := map[string]interface{}{
+		"nodes":    nodes,
+		"channels": channels,
+	}
+	return networkGraph, nil
 }
 
 func (gs *LDKService) GetLogOutput(ctx context.Context, maxLen int) ([]byte, error) {

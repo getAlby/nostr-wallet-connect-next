@@ -20,7 +20,7 @@ type AppConfig struct {
 	CookieSecret        string `envconfig:"COOKIE_SECRET"`
 	LogLevel            string `envconfig:"LOG_LEVEL"`
 	LDKNetwork          string `envconfig:"LDK_NETWORK" default:"bitcoin"`
-	LDKEsploraServer    string `envconfig:"LDK_ESPLORA_SERVER" default:"https://blockstream.info/api"`
+	LDKEsploraServer    string `envconfig:"LDK_ESPLORA_SERVER" default:"https://electrs.albylabs.com"`
 	LDKGossipSource     string `envconfig:"LDK_GOSSIP_SOURCE" default:"https://rapidsync.lightningdevkit.org/snapshot"`
 	LDKLogLevel         string `envconfig:"LDK_LOG_LEVEL"`
 	MempoolApi          string `envconfig:"MEMPOOL_API" default:"https://mempool.space/api"`
@@ -31,7 +31,6 @@ type AppConfig struct {
 	BaseUrl             string `envconfig:"BASE_URL" default:"http://localhost:8080"`
 	FrontendUrl         string `envconfig:"FRONTEND_URL"`
 	LogEvents           bool   `envconfig:"LOG_EVENTS" default:"false"`
-	ConnectAlbyAccount  bool   `envconfig:"CONNECT_ALBY_ACCOUNT" default:"true"`
 	GoProfilerAddr      string `envconfig:"GO_PROFILER_ADDR"`
 	DdProfilerAgentAddr string `envconfig:"DD_PROFILER_AGENT_ADDR"`
 }
