@@ -77,7 +77,6 @@ function Wallet() {
                           className="shrink-0 w-4 h-4"
                           onClick={() => {
                             copyToClipboard(nodeConnectionInfo.pubkey);
-                            toast({ title: "Copied to clipboard." });
                           }}
                         />
                       )}
