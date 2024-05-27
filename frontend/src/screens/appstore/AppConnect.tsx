@@ -40,7 +40,7 @@ export default function AppConnect() {
       <div className="flex flex-col gap-3 ph-no-capture">
         <div>
           <p>
-            1. Open <span className="font-semibold">{app.title}</span> and go to "Wallet" —> "Attach Wallet"
+            1. Open <span className="font-semibold">{app.title}</span> and go to "Wallet" → "Attach Wallet"
           </p>
           <p>
             2. Scan or paste the connection secret
