@@ -67,7 +67,7 @@ export default function AppConnect() {
               {appstoreApp.title}
             </ExternalLink>
             {" "}
-            and go to "Wallet" → "Attach Wallet"
+            and look for a way to attach a wallet (most apps provide this option in settings)
           </p>
           <p>
             2. Scan or paste the connection secret
