@@ -38,7 +38,6 @@ const Permissions: React.FC<PermissionsProps> = ({
   budgetUsage,
 }) => {
   const [permissions, setPermissions] = React.useState(initialPermissions);
-
   const [days, setDays] = useState(isNew ? 0 : -1);
   const [expireOptions, setExpireOptions] = useState(!isNew);
 

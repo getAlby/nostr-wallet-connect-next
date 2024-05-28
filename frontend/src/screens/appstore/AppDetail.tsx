@@ -21,7 +21,6 @@ export default function AppDetail() {
   const params = useParams();
   const navigate = useNavigate();
   const { data: csrf } = useCSRF();
-  const [isEditing, setEditing] = useState(true);
 
   const app = suggestedApps.find(x => x.id == params.id);
 
@@ -92,7 +91,7 @@ export default function AppDetail() {
           <Permissions
             initialPermissions={permissions}
             onPermissionsChange={setPermissions}
-            isEditing={isEditing}
+            isEditing
             isNew
           />
         </div>
