@@ -2,6 +2,7 @@ import { CopyIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
+import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
 
 import QRCode from "src/components/QRCode";
@@ -61,7 +62,12 @@ export default function AppConnect() {
       <div className="flex flex-col gap-3 ph-no-capture">
         <div>
           <p>
-            1. Open <span className="font-semibold">{appstoreApp.title}</span> and go to "Wallet" → "Attach Wallet"
+            1. Open{" "}
+            <ExternalLink className="font-semibold underline" to={appstoreApp.to}>
+              {appstoreApp.title}
+            </ExternalLink>
+            {" "}
+            and go to "Wallet" → "Attach Wallet"
           </p>
           <p>
             2. Scan or paste the connection secret
