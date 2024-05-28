@@ -1,4 +1,3 @@
-import { PencilIcon } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
@@ -90,12 +89,6 @@ export default function AppDetail() {
 
         <div className="flex flex-col gap-2 w-full">
           <p className="font-medium text-sm">Authorize the app to:</p>
-          {!isEditing && (
-            <PencilIcon
-              onClick={() => setEditing(true)}
-              className="cursor-pointer w-6"
-            />
-          )}
           <Permissions
             initialPermissions={permissions}
             onPermissionsChange={setPermissions}
