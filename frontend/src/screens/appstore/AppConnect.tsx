@@ -95,7 +95,7 @@ export default function AppConnect() {
             >
               <QRCode value={pairingUri} className="w-full" />
               <img src={appstoreApp.logo}
-                className="absolute w-12 h-12 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary p-1 rounded"
+                className="absolute w-12 h-12 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-muted p-1 rounded-xl"
               />
             </a>
             <div>
