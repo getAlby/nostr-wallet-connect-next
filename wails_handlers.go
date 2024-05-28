@@ -156,22 +156,6 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 		return WailsRequestRouterResponse{Body: me, Error: ""}
-	case "/api/alby/topup":
-		topupRequest := &api.AlbyTopupRequest{}
-		err := json.Unmarshal([]byte(body), topupRequest)
-		if err != nil {
-			app.svc.Logger.WithFields(logrus.Fields{
-				"route":  route,
-				"method": method,
-				"body":   body,
-			}).WithError(err).Error("Failed to decode request to wails router")
-			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
-		}
-		topupResponse, err := app.svc.AlbyOAuthSvc.GetTopupUrl(ctx, topupRequest.Amount, topupRequest.Address)
-		if err != nil {
-			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
-		}
-		return WailsRequestRouterResponse{Body: topupResponse, Error: ""}
 	case "/api/alby/balance":
 		balance, err := app.svc.AlbyOAuthSvc.GetBalance(ctx)
 		if err != nil {
@@ -611,6 +595,25 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 		return WailsRequestRouterResponse{Body: nil, Error: ""}
+	}
+
+	if strings.HasPrefix(route, "/api/alby/topup") {
+		topupRequest := &api.AlbyTopupRequest{}
+		err := json.Unmarshal([]byte(body), topupRequest)
+		if err != nil {
+			app.svc.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		topupResponse, err := app.svc.AlbyOAuthSvc.GetTopupUrl(ctx, topupRequest.Amount, topupRequest.Address)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: topupResponse, Error: ""}
+
 	}
 
 	if strings.HasPrefix(route, "/api/log/") {
