@@ -76,7 +76,7 @@ export default function AppDetail() {
     <>
       <AppHeader
         title={`Connect to ${app.title}`}
-        description="Configure wallet permissions for the app and follow instructions to finalise the connection."
+        description="Configure wallet permissions for the app and follow instructions to finalise the connection"
       />
       <form onSubmit={handleSubmit} acceptCharset="UTF-8"
         className="flex flex-col items-start gap-5 max-w-lg">

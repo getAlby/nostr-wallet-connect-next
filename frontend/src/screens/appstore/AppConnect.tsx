@@ -57,8 +57,8 @@ export default function AppConnect() {
     <>
       <AppHeader
         title={`Connect to ${appstoreApp.title}`}
-        description="Configure wallet permissions for the app and follow instructions to finalise the connection." />
-
+        description="Configure wallet permissions for the app and follow instructions to finalise the connection"
+      />
       <div className="flex flex-col gap-3 ph-no-capture">
         <div>
           <p>

@@ -250,13 +250,13 @@ const Permissions: React.FC<PermissionsProps> = ({
           {!expireOptions &&
             <Button type="button" variant="secondary" onClick={() => setExpireOptions(true)}>
               <PlusCircle className="w-4 h-4 mr-2" />
-              Add expiration time
+              Set expiration date
             </Button>
           }
 
           {expireOptions && (
             <div className="mt-5">
-              <p className="font-medium text-sm mb-2">Connection expiry time</p>
+              <p className="font-medium text-sm mb-2">Connection expiration</p>
               {!isNew && (
                 <p className="mb-2 text-muted-foreground text-sm">
                   Expires:{" "}
@@ -269,7 +269,6 @@ const Permissions: React.FC<PermissionsProps> = ({
               <div id="expiry-days" className="grid grid-cols-4 gap-2 text-xs">
                 {Object.keys(expiryOptions).map((expiry) => {
                   return (
-                    // replace with something else and then remove dark prefixes
                     <div
                       key={expiry}
                       onClick={() => handleDaysChange(expiryOptions[expiry])}
@@ -288,7 +287,7 @@ const Permissions: React.FC<PermissionsProps> = ({
         </>
       ) : (
         <>
-          <p className="text-lg font-medium mb-2">Connection expiry time</p>
+          <p className="text-sm font-medium mb-2">Connection expiry</p>
           <p className="text-muted-foreground text-sm">
             {permissions.expiresAt &&
               new Date(permissions.expiresAt).getFullYear() !== 1
