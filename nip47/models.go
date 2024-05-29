@@ -51,77 +51,77 @@ const (
 	BUDGET_RENEWAL_NEVER   = "never"
 )
 
-type Nip47Transaction = lnclient.Transaction
+type Transaction = lnclient.Transaction
 
 type PayRequest struct {
 	Invoice string `json:"invoice"`
 }
 
-type Nip47Request struct {
+type Request struct {
 	Method string          `json:"method"`
 	Params json.RawMessage `json:"params"`
 }
 
-type Nip47Response struct {
-	Error      *Nip47Error `json:"error,omitempty"`
+type Response struct {
+	Error      *Error      `json:"error,omitempty"`
 	Result     interface{} `json:"result,omitempty"`
 	ResultType string      `json:"result_type"`
 }
 
-type Nip47Notification struct {
+type Notification struct {
 	Notification     interface{} `json:"notification,omitempty"`
 	NotificationType string      `json:"notification_type"`
 }
 
-type Nip47Error struct {
+type Error struct {
 	Code    string `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
 }
 
-type Nip47PaymentReceivedNotification struct {
-	Nip47Transaction
+type PaymentReceivedNotification struct {
+	Transaction
 }
 
-type Nip47PayParams struct {
+type PayParams struct {
 	Invoice string `json:"invoice"`
 }
-type Nip47PayResponse struct {
+type PayResponse struct {
 	Preimage string  `json:"preimage"`
 	FeesPaid *uint64 `json:"fees_paid"`
 }
 
-type Nip47MultiPayKeysendParams struct {
-	Keysends []Nip47MultiPayKeysendElement `json:"keysends"`
+type MultiPayKeysendParams struct {
+	Keysends []MultiPayKeysendElement `json:"keysends"`
 }
 
-type Nip47MultiPayKeysendElement struct {
-	Nip47KeysendParams
+type MultiPayKeysendElement struct {
+	KeysendParams
 	Id string `json:"id"`
 }
 
-type Nip47MultiPayInvoiceParams struct {
-	Invoices []Nip47MultiPayInvoiceElement `json:"invoices"`
+type MultiPayInvoiceParams struct {
+	Invoices []MultiPayInvoiceElement `json:"invoices"`
 }
 
-type Nip47MultiPayInvoiceElement struct {
-	Nip47PayParams
+type MultiPayInvoiceElement struct {
+	PayParams
 	Id string `json:"id"`
 }
 
-type Nip47KeysendParams struct {
+type KeysendParams struct {
 	Amount     int64                `json:"amount"`
 	Pubkey     string               `json:"pubkey"`
 	Preimage   string               `json:"preimage"`
 	TLVRecords []lnclient.TLVRecord `json:"tlv_records"`
 }
 
-type Nip47BalanceResponse struct {
+type BalanceResponse struct {
 	Balance       int64  `json:"balance"`
 	MaxAmount     int    `json:"max_amount"`
 	BudgetRenewal string `json:"budget_renewal"`
 }
 
-type Nip47GetInfoResponse struct {
+type GetInfoResponse struct {
 	Alias       string   `json:"alias"`
 	Color       string   `json:"color"`
 	Pubkey      string   `json:"pubkey"`
@@ -131,26 +131,26 @@ type Nip47GetInfoResponse struct {
 	Methods     []string `json:"methods"`
 }
 
-type Nip47MakeInvoiceParams struct {
+type MakeInvoiceParams struct {
 	Amount          int64  `json:"amount"`
 	Description     string `json:"description"`
 	DescriptionHash string `json:"description_hash"`
 	Expiry          int64  `json:"expiry"`
 }
-type Nip47MakeInvoiceResponse struct {
-	Nip47Transaction
+type MakeInvoiceResponse struct {
+	Transaction
 }
 
-type Nip47LookupInvoiceParams struct {
+type LookupInvoiceParams struct {
 	Invoice     string `json:"invoice"`
 	PaymentHash string `json:"payment_hash"`
 }
 
-type Nip47LookupInvoiceResponse struct {
-	Nip47Transaction
+type LookupInvoiceResponse struct {
+	Transaction
 }
 
-type Nip47ListTransactionsParams struct {
+type ListTransactionsParams struct {
 	From   uint64 `json:"from,omitempty"`
 	Until  uint64 `json:"until,omitempty"`
 	Limit  uint64 `json:"limit,omitempty"`
@@ -159,15 +159,15 @@ type Nip47ListTransactionsParams struct {
 	Type   string `json:"type,omitempty"`
 }
 
-type Nip47ListTransactionsResponse struct {
-	Transactions []Nip47Transaction `json:"transactions"`
+type ListTransactionsResponse struct {
+	Transactions []Transaction `json:"transactions"`
 }
 
-type Nip47SignMessageParams struct {
+type SignMessageParams struct {
 	Message string `json:"message"`
 }
 
-type Nip47SignMessageResponse struct {
+type SignMessageResponse struct {
 	Message   string `json:"message"`
 	Signature string `json:"signature"`
 }

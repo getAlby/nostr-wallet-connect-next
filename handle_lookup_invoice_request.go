@@ -12,9 +12,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *nip47.Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Nip47Response, nostr.Tags)) {
+func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *nip47.Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Response, nostr.Tags)) {
 
-	lookupInvoiceParams := &nip47.Nip47LookupInvoiceParams{}
+	lookupInvoiceParams := &nip47.LookupInvoiceParams{}
 	resp := svc.decodeNip47Request(nip47Request, requestEvent, app, lookupInvoiceParams)
 	if resp != nil {
 		publishResponse(resp, nostr.Tags{})
@@ -45,9 +45,9 @@ func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *
 				"invoice":             lookupInvoiceParams.Invoice,
 			}).Errorf("Failed to decode bolt11 invoice: %v", err)
 
-			publishResponse(&nip47.Nip47Response{
+			publishResponse(&nip47.Response{
 				ResultType: nip47Request.Method,
-				Error: &nip47.Nip47Error{
+				Error: &nip47.Error{
 					Code:    nip47.ERROR_INTERNAL,
 					Message: fmt.Sprintf("Failed to decode bolt11 invoice: %s", err.Error()),
 				},
@@ -66,9 +66,9 @@ func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *
 			"paymentHash":         lookupInvoiceParams.PaymentHash,
 		}).Infof("Failed to lookup invoice: %v", err)
 
-		publishResponse(&nip47.Nip47Response{
+		publishResponse(&nip47.Response{
 			ResultType: nip47Request.Method,
-			Error: &nip47.Nip47Error{
+			Error: &nip47.Error{
 				Code:    nip47.ERROR_INTERNAL,
 				Message: err.Error(),
 			},
@@ -76,11 +76,11 @@ func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *
 		return
 	}
 
-	responsePayload := &nip47.Nip47LookupInvoiceResponse{
-		Nip47Transaction: *transaction,
+	responsePayload := &nip47.LookupInvoiceResponse{
+		Transaction: *transaction,
 	}
 
-	publishResponse(&nip47.Nip47Response{
+	publishResponse(&nip47.Response{
 		ResultType: nip47Request.Method,
 		Result:     responsePayload,
 	}, nostr.Tags{})

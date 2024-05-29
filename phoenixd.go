@@ -123,7 +123,7 @@ func (svc *PhoenixService) GetBalances(ctx context.Context) (*lnclient.BalancesR
 	}, nil
 }
 
-func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Nip47Transaction, err error) {
+func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Transaction, err error) {
 	incomingQuery := url.Values{}
 	if from != 0 {
 		incomingQuery.Add("from", strconv.FormatUint(from*1000, 10))
@@ -161,14 +161,14 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 	if err := json.NewDecoder(incomingResp.Body).Decode(&incomingPayments); err != nil {
 		return nil, err
 	}
-	transactions = []nip47.Nip47Transaction{}
+	transactions = []nip47.Transaction{}
 	for _, invoice := range incomingPayments {
 		var settledAt *int64
 		if invoice.CompletedAt != 0 {
 			settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
 			settledAt = &settledAtUnix
 		}
-		transaction := nip47.Nip47Transaction{
+		transaction := nip47.Transaction{
 			Type:        "incoming",
 			Invoice:     invoice.Invoice,
 			Preimage:    invoice.Preimage,
@@ -224,7 +224,7 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 			settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
 			settledAt = &settledAtUnix
 		}
-		transaction := nip47.Nip47Transaction{
+		transaction := nip47.Transaction{
 			Type:        "outgoing",
 			Invoice:     invoice.Invoice,
 			Preimage:    invoice.Preimage,
@@ -277,7 +277,7 @@ func (svc *PhoenixService) ListChannels(ctx context.Context) ([]lnclient.Channel
 	return channels, nil
 }
 
-func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Nip47Transaction, err error) {
+func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Transaction, err error) {
 	form := url.Values{}
 	amountSat := strconv.FormatInt(amount/1000, 10)
 	form.Add("amountSat", amountSat)
@@ -314,7 +314,7 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	}
 	expiresAt := time.Now().Add(1 * time.Hour).Unix()
 
-	tx := &nip47.Nip47Transaction{
+	tx := &nip47.Transaction{
 		Type:        "incoming",
 		Invoice:     invoiceRes.Serialized,
 		Preimage:    "",
@@ -328,7 +328,7 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	return tx, nil
 }
 
-func (svc *PhoenixService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Nip47Transaction, err error) {
+func (svc *PhoenixService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Transaction, err error) {
 	req, err := http.NewRequest(http.MethodGet, svc.Address+"/payments/incoming/"+paymentHash, nil)
 	if err != nil {
 		return nil, err
@@ -351,7 +351,7 @@ func (svc *PhoenixService) LookupInvoice(ctx context.Context, paymentHash string
 		settledAtUnix := time.UnixMilli(invoiceRes.CompletedAt).Unix()
 		settledAt = &settledAtUnix
 	}
-	transaction = &nip47.Nip47Transaction{
+	transaction = &nip47.Transaction{
 		Type:        "incoming",
 		Invoice:     invoiceRes.Invoice,
 		Preimage:    invoiceRes.Preimage,

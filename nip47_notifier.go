@@ -54,14 +54,14 @@ func (notifier *Nip47Notifier) ConsumeEvent(ctx context.Context, event *events.E
 		return err
 	}
 
-	notifier.notifySubscribers(ctx, &nip47.Nip47Notification{
+	notifier.notifySubscribers(ctx, &nip47.Notification{
 		Notification:     transaction,
 		NotificationType: nip47.PAYMENT_RECEIVED_NOTIFICATION,
 	}, nostr.Tags{})
 	return nil
 }
 
-func (notifier *Nip47Notifier) notifySubscribers(ctx context.Context, notification *nip47.Nip47Notification, tags nostr.Tags) {
+func (notifier *Nip47Notifier) notifySubscribers(ctx context.Context, notification *nip47.Notification, tags nostr.Tags) {
 	apps := []db.App{}
 
 	// TODO: join apps and permissions
@@ -76,7 +76,7 @@ func (notifier *Nip47Notifier) notifySubscribers(ctx context.Context, notificati
 	}
 }
 
-func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App, notification *nip47.Nip47Notification, tags nostr.Tags) {
+func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App, notification *nip47.Notification, tags nostr.Tags) {
 	notifier.svc.Logger.WithFields(logrus.Fields{
 		"notification": notification,
 		"appId":        app.ID,

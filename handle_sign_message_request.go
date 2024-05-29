@@ -9,8 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (svc *Service) HandleSignMessageEvent(ctx context.Context, nip47Request *nip47.Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Nip47Response, nostr.Tags)) {
-	signParams := &nip47.Nip47SignMessageParams{}
+func (svc *Service) HandleSignMessageEvent(ctx context.Context, nip47Request *nip47.Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Response, nostr.Tags)) {
+	signParams := &nip47.SignMessageParams{}
 	resp := svc.decodeNip47Request(nip47Request, requestEvent, app, signParams)
 	if resp != nil {
 		publishResponse(resp, nostr.Tags{})
@@ -34,9 +34,9 @@ func (svc *Service) HandleSignMessageEvent(ctx context.Context, nip47Request *ni
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 		}).Infof("Failed to sign message: %v", err)
-		publishResponse(&nip47.Nip47Response{
+		publishResponse(&nip47.Response{
 			ResultType: nip47Request.Method,
-			Error: &nip47.Nip47Error{
+			Error: &nip47.Error{
 				Code:    nip47.ERROR_INTERNAL,
 				Message: err.Error(),
 			},
@@ -44,12 +44,12 @@ func (svc *Service) HandleSignMessageEvent(ctx context.Context, nip47Request *ni
 		return
 	}
 
-	responsePayload := nip47.Nip47SignMessageResponse{
+	responsePayload := nip47.SignMessageResponse{
 		Message:   signParams.Message,
 		Signature: signature,
 	}
 
-	publishResponse(&nip47.Nip47Response{
+	publishResponse(&nip47.Response{
 		ResultType: nip47Request.Method,
 		Result:     responsePayload,
 	}, nostr.Tags{})

@@ -13,7 +13,7 @@ const (
 	MSAT_PER_SAT = 1000
 )
 
-func (svc *Service) HandleGetBalanceEvent(ctx context.Context, nip47Request *nip47.Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Nip47Response, nostr.Tags)) {
+func (svc *Service) HandleGetBalanceEvent(ctx context.Context, nip47Request *nip47.Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Response, nostr.Tags)) {
 
 	resp := svc.checkPermission(nip47Request, requestEvent.NostrId, app, 0)
 	if resp != nil {
@@ -32,9 +32,9 @@ func (svc *Service) HandleGetBalanceEvent(ctx context.Context, nip47Request *nip
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 		}).Infof("Failed to fetch balance: %v", err)
-		publishResponse(&nip47.Nip47Response{
+		publishResponse(&nip47.Response{
 			ResultType: nip47Request.Method,
-			Error: &nip47.Nip47Error{
+			Error: &nip47.Error{
 				Code:    nip47.ERROR_INTERNAL,
 				Message: err.Error(),
 			},
@@ -42,7 +42,7 @@ func (svc *Service) HandleGetBalanceEvent(ctx context.Context, nip47Request *nip
 		return
 	}
 
-	responsePayload := &nip47.Nip47BalanceResponse{
+	responsePayload := &nip47.BalanceResponse{
 		Balance: balance,
 	}
 
@@ -55,7 +55,7 @@ func (svc *Service) HandleGetBalanceEvent(ctx context.Context, nip47Request *nip
 		responsePayload.BudgetRenewal = appPermission.BudgetRenewal
 	}
 
-	publishResponse(&nip47.Nip47Response{
+	publishResponse(&nip47.Response{
 		ResultType: nip47Request.Method,
 		Result:     responsePayload,
 	}, nostr.Tags{})

@@ -13,9 +13,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip47.Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Nip47Response, nostr.Tags)) {
+func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip47.Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Response, nostr.Tags)) {
 
-	payParams := &nip47.Nip47PayParams{}
+	payParams := &nip47.PayParams{}
 	resp := svc.decodeNip47Request(nip47Request, requestEvent, app, payParams)
 	if resp != nil {
 		publishResponse(resp, nostr.Tags{})
@@ -33,9 +33,9 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 			"bolt11":              bolt11,
 		}).Errorf("Failed to decode bolt11 invoice: %v", err)
 
-		publishResponse(&nip47.Nip47Response{
+		publishResponse(&nip47.Response{
 			ResultType: nip47Request.Method,
-			Error: &nip47.Nip47Error{
+			Error: &nip47.Error{
 				Code:    nip47.ERROR_INTERNAL,
 				Message: fmt.Sprintf("Failed to decode bolt11 invoice: %s", err.Error()),
 			},
@@ -52,9 +52,9 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 	payment := db.Payment{App: *app, RequestEvent: *requestEvent, PaymentRequest: bolt11, Amount: uint(paymentRequest.MSatoshi / 1000)}
 	err = svc.db.Create(&payment).Error
 	if err != nil {
-		publishResponse(&nip47.Nip47Response{
+		publishResponse(&nip47.Response{
 			ResultType: nip47Request.Method,
-			Error: &nip47.Nip47Error{
+			Error: &nip47.Error{
 				Code:    nip47.ERROR_INTERNAL,
 				Message: err.Error(),
 			},
@@ -83,9 +83,9 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 				"amount":  paymentRequest.MSatoshi / 1000,
 			},
 		})
-		publishResponse(&nip47.Nip47Response{
+		publishResponse(&nip47.Response{
 			ResultType: nip47Request.Method,
-			Error: &nip47.Nip47Error{
+			Error: &nip47.Error{
 				Code:    nip47.ERROR_INTERNAL,
 				Message: err.Error(),
 			},
@@ -104,9 +104,9 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 		},
 	})
 
-	publishResponse(&nip47.Nip47Response{
+	publishResponse(&nip47.Response{
 		ResultType: nip47Request.Method,
-		Result: nip47.Nip47PayResponse{
+		Result: nip47.PayResponse{
 			Preimage: response.Preimage,
 			FeesPaid: response.Fee,
 		},

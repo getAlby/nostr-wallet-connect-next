@@ -618,7 +618,7 @@ func (gs *LDKService) getMaxSpendable() int64 {
 	return int64(spendable)
 }
 
-func (gs *LDKService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Nip47Transaction, err error) {
+func (gs *LDKService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Transaction, err error) {
 
 	maxReceivable := gs.getMaxReceivable()
 
@@ -658,7 +658,7 @@ func (gs *LDKService) MakeInvoice(ctx context.Context, amount int64, description
 	description = paymentRequest.Description
 	descriptionHash = paymentRequest.DescriptionHash
 
-	transaction = &nip47.Nip47Transaction{
+	transaction = &nip47.Transaction{
 		Type:            "incoming",
 		Invoice:         invoice,
 		PaymentHash:     paymentRequest.PaymentHash,
@@ -672,7 +672,7 @@ func (gs *LDKService) MakeInvoice(ctx context.Context, amount int64, description
 	return transaction, nil
 }
 
-func (gs *LDKService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Nip47Transaction, err error) {
+func (gs *LDKService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Transaction, err error) {
 
 	payment := gs.node.Payment(paymentHash)
 	if payment == nil {
@@ -690,8 +690,8 @@ func (gs *LDKService) LookupInvoice(ctx context.Context, paymentHash string) (tr
 	return transaction, nil
 }
 
-func (ls *LDKService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Nip47Transaction, err error) {
-	transactions = []nip47.Nip47Transaction{}
+func (ls *LDKService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Transaction, err error) {
+	transactions = []nip47.Transaction{}
 
 	// TODO: support pagination
 	payments := ls.node.ListPayments()
@@ -729,7 +729,7 @@ func (ls *LDKService) ListTransactions(ctx context.Context, from, until, limit, 
 		if offset < uint64(len(transactions)) {
 			transactions = transactions[offset:]
 		} else {
-			transactions = []nip47.Nip47Transaction{}
+			transactions = []nip47.Transaction{}
 		}
 	}
 
@@ -934,7 +934,7 @@ func (gs *LDKService) SignMessage(ctx context.Context, message string) (string, 
 	return sign, nil
 }
 
-func (gs *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) (*nip47.Nip47Transaction, error) {
+func (gs *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) (*nip47.Transaction, error) {
 	// gs.svc.Logger.WithField("payment", payment).Debug("Mapping LDK payment to transaction")
 
 	transactionType := "incoming"
@@ -991,7 +991,7 @@ func (gs *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) 
 		fee = *payment.FeeMsat
 	}
 
-	return &nip47.Nip47Transaction{
+	return &nip47.Transaction{
 		Type:            transactionType,
 		Preimage:        preimage,
 		PaymentHash:     paymentHash,
