@@ -369,16 +369,6 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		"eventKind":           event.Kind,
 	}).Info("Processing Event")
 
-	// make sure we don't know the event, yet
-	requestEvent := db.RequestEvent{}
-	findEventResult := svc.db.Where("nostr_id = ?", event.ID).Find(&requestEvent)
-	if findEventResult.RowsAffected != 0 {
-		svc.logger.WithFields(logrus.Fields{
-			"requestEventNostrId": event.ID,
-		}).Warn("Event already processed")
-		return
-	}
-
 	ss, err := nip04.ComputeSharedSecret(event.PubKey, svc.cfg.GetNostrSecretKey())
 	if err != nil {
 		svc.logger.WithFields(logrus.Fields{
@@ -389,9 +379,15 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	}
 
 	// store request event
-	requestEvent = db.RequestEvent{AppId: nil, NostrId: event.ID, Content: event.Content, State: db.REQUEST_EVENT_STATE_HANDLER_EXECUTING}
+	requestEvent := db.RequestEvent{AppId: nil, NostrId: event.ID, Content: event.Content, State: db.REQUEST_EVENT_STATE_HANDLER_EXECUTING}
 	err = svc.db.Create(&requestEvent).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			svc.logger.WithFields(logrus.Fields{
+				"requestEventNostrId": event.ID,
+			}).Warn("Event already processed")
+			return
+		}
 		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
 			"eventKind":           event.Kind,
