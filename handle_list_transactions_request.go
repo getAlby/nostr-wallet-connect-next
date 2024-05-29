@@ -24,7 +24,7 @@ func (svc *Service) HandleListTransactionsEvent(ctx context.Context, nip47Reques
 		return
 	}
 
-	svc.Logger.WithFields(logrus.Fields{
+	svc.logger.WithFields(logrus.Fields{
 		// TODO: log request fields from listParams
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
@@ -38,7 +38,7 @@ func (svc *Service) HandleListTransactionsEvent(ctx context.Context, nip47Reques
 	}
 	transactions, err := svc.lnClient.ListTransactions(ctx, listParams.From, listParams.Until, limit, listParams.Offset, listParams.Unpaid, listParams.Type)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			// TODO: log request fields from listParams
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,

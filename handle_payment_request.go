@@ -27,7 +27,7 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 	bolt11 = strings.ToLower(bolt11)
 	paymentRequest, err := decodepay.Decodepay(bolt11)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 			"bolt11":              bolt11,
@@ -62,7 +62,7 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 		return
 	}
 
-	svc.Logger.WithFields(logrus.Fields{
+	svc.logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 		"bolt11":              bolt11,
@@ -70,12 +70,12 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 
 	response, err := svc.lnClient.SendPaymentSync(ctx, bolt11)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 			"bolt11":              bolt11,
 		}).Infof("Failed to send payment: %v", err)
-		svc.EventPublisher.Publish(&events.Event{
+		svc.eventPublisher.Publish(&events.Event{
 			Event: "nwc_payment_failed",
 			Properties: map[string]interface{}{
 				// "error":   fmt.Sprintf("%v", err),
@@ -96,7 +96,7 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 	// TODO: save payment fee
 	svc.db.Save(&payment)
 
-	svc.EventPublisher.Publish(&events.Event{
+	svc.eventPublisher.Publish(&events.Event{
 		Event: "nwc_payment_succeeded",
 		Properties: map[string]interface{}{
 			"bolt11": bolt11,

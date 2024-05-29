@@ -33,8 +33,8 @@ func TestSendNotification(t *testing.T) {
 	err = svc.db.Create(appPermission).Error
 	assert.NoError(t, err)
 
-	svc.nip47NotificationQueue = nip47.NewNip47NotificationQueue(svc.Logger)
-	svc.EventPublisher.RegisterSubscriber(svc.nip47NotificationQueue)
+	svc.nip47NotificationQueue = nip47.NewNip47NotificationQueue(svc.logger)
+	svc.eventPublisher.RegisterSubscriber(svc.nip47NotificationQueue)
 
 	testEvent := &events.Event{
 		Event: "nwc_payment_received",
@@ -45,7 +45,7 @@ func TestSendNotification(t *testing.T) {
 		},
 	}
 
-	svc.EventPublisher.Publish(testEvent)
+	svc.eventPublisher.Publish(testEvent)
 
 	receivedEvent := <-svc.nip47NotificationQueue.Channel()
 	assert.Equal(t, testEvent, receivedEvent)
@@ -90,8 +90,8 @@ func TestSendNotificationNoPermission(t *testing.T) {
 	_, _, err = createApp(svc)
 	assert.NoError(t, err)
 
-	svc.nip47NotificationQueue = nip47.NewNip47NotificationQueue(svc.Logger)
-	svc.EventPublisher.RegisterSubscriber(svc.nip47NotificationQueue)
+	svc.nip47NotificationQueue = nip47.NewNip47NotificationQueue(svc.logger)
+	svc.eventPublisher.RegisterSubscriber(svc.nip47NotificationQueue)
 
 	testEvent := &events.Event{
 		Event: "nwc_payment_received",
@@ -102,7 +102,7 @@ func TestSendNotificationNoPermission(t *testing.T) {
 		},
 	}
 
-	svc.EventPublisher.Publish(testEvent)
+	svc.eventPublisher.Publish(testEvent)
 
 	receivedEvent := <-svc.nip47NotificationQueue.Channel()
 	assert.Equal(t, testEvent, receivedEvent)

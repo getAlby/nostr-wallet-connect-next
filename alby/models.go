@@ -54,3 +54,7 @@ type ChannelPeerSuggestion struct {
 	Image              string `json:"image"`
 	Lsp                string `json:"lsp"`
 }
+
+type ErrorResponse struct {
+	Message string `json:"message"`
+}

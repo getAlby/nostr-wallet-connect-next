@@ -23,14 +23,14 @@ func (svc *Service) HandleSignMessageEvent(ctx context.Context, nip47Request *ni
 		return
 	}
 
-	svc.Logger.WithFields(logrus.Fields{
+	svc.logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 	}).Info("Signing message")
 
 	signature, err := svc.lnClient.SignMessage(ctx, signParams.Message)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 		}).Infof("Failed to sign message: %v", err)

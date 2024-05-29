@@ -17,14 +17,14 @@ func (svc *Service) HandleGetInfoEvent(ctx context.Context, nip47Request *nip47.
 		return
 	}
 
-	svc.Logger.WithFields(logrus.Fields{
+	svc.logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 	}).Info("Fetching node info")
 
 	info, err := svc.lnClient.GetInfo(ctx)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 		}).Infof("Failed to fetch node info: %v", err)

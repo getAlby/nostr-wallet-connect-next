@@ -54,9 +54,9 @@ type Service struct {
 	cfg                    config.Config
 	db                     *gorm.DB
 	lnClient               lnclient.LNClient
-	Logger                 *logrus.Logger
+	logger                 *logrus.Logger
 	albyOAuthSvc           alby.AlbyOAuthService
-	EventPublisher         events.EventPublisher
+	eventPublisher         events.EventPublisher
 	ctx                    context.Context
 	wg                     *sync.WaitGroup
 	nip47NotificationQueue nip47.Nip47NotificationQueue
@@ -153,8 +153,8 @@ func NewService(ctx context.Context) (*Service, error) {
 		db:                     gormDB,
 		ctx:                    ctx,
 		wg:                     &wg,
-		Logger:                 logger,
-		EventPublisher:         eventPublisher,
+		logger:                 logger,
+		eventPublisher:         eventPublisher,
 		nip47NotificationQueue: nip47NotificationQueue,
 		albyOAuthSvc:           alby.NewAlbyOAuthService(logger, cfg, cfg.GetEnv(), db.NewDBService(gormDB, logger)),
 	}
@@ -170,11 +170,11 @@ func NewService(ctx context.Context) (*Service, error) {
 
 func (svc *Service) StopLNClient() error {
 	if svc.lnClient != nil {
-		svc.Logger.Info("Shutting down LDK client")
+		svc.logger.Info("Shutting down LDK client")
 		err := svc.lnClient.Shutdown()
 		if err != nil {
-			svc.Logger.WithError(err).Error("Failed to stop LN backend")
-			svc.EventPublisher.Publish(&events.Event{
+			svc.logger.WithError(err).Error("Failed to stop LN backend")
+			svc.eventPublisher.Publish(&events.Event{
 				Event: "nwc_node_stop_failed",
 				Properties: map[string]interface{}{
 					"error": fmt.Sprintf("%v", err),
@@ -182,13 +182,13 @@ func (svc *Service) StopLNClient() error {
 			})
 			return err
 		}
-		svc.Logger.Info("Publishing node shutdown event")
+		svc.logger.Info("Publishing node shutdown event")
 		svc.lnClient = nil
-		svc.EventPublisher.Publish(&events.Event{
+		svc.eventPublisher.Publish(&events.Event{
 			Event: "nwc_node_stopped",
 		})
 	}
-	svc.Logger.Info("LNClient stopped successfully")
+	svc.logger.Info("LNClient stopped successfully")
 	return nil
 }
 
@@ -203,51 +203,51 @@ func (svc *Service) launchLNBackend(ctx context.Context, encryptionKey string) e
 		return errors.New("no LNBackendType specified")
 	}
 
-	svc.Logger.Infof("Launching LN Backend: %s", lnBackend)
+	svc.logger.Infof("Launching LN Backend: %s", lnBackend)
 	var lnClient lnclient.LNClient
 	switch lnBackend {
 	case config.LNDBackendType:
 		LNDAddress, _ := svc.cfg.Get("LNDAddress", encryptionKey)
 		LNDCertHex, _ := svc.cfg.Get("LNDCertHex", encryptionKey)
 		LNDMacaroonHex, _ := svc.cfg.Get("LNDMacaroonHex", encryptionKey)
-		lnClient, err = lnd.NewLNDService(ctx, svc.Logger, LNDAddress, LNDCertHex, LNDMacaroonHex)
+		lnClient, err = lnd.NewLNDService(ctx, svc.logger, LNDAddress, LNDCertHex, LNDMacaroonHex)
 	case config.LDKBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		LDKWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "ldk")
 
-		lnClient, err = ldk.NewLDKService(ctx, svc.Logger, svc.cfg, svc.EventPublisher, Mnemonic, LDKWorkdir, svc.cfg.GetEnv().LDKNetwork, svc.cfg.GetEnv().LDKEsploraServer, svc.cfg.GetEnv().LDKGossipSource)
+		lnClient, err = ldk.NewLDKService(ctx, svc.logger, svc.cfg, svc.eventPublisher, Mnemonic, LDKWorkdir, svc.cfg.GetEnv().LDKNetwork, svc.cfg.GetEnv().LDKEsploraServer, svc.cfg.GetEnv().LDKGossipSource)
 	case config.GreenlightBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
 		GreenlightWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "greenlight")
 
-		lnClient, err = greenlight.NewGreenlightService(svc.cfg, svc.Logger, Mnemonic, GreenlightInviteCode, GreenlightWorkdir, encryptionKey)
+		lnClient, err = greenlight.NewGreenlightService(svc.cfg, svc.logger, Mnemonic, GreenlightInviteCode, GreenlightWorkdir, encryptionKey)
 	case config.BreezBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		BreezAPIKey, _ := svc.cfg.Get("BreezAPIKey", encryptionKey)
 		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
 		BreezWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "breez")
 
-		lnClient, err = breez.NewBreezService(svc.Logger, Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
+		lnClient, err = breez.NewBreezService(svc.logger, Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
 	case config.PhoenixBackendType:
-		lnClient, err = phoenixd.NewPhoenixService(svc.Logger, svc.cfg.GetEnv().PhoenixdAddress, svc.cfg.GetEnv().PhoenixdAuthorization)
+		lnClient, err = phoenixd.NewPhoenixService(svc.logger, svc.cfg.GetEnv().PhoenixdAddress, svc.cfg.GetEnv().PhoenixdAuthorization)
 	default:
-		svc.Logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
+		svc.logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
 	}
 	if err != nil {
-		svc.Logger.WithError(err).Error("Failed to launch LN backend")
+		svc.logger.WithError(err).Error("Failed to launch LN backend")
 		return err
 	}
 
 	info, err := lnClient.GetInfo(ctx)
 	if err != nil {
-		svc.Logger.WithError(err).Error("Failed to fetch node info")
+		svc.logger.WithError(err).Error("Failed to fetch node info")
 	}
 	if info != nil && info.Pubkey != "" {
-		svc.EventPublisher.SetGlobalProperty("node_id", info.Pubkey)
+		svc.eventPublisher.SetGlobalProperty("node_id", info.Pubkey)
 	}
 
-	svc.EventPublisher.Publish(&events.Event{
+	svc.eventPublisher.Publish(&events.Event{
 		Event: "nwc_node_started",
 		Properties: map[string]interface{}{
 			"node_type": lnBackend,
@@ -266,7 +266,7 @@ func (svc *Service) createFilters(identityPubkey string) nostr.Filters {
 }
 
 func (svc *Service) noticeHandler(notice string) {
-	svc.Logger.Infof("Received a notice %s", notice)
+	svc.logger.Infof("Received a notice %s", notice)
 }
 
 func (svc *Service) GetLNClient() lnclient.LNClient {
@@ -290,22 +290,22 @@ func (svc *Service) StartSubscription(ctx context.Context, sub *nostr.Subscripti
 	go func() {
 		// block till EOS is received
 		<-sub.EndOfStoredEvents
-		svc.Logger.Info("Received EOS")
+		svc.logger.Info("Received EOS")
 
 		// loop through incoming events
 		for event := range sub.Events {
 			go svc.HandleEvent(ctx, sub, event)
 		}
-		svc.Logger.Info("Relay subscription events channel ended")
+		svc.logger.Info("Relay subscription events channel ended")
 	}()
 
 	<-ctx.Done()
 
 	if sub.Relay.ConnectionError != nil {
-		svc.Logger.WithField("connectionError", sub.Relay.ConnectionError).Error("Relay error")
+		svc.logger.WithField("connectionError", sub.Relay.ConnectionError).Error("Relay error")
 		return sub.Relay.ConnectionError
 	}
-	svc.Logger.Info("Exiting subscription...")
+	svc.logger.Info("Exiting subscription...")
 	return nil
 }
 
@@ -317,7 +317,7 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, r
 	responseEvent := db.ResponseEvent{NostrId: resp.ID, RequestId: requestEvent.ID, Content: resp.Content, State: "received"}
 	err := svc.db.Create(&responseEvent).Error
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               appId,
 			"replyEventId":        resp.ID,
@@ -328,7 +328,7 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, r
 	err = sub.Relay.Publish(ctx, *resp)
 	if err != nil {
 		responseEvent.State = db.RESPONSE_EVENT_STATE_PUBLISH_FAILED
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventId":       requestEvent.ID,
 			"requestNostrEventId":  requestEvent.NostrId,
 			"appId":                appId,
@@ -338,7 +338,7 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, r
 	} else {
 		responseEvent.State = db.RESPONSE_EVENT_STATE_PUBLISH_CONFIRMED
 		responseEvent.RepliedAt = time.Now()
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventId":       requestEvent.ID,
 			"requestNostrEventId":  requestEvent.NostrId,
 			"appId":                appId,
@@ -349,7 +349,7 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, r
 
 	err = svc.db.Save(&responseEvent).Error
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventId":       requestEvent.ID,
 			"requestNostrEventId":  requestEvent.NostrId,
 			"appId":                appId,
@@ -364,7 +364,7 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, r
 
 func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, event *nostr.Event) {
 	var nip47Response *nip47.Response
-	svc.Logger.WithFields(logrus.Fields{
+	svc.logger.WithFields(logrus.Fields{
 		"requestEventNostrId": event.ID,
 		"eventKind":           event.Kind,
 	}).Info("Processing Event")
@@ -373,7 +373,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	requestEvent := db.RequestEvent{}
 	findEventResult := svc.db.Where("nostr_id = ?", event.ID).Find(&requestEvent)
 	if findEventResult.RowsAffected != 0 {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
 		}).Warn("Event already processed")
 		return
@@ -381,7 +381,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 
 	ss, err := nip04.ComputeSharedSecret(event.PubKey, svc.cfg.GetNostrSecretKey())
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
 			"eventKind":           event.Kind,
 		}).Errorf("Failed to compute shared secret: %v", err)
@@ -392,7 +392,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	requestEvent = db.RequestEvent{AppId: nil, NostrId: event.ID, Content: event.Content, State: db.REQUEST_EVENT_STATE_HANDLER_EXECUTING}
 	err = svc.db.Create(&requestEvent).Error
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
 			"eventKind":           event.Kind,
 		}).Errorf("Failed to save nostr event: %v", err)
@@ -404,7 +404,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		}
 		resp, err := svc.createResponse(event, nip47Response, nostr.Tags{}, ss)
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"requestEventNostrId": event.ID,
 				"eventKind":           event.Kind,
 			}).Errorf("Failed to process event: %v", err)
@@ -418,7 +418,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		NostrPubkey: event.PubKey,
 	}).Error
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"nostrPubkey": event.PubKey,
 		}).Errorf("Failed to find app for nostr pubkey: %v", err)
 
@@ -430,7 +430,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		}
 		resp, err := svc.createResponse(event, nip47Response, nostr.Tags{}, ss)
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"requestEventNostrId": event.ID,
 				"eventKind":           event.Kind,
 			}).Errorf("Failed to process event: %v", err)
@@ -440,7 +440,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"nostrPubkey": event.PubKey,
 			}).Errorf("Failed to save state to nostr event: %v", err)
 		}
@@ -450,7 +450,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	requestEvent.AppId = &app.ID
 	err = svc.db.Save(&requestEvent).Error
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"nostrPubkey": event.PubKey,
 		}).Errorf("Failed to save app to nostr event: %v", err)
 
@@ -462,7 +462,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		}
 		resp, err := svc.createResponse(event, nip47Response, nostr.Tags{}, ss)
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"requestEventNostrId": event.ID,
 				"eventKind":           event.Kind,
 			}).Errorf("Failed to process event: %v", err)
@@ -472,7 +472,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"nostrPubkey": event.PubKey,
 			}).Errorf("Failed to save state to nostr event: %v", err)
 		}
@@ -480,7 +480,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		return
 	}
 
-	svc.Logger.WithFields(logrus.Fields{
+	svc.logger.WithFields(logrus.Fields{
 		"requestEventNostrId": event.ID,
 		"eventKind":           event.Kind,
 		"appId":               app.ID,
@@ -489,7 +489,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	//to be extra safe, decrypt using the key found from the app
 	ss, err = nip04.ComputeSharedSecret(app.NostrPubkey, svc.cfg.GetNostrSecretKey())
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
 			"eventKind":           event.Kind,
 		}).Errorf("Failed to process event: %v", err)
@@ -497,7 +497,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"nostrPubkey": event.PubKey,
 			}).Errorf("Failed to save state to nostr event: %v", err)
 		}
@@ -506,12 +506,12 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	}
 	payload, err := nip04.Decrypt(event.Content, ss)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
 			"eventKind":           event.Kind,
 			"appId":               app.ID,
 		}).Errorf("Failed to decrypt content: %v", err)
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
 			"eventKind":           event.Kind,
 		}).Errorf("Failed to process event: %v", err)
@@ -519,7 +519,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"nostrPubkey": event.PubKey,
 			}).Errorf("Failed to save state to nostr event: %v", err)
 		}
@@ -529,7 +529,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	nip47Request := &nip47.Request{}
 	err = json.Unmarshal([]byte(payload), nip47Request)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
 			"eventKind":           event.Kind,
 		}).Errorf("Failed to process event: %v", err)
@@ -537,7 +537,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"nostrPubkey": event.PubKey,
 			}).Errorf("Failed to save state to nostr event: %v", err)
 		}
@@ -550,7 +550,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	publishResponse := func(nip47Response *nip47.Response, tags nostr.Tags) {
 		resp, err := svc.createResponse(event, nip47Response, tags, ss)
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"requestEventNostrId": event.ID,
 				"eventKind":           event.Kind,
 			}).Errorf("Failed to create response: %v", err)
@@ -558,7 +558,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		} else {
 			err = svc.PublishEvent(ctx, sub, &requestEvent, resp, &app)
 			if err != nil {
-				svc.Logger.WithFields(logrus.Fields{
+				svc.logger.WithFields(logrus.Fields{
 					"requestEventNostrId": event.ID,
 					"eventKind":           event.Kind,
 				}).Errorf("Failed to publish event: %v", err)
@@ -569,7 +569,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		}
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"nostrPubkey": event.PubKey,
 			}).Errorf("Failed to save state to nostr event: %v", err)
 		}
@@ -658,7 +658,7 @@ func (svc *Service) GetMethods(app *db.App) []string {
 func (svc *Service) decodeNip47Request(nip47Request *nip47.Request, requestEvent *db.RequestEvent, app *db.App, methodParams interface{}) *nip47.Response {
 	err := json.Unmarshal(nip47Request.Params, methodParams)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 		}).Errorf("Failed to decode nostr event: %v", err)
@@ -675,14 +675,14 @@ func (svc *Service) decodeNip47Request(nip47Request *nip47.Request, requestEvent
 func (svc *Service) checkPermission(nip47Request *nip47.Request, requestNostrEventId string, app *db.App, amount int64) *nip47.Response {
 	hasPermission, code, message := svc.hasPermission(app, nip47Request.Method, amount)
 	if !hasPermission {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestNostrEventId,
 			"appId":               app.ID,
 			"code":                code,
 			"message":             message,
 		}).Error("App does not have permission")
 
-		svc.EventPublisher.Publish(&events.Event{
+		svc.eventPublisher.Publish(&events.Event{
 			Event: "nwc_permission_denied",
 			Properties: map[string]interface{}{
 				"request_method": nip47Request.Method,
@@ -721,7 +721,7 @@ func (svc *Service) hasPermission(app *db.App, requestMethod string, amount int6
 	}
 	expiresAt := appPermission.ExpiresAt
 	if expiresAt != nil && expiresAt.Before(time.Now()) {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestMethod": requestMethod,
 			"expiresAt":     expiresAt.Unix(),
 			"appId":         app.ID,

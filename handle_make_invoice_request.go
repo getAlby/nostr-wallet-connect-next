@@ -24,7 +24,7 @@ func (svc *Service) HandleMakeInvoiceEvent(ctx context.Context, nip47Request *ni
 		return
 	}
 
-	svc.Logger.WithFields(logrus.Fields{
+	svc.logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 		"amount":              makeInvoiceParams.Amount,
@@ -40,7 +40,7 @@ func (svc *Service) HandleMakeInvoiceEvent(ctx context.Context, nip47Request *ni
 
 	transaction, err := svc.lnClient.MakeInvoice(ctx, makeInvoiceParams.Amount, makeInvoiceParams.Description, makeInvoiceParams.DescriptionHash, expiry)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 			"amount":              makeInvoiceParams.Amount,

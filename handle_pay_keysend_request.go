@@ -38,7 +38,7 @@ func (svc *Service) HandlePayKeysendEvent(ctx context.Context, nip47Request *nip
 		return
 	}
 
-	svc.Logger.WithFields(logrus.Fields{
+	svc.logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 		"senderPubkey":        payParams.Pubkey,
@@ -46,12 +46,12 @@ func (svc *Service) HandlePayKeysendEvent(ctx context.Context, nip47Request *nip
 
 	preimage, err := svc.lnClient.SendKeysend(ctx, payParams.Amount, payParams.Pubkey, payParams.Preimage, payParams.TLVRecords)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 			"recipientPubkey":     payParams.Pubkey,
 		}).Infof("Failed to send payment: %v", err)
-		svc.EventPublisher.Publish(&events.Event{
+		svc.eventPublisher.Publish(&events.Event{
 			Event: "nwc_payment_failed",
 			Properties: map[string]interface{}{
 				// "error":   fmt.Sprintf("%v", err),
@@ -70,7 +70,7 @@ func (svc *Service) HandlePayKeysendEvent(ctx context.Context, nip47Request *nip
 	}
 	payment.Preimage = &preimage
 	svc.db.Save(&payment)
-	svc.EventPublisher.Publish(&events.Event{
+	svc.eventPublisher.Publish(&events.Event{
 		Event: "nwc_payment_succeeded",
 		Properties: map[string]interface{}{
 			"keysend": true,

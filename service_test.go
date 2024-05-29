@@ -1225,8 +1225,8 @@ func createTestService(ln *MockLn) (svc *Service, err error) {
 		cfg:            cfg,
 		db:             gormDb,
 		lnClient:       ln,
-		Logger:         logger,
-		EventPublisher: events.NewEventPublisher(logger),
+		logger:         logger,
+		eventPublisher: events.NewEventPublisher(logger),
 	}, nil
 }
 

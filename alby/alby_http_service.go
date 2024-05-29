@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/getAlby/nostr-wallet-connect/config"
-	models "github.com/getAlby/nostr-wallet-connect/http"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -38,7 +37,7 @@ func (albyHttpSvc *AlbyHttpService) albyCallbackHandler(c echo.Context) error {
 	err := albyHttpSvc.albyOAuthSvc.CallbackHandler(c.Request().Context(), code)
 	if err != nil {
 		albyHttpSvc.logger.WithError(err).Error("Failed to handle Alby OAuth callback")
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Message: fmt.Sprintf("Failed to handle Alby OAuth callback: %s", err.Error()),
 		})
 	}
@@ -61,7 +60,7 @@ func (albyHttpSvc *AlbyHttpService) albyMeHandler(c echo.Context) error {
 	me, err := albyHttpSvc.albyOAuthSvc.GetMe(c.Request().Context())
 	if err != nil {
 		albyHttpSvc.logger.WithError(err).Error("Failed to request alby me endpoint")
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Message: fmt.Sprintf("Failed to request alby me endpoint: %s", err.Error()),
 		})
 	}
@@ -73,7 +72,7 @@ func (albyHttpSvc *AlbyHttpService) albyBalanceHandler(c echo.Context) error {
 	balance, err := albyHttpSvc.albyOAuthSvc.GetBalance(c.Request().Context())
 	if err != nil {
 		albyHttpSvc.logger.WithError(err).Error("Failed to request alby balance endpoint")
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Message: fmt.Sprintf("Failed to request alby balance endpoint: %s", err.Error()),
 		})
 	}
@@ -86,7 +85,7 @@ func (albyHttpSvc *AlbyHttpService) albyBalanceHandler(c echo.Context) error {
 func (albyHttpSvc *AlbyHttpService) albyPayHandler(c echo.Context) error {
 	var payRequest AlbyPayRequest
 	if err := c.Bind(&payRequest); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+		return c.JSON(http.StatusBadRequest, ErrorResponse{
 			Message: fmt.Sprintf("Bad request: %s", err.Error()),
 		})
 	}
@@ -94,7 +93,7 @@ func (albyHttpSvc *AlbyHttpService) albyPayHandler(c echo.Context) error {
 	err := albyHttpSvc.albyOAuthSvc.SendPayment(c.Request().Context(), payRequest.Invoice)
 	if err != nil {
 		albyHttpSvc.logger.WithError(err).Error("Failed to request alby pay endpoint")
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Message: fmt.Sprintf("Failed to request alby pay endpoint: %s", err.Error()),
 		})
 	}

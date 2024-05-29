@@ -21,14 +21,14 @@ func (svc *Service) HandleGetBalanceEvent(ctx context.Context, nip47Request *nip
 		return
 	}
 
-	svc.Logger.WithFields(logrus.Fields{
+	svc.logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 	}).Info("Fetching balance")
 
 	balance, err := svc.lnClient.GetBalance(ctx)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 		}).Infof("Failed to fetch balance: %v", err)

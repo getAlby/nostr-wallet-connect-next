@@ -36,7 +36,7 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request
 			bolt11 = strings.ToLower(bolt11)
 			paymentRequest, err := decodepay.Decodepay(bolt11)
 			if err != nil {
-				svc.Logger.WithFields(logrus.Fields{
+				svc.logger.WithFields(logrus.Fields{
 					"requestEventNostrId": requestEvent.NostrId,
 					"appId":               app.ID,
 					"bolt11":              bolt11,
@@ -71,7 +71,7 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request
 			insertPaymentResult := svc.db.Create(&payment)
 			mu.Unlock()
 			if insertPaymentResult.Error != nil {
-				svc.Logger.WithFields(logrus.Fields{
+				svc.logger.WithFields(logrus.Fields{
 					"requestEventNostrId": requestEvent.NostrId,
 					"paymentRequest":      bolt11,
 					"invoiceId":           invoiceInfo.Id,
@@ -79,7 +79,7 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request
 				return
 			}
 
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"requestEventNostrId": requestEvent.NostrId,
 				"appId":               app.ID,
 				"bolt11":              bolt11,
@@ -87,13 +87,13 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request
 
 			response, err := svc.lnClient.SendPaymentSync(ctx, bolt11)
 			if err != nil {
-				svc.Logger.WithFields(logrus.Fields{
+				svc.logger.WithFields(logrus.Fields{
 					"requestEventNostrId": requestEvent.NostrId,
 					"appId":               app.ID,
 					"bolt11":              bolt11,
 				}).Infof("Failed to send payment: %v", err)
 
-				svc.EventPublisher.Publish(&events.Event{
+				svc.eventPublisher.Publish(&events.Event{
 					Event: "nwc_payment_failed",
 					Properties: map[string]interface{}{
 						// "error":   fmt.Sprintf("%v", err),
@@ -118,7 +118,7 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request
 			mu.Lock()
 			svc.db.Save(&payment)
 			mu.Unlock()
-			svc.EventPublisher.Publish(&events.Event{
+			svc.eventPublisher.Publish(&events.Event{
 				Event: "nwc_payment_succeeded",
 				Properties: map[string]interface{}{
 					"multi":  true,

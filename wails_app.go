@@ -24,7 +24,7 @@ type WailsApp struct {
 func NewApp(svc *Service) *WailsApp {
 	return &WailsApp{
 		svc: svc,
-		api: api.NewAPI(svc, svc.Logger, svc.db),
+		api: api.NewAPI(svc, svc.logger, svc.db),
 	}
 }
 
@@ -35,7 +35,7 @@ func (app *WailsApp) startup(ctx context.Context) {
 }
 
 func LaunchWailsApp(app *WailsApp) {
-	logger := NewWailsLogger(app.svc.Logger)
+	logger := NewWailsLogger(app.svc.logger)
 
 	err := wails.Run(&options.App{
 		Title:  "Nostr Wallet Connect",

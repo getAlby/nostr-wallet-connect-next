@@ -27,7 +27,7 @@ func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *
 		return
 	}
 
-	svc.Logger.WithFields(logrus.Fields{
+	svc.logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 		"invoice":             lookupInvoiceParams.Invoice,
@@ -39,7 +39,7 @@ func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *
 	if paymentHash == "" {
 		paymentRequest, err := decodepay.Decodepay(strings.ToLower(lookupInvoiceParams.Invoice))
 		if err != nil {
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"requestEventNostrId": requestEvent.NostrId,
 				"appId":               app.ID,
 				"invoice":             lookupInvoiceParams.Invoice,
@@ -59,7 +59,7 @@ func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *
 
 	transaction, err := svc.lnClient.LookupInvoice(ctx, paymentHash)
 	if err != nil {
-		svc.Logger.WithFields(logrus.Fields{
+		svc.logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 			"invoice":             lookupInvoiceParams.Invoice,

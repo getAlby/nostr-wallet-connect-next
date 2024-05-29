@@ -44,7 +44,7 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 			insertPaymentResult := svc.db.Create(&payment)
 			mu.Unlock()
 			if insertPaymentResult.Error != nil {
-				svc.Logger.WithFields(logrus.Fields{
+				svc.logger.WithFields(logrus.Fields{
 					"requestEventNostrId": requestEvent.NostrId,
 					"recipientPubkey":     keysendInfo.Pubkey,
 					"keysendId":           keysendInfo.Id,
@@ -52,7 +52,7 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 				return
 			}
 
-			svc.Logger.WithFields(logrus.Fields{
+			svc.logger.WithFields(logrus.Fields{
 				"requestEventNostrId": requestEvent.NostrId,
 				"appId":               app.ID,
 				"recipientPubkey":     keysendInfo.Pubkey,
@@ -60,12 +60,12 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 
 			preimage, err := svc.lnClient.SendKeysend(ctx, keysendInfo.Amount, keysendInfo.Pubkey, keysendInfo.Preimage, keysendInfo.TLVRecords)
 			if err != nil {
-				svc.Logger.WithFields(logrus.Fields{
+				svc.logger.WithFields(logrus.Fields{
 					"requestEventNostrId": requestEvent.NostrId,
 					"appId":               app.ID,
 					"recipientPubkey":     keysendInfo.Pubkey,
 				}).Infof("Failed to send payment: %v", err)
-				svc.EventPublisher.Publish(&events.Event{
+				svc.eventPublisher.Publish(&events.Event{
 					Event: "nwc_payment_failed",
 					Properties: map[string]interface{}{
 						// "error":   fmt.Sprintf("%v", err),
@@ -88,7 +88,7 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 			mu.Lock()
 			svc.db.Save(&payment)
 			mu.Unlock()
-			svc.EventPublisher.Publish(&events.Event{
+			svc.eventPublisher.Publish(&events.Event{
 				Event: "nwc_payment_succeeded",
 				Properties: map[string]interface{}{
 					"keysend": true,
