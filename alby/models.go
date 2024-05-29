@@ -26,3 +26,31 @@ type AlbyBalanceResponse struct {
 type AlbyPayRequest struct {
 	Invoice string `json:"invoice"`
 }
+
+type AlbyMe struct {
+	Identifier       string `json:"identifier"`
+	NPub             string `json:"nostr_pubkey"`
+	LightningAddress string `json:"lightning_address"`
+	Email            string `json:"email"`
+	Name             string `json:"name"`
+	Avatar           string `json:"avatar"`
+	KeysendPubkey    string `json:"keysend_pubkey"`
+	SharedNode       bool   `json:"shared_node"`
+}
+
+type AlbyBalance struct {
+	Balance  int64  `json:"balance"`
+	Unit     string `json:"unit"`
+	Currency string `json:"currency"`
+}
+
+type ChannelPeerSuggestion struct {
+	Network            string `json:"network"`
+	PaymentMethod      string `json:"paymentMethod"`
+	Pubkey             string `json:"pubkey"`
+	Host               string `json:"host"`
+	MinimumChannelSize uint64 `json:"minimumChannelSize"`
+	Name               string `json:"name"`
+	Image              string `json:"image"`
+	Lsp                string `json:"lsp"`
+}
