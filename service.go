@@ -225,6 +225,8 @@ func (svc *Service) launchLNBackend(ctx context.Context, encryptionKey string) e
 		BreezWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "breez")
 
 		lnClient, err = NewBreezService(svc.Logger, Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
+	case config.PhoenixBackendType:
+		lnClient, err = NewPhoenixService(svc, svc.cfg.GetEnv().PhoenixdAddress, svc.cfg.GetEnv().PhoenixdAuthorization)
 	default:
 		svc.Logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
 	}

@@ -480,7 +480,7 @@ func (api *api) GetInfo(ctx context.Context) (*InfoResponse, error) {
 	if api.svc.GetLNClient() != nil {
 		nodeInfo, err := api.svc.GetLNClient().GetInfo(ctx)
 		if err != nil {
-			api.logger.WithError(err).Error("Failed to get alby user identifier")
+			api.logger.WithError(err).Error("Failed to get nodeInfo")
 			return nil, err
 		}
 
