@@ -123,117 +123,122 @@ func (svc *PhoenixService) GetBalances(ctx context.Context) (*lnclient.BalancesR
 }
 
 func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
-	incomingQuery := url.Values{}
-	if from != 0 {
-		incomingQuery.Add("from", strconv.FormatUint(from*1000, 10))
-	}
-	if until != 0 {
-		incomingQuery.Add("to", strconv.FormatUint(until*1000, 10))
-	}
-	if limit != 0 {
-		incomingQuery.Add("limit", strconv.FormatUint(limit, 10))
-	}
-	if offset != 0 {
-		incomingQuery.Add("offset", strconv.FormatUint(offset, 10))
-	}
-	incomingQuery.Add("all", strconv.FormatBool(unpaid))
-
-	incomingUrl := svc.Address + "/payments/incoming?" + incomingQuery.Encode()
-
-	svc.Logger.WithFields(logrus.Fields{
-		"url": incomingUrl,
-	}).Infof("Fetching incoming tranasctions: %s", incomingUrl)
-	incomingReq, err := http.NewRequest(http.MethodGet, incomingUrl, nil)
-	if err != nil {
-		return nil, err
-	}
-	incomingReq.Header.Add("Authorization", "Basic "+svc.Authorization)
+	transactions = []Nip47Transaction{}
 	client := &http.Client{Timeout: 5 * time.Second}
 
-	incomingResp, err := client.Do(incomingReq)
-	if err != nil {
-		return nil, err
-	}
-	defer incomingResp.Body.Close()
-
-	var incomingPayments []InvoiceResponse
-	if err := json.NewDecoder(incomingResp.Body).Decode(&incomingPayments); err != nil {
-		return nil, err
-	}
-	transactions = []Nip47Transaction{}
-	for _, invoice := range incomingPayments {
-		var settledAt *int64
-		if invoice.CompletedAt != 0 {
-			settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
-			settledAt = &settledAtUnix
+	if invoiceType == "" || invoiceType == "incoming" {
+		incomingQuery := url.Values{}
+		if from != 0 {
+			incomingQuery.Add("from", strconv.FormatUint(from*1000, 10))
 		}
-		transaction := Nip47Transaction{
-			Type:        "incoming",
-			Invoice:     invoice.Invoice,
-			Preimage:    invoice.Preimage,
-			PaymentHash: invoice.PaymentHash,
-			Amount:      invoice.ReceivedSat * 1000,
-			FeesPaid:    invoice.Fees * 1000,
-			CreatedAt:   time.UnixMilli(invoice.CreatedAt).Unix(),
-			Description: invoice.Description,
-			SettledAt:   settledAt,
+		if until != 0 {
+			incomingQuery.Add("to", strconv.FormatUint(until*1000, 10))
 		}
-		transactions = append(transactions, transaction)
-	}
-
-	// get outgoing payments
-	outgoingQuery := url.Values{}
-	if from != 0 {
-		outgoingQuery.Add("from", strconv.FormatUint(from*1000, 10))
-	}
-	if until != 0 {
-		outgoingQuery.Add("to", strconv.FormatUint(until*1000, 10))
-	}
-	if limit != 0 {
-		outgoingQuery.Add("limit", strconv.FormatUint(limit, 10))
-	}
-	if offset != 0 {
-		outgoingQuery.Add("offset", strconv.FormatUint(offset, 10))
-	}
-	outgoingQuery.Add("all", strconv.FormatBool(unpaid))
-
-	outgoingUrl := svc.Address + "/payments/outgoing?" + outgoingQuery.Encode()
-
-	svc.Logger.WithFields(logrus.Fields{
-		"url": outgoingUrl,
-	}).Infof("Fetching outgoing tranasctions: %s", outgoingUrl)
-	outgoingReq, err := http.NewRequest(http.MethodGet, outgoingUrl, nil)
-	if err != nil {
-		return nil, err
-	}
-	outgoingReq.Header.Add("Authorization", "Basic "+svc.Authorization)
-	outgoingResp, err := client.Do(outgoingReq)
-	if err != nil {
-		return nil, err
-	}
-	defer outgoingResp.Body.Close()
-
-	var outgoingPayments []OutgoingPaymentResponse
-	if err := json.NewDecoder(outgoingResp.Body).Decode(&outgoingPayments); err != nil {
-		return nil, err
-	}
-	for _, invoice := range outgoingPayments {
-		var settledAt *int64
-		if invoice.CompletedAt != 0 {
-			settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
-			settledAt = &settledAtUnix
+		if limit != 0 {
+			incomingQuery.Add("limit", strconv.FormatUint(limit, 10))
 		}
-		transaction := Nip47Transaction{
-			Type:        "outgoing",
-			Invoice:     invoice.Invoice,
-			Preimage:    invoice.Preimage,
-			PaymentHash: invoice.PaymentHash,
-			Amount:      invoice.Sent * 1000,
-			FeesPaid:    invoice.Fees * 1000,
-			CreatedAt:   time.UnixMilli(invoice.CreatedAt).Unix(),
-			SettledAt:   settledAt,
+		if offset != 0 {
+			incomingQuery.Add("offset", strconv.FormatUint(offset, 10))
 		}
-		transactions = append(transactions, transaction)
+		incomingQuery.Add("all", strconv.FormatBool(unpaid))
+
+		incomingUrl := svc.Address + "/payments/incoming?" + incomingQuery.Encode()
+
+		svc.Logger.WithFields(logrus.Fields{
+			"url": incomingUrl,
+		}).Infof("Fetching incoming tranasctions: %s", incomingUrl)
+		incomingReq, err := http.NewRequest(http.MethodGet, incomingUrl, nil)
+		if err != nil {
+			return nil, err
+		}
+		incomingReq.Header.Add("Authorization", "Basic "+svc.Authorization)
+
+		incomingResp, err := client.Do(incomingReq)
+		if err != nil {
+			return nil, err
+		}
+		defer incomingResp.Body.Close()
+
+		var incomingPayments []InvoiceResponse
+		if err := json.NewDecoder(incomingResp.Body).Decode(&incomingPayments); err != nil {
+			return nil, err
+		}
+		for _, invoice := range incomingPayments {
+			var settledAt *int64
+			if invoice.CompletedAt != 0 {
+				settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
+				settledAt = &settledAtUnix
+			}
+			transaction := Nip47Transaction{
+				Type:        "incoming",
+				Invoice:     invoice.Invoice,
+				Preimage:    invoice.Preimage,
+				PaymentHash: invoice.PaymentHash,
+				Amount:      invoice.ReceivedSat * 1000,
+				FeesPaid:    invoice.Fees * 1000,
+				CreatedAt:   time.UnixMilli(invoice.CreatedAt).Unix(),
+				Description: invoice.Description,
+				SettledAt:   settledAt,
+			}
+			transactions = append(transactions, transaction)
+		}
+	}
+
+	if invoiceType == "" || invoiceType == "outgoing" {
+		// get outgoing payments
+		outgoingQuery := url.Values{}
+		if from != 0 {
+			outgoingQuery.Add("from", strconv.FormatUint(from*1000, 10))
+		}
+		if until != 0 {
+			outgoingQuery.Add("to", strconv.FormatUint(until*1000, 10))
+		}
+		if limit != 0 {
+			outgoingQuery.Add("limit", strconv.FormatUint(limit, 10))
+		}
+		if offset != 0 {
+			outgoingQuery.Add("offset", strconv.FormatUint(offset, 10))
+		}
+		outgoingQuery.Add("all", strconv.FormatBool(unpaid))
+
+		outgoingUrl := svc.Address + "/payments/outgoing?" + outgoingQuery.Encode()
+
+		svc.Logger.WithFields(logrus.Fields{
+			"url": outgoingUrl,
+		}).Infof("Fetching outgoing tranasctions: %s", outgoingUrl)
+		outgoingReq, err := http.NewRequest(http.MethodGet, outgoingUrl, nil)
+		if err != nil {
+			return nil, err
+		}
+		outgoingReq.Header.Add("Authorization", "Basic "+svc.Authorization)
+		outgoingResp, err := client.Do(outgoingReq)
+		if err != nil {
+			return nil, err
+		}
+		defer outgoingResp.Body.Close()
+
+		var outgoingPayments []OutgoingPaymentResponse
+		if err := json.NewDecoder(outgoingResp.Body).Decode(&outgoingPayments); err != nil {
+			return nil, err
+		}
+		for _, invoice := range outgoingPayments {
+			var settledAt *int64
+			if invoice.CompletedAt != 0 {
+				settledAtUnix := time.UnixMilli(invoice.CompletedAt).Unix()
+				settledAt = &settledAtUnix
+			}
+			transaction := Nip47Transaction{
+				Type:        "outgoing",
+				Invoice:     invoice.Invoice,
+				Preimage:    invoice.Preimage,
+				PaymentHash: invoice.PaymentHash,
+				Amount:      invoice.Sent * 1000,
+				FeesPaid:    invoice.Fees * 1000,
+				CreatedAt:   time.UnixMilli(invoice.CreatedAt).Unix(),
+				SettledAt:   settledAt,
+			}
+			transactions = append(transactions, transaction)
+		}
 	}
 
 	// sort by created date descending
