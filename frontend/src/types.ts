@@ -137,7 +137,7 @@ export interface InfoResponse {
   running: boolean;
   unlocked: boolean;
   albyAuthUrl: string;
-  showBackupReminder: boolean;
+  nextBackupReminder: string;
   albyUserIdentifier: string;
   network?: Network;
 }

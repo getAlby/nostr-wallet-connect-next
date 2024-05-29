@@ -16,7 +16,6 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/backup"
-	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/lsp"
@@ -487,21 +486,7 @@ func (api *api) GetInfo(ctx context.Context) (*InfoResponse, error) {
 		info.Network = nodeInfo.Network
 	}
 
-	if info.BackendType != config.LNDBackendType {
-		nextBackupReminder, _ := api.svc.GetConfig().Get("NextBackupReminder", "")
-		var err error
-		parsedTime := time.Time{}
-		if nextBackupReminder != "" {
-			parsedTime, err = time.Parse(time.RFC3339, nextBackupReminder)
-			if err != nil {
-				api.logger.WithError(err).WithFields(logrus.Fields{
-					"nextBackupReminder": nextBackupReminder,
-				}).Error("Error parsing time")
-				return nil, err
-			}
-		}
-		info.ShowBackupReminder = parsedTime.IsZero() || parsedTime.Before(time.Now())
-	}
+	info.NextBackupReminder, _ = api.svc.GetConfig().Get("NextBackupReminder", "")
 
 	return &info, nil
 }

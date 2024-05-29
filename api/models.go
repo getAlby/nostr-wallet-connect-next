@@ -135,7 +135,7 @@ type InfoResponse struct {
 	Running              bool   `json:"running"`
 	Unlocked             bool   `json:"unlocked"`
 	AlbyAuthUrl          string `json:"albyAuthUrl"`
-	ShowBackupReminder   bool   `json:"showBackupReminder"`
+	NextBackupReminder   string `json:"nextBackupReminder"`
 	AlbyUserIdentifier   string `json:"albyUserIdentifier"`
 	AlbyAccountConnected bool   `json:"albyAccountConnected"`
 	Network              string `json:"network"`
