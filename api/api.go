@@ -478,18 +478,6 @@ func (api *api) GetInfo(ctx context.Context) (*InfoResponse, error) {
 	info.AlbyUserIdentifier = albyUserIdentifier
 	info.AlbyAccountConnected = api.svc.GetAlbyOAuthSvc().IsConnected(ctx)
 	if api.svc.GetLNClient() != nil {
-		// TODO: is there a better way to do this?
-		if backendType == config.BreezBackendType {
-			info.OnboardingCompleted = true
-		} else {
-			channels, err := api.ListChannels(ctx)
-			if err != nil {
-				api.logger.WithError(err).WithFields(logrus.Fields{}).Error("Failed to fetch channels")
-				return nil, err
-			}
-			info.OnboardingCompleted = len(channels) > 0
-		}
-
 		nodeInfo, err := api.svc.GetLNClient().GetInfo(ctx)
 		if err != nil {
 			api.logger.WithError(err).Error("Failed to get alby user identifier")
