@@ -7,8 +7,8 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/backup"
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/lsp"
-	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 )
 
 type API interface {

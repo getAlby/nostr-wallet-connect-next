@@ -12,8 +12,8 @@ import (
 
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 
+	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/lnd/wrapper"
-	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 
 	"github.com/sirupsen/logrus"

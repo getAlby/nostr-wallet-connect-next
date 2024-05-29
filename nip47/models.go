@@ -3,7 +3,7 @@ package nip47
 import (
 	"encoding/json"
 
-	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/lnclient"
 )
 
 const (

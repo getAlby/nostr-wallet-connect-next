@@ -1,6 +1,6 @@
 package greenlight
 
-import "github.com/getAlby/nostr-wallet-connect/models/lnclient"
+import "github.com/getAlby/nostr-wallet-connect/lnclient"
 
 type NodeInfo struct {
 	ID          string `json:"id"`

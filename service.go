@@ -32,13 +32,13 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/breez"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/greenlight"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/ldk"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/lnd"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/phoenixd"
 	"github.com/getAlby/nostr-wallet-connect/migrations"
-	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 

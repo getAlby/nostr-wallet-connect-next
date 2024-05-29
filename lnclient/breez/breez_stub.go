@@ -5,7 +5,7 @@ package breez
 import (
 	"github.com/sirupsen/logrus"
 
-	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/lnclient"
 )
 
 func NewBreezService(logger *logrus.Logger, mnemonic, apiKey, inviteCode, workDir string) (result lnclient.LNClient, err error) {
