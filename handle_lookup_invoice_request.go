@@ -63,6 +63,7 @@ func (svc *Service) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *
 			"appId":               app.ID,
 			"invoice":             lookupInvoiceParams.Invoice,
 			"paymentHash":         lookupInvoiceParams.PaymentHash,
+			"transaction":         transaction,
 		}).Infof("Failed to lookup invoice: %v", err)
 
 		publishResponse(&Nip47Response{
