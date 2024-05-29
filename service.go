@@ -66,7 +66,7 @@ type Service struct {
 // TODO: move to service.go
 func NewService(ctx context.Context) (*Service, error) {
 	// Load config from environment variables / .GetEnv() file
-	godotenv.Load(".GetEnv()")
+	godotenv.Load(".env")
 	appConfig := &config.AppConfig{}
 	err := envconfig.Process("", appConfig)
 	if err != nil {
