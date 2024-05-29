@@ -26,7 +26,9 @@ export default function ConnectPeer() {
     }
     try {
       const [pubkey, connectionDetails] = connectionString.split("@");
-      const [address, port] = connectionDetails.split(":");
+      const lastColonIndex = connectionDetails.lastIndexOf(":");
+      const address = connectionDetails.slice(0, lastColonIndex);
+      const port = connectionDetails.slice(lastColonIndex + 1);
       if (!pubkey || !address || !port) {
         throw new Error("connection details missing");
       }

@@ -412,7 +412,10 @@ function PayBitcoinChannelOrderWithSpendableFunds({
     const _host = nodeDetails?.sockets
       ? nodeDetails.sockets.split(",")[0]
       : host;
-    const [address, port] = _host.split(":");
+
+    const lastColonIndex = _host.lastIndexOf(":");
+    const address = _host.slice(0, lastColonIndex);
+    const port = _host.slice(lastColonIndex + 1);
     if (!address || !port) {
       throw new Error("host not found");
     }
@@ -526,9 +529,9 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
   const newChannel =
     channels && prevChannels
       ? channels.find(
-        (newChannel) =>
-          !prevChannels.some((current) => current.id === newChannel.id)
-      )
+          (newChannel) =>
+            !prevChannels.some((current) => current.id === newChannel.id)
+        )
       : undefined;
 
   React.useEffect(() => {
