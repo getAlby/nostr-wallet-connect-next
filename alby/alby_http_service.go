@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/getAlby/nostr-wallet-connect/config"
-	models "github.com/getAlby/nostr-wallet-connect/models/http"
+	models "github.com/getAlby/nostr-wallet-connect/http"
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )

@@ -17,8 +17,8 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	models "github.com/getAlby/nostr-wallet-connect/http"
 	"github.com/getAlby/nostr-wallet-connect/lsp"
-	models "github.com/getAlby/nostr-wallet-connect/models/http"
 
 	"github.com/getAlby/nostr-wallet-connect/api"
 	"github.com/getAlby/nostr-wallet-connect/frontend"
