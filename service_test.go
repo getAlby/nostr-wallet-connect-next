@@ -224,7 +224,7 @@ var mockNodeInfo = lnclient.NodeInfo{
 var mockTime = time.Unix(1693876963, 0)
 var mockTimeUnix = mockTime.Unix()
 
-var mockTransactions = []Nip47Transaction{
+var mockTransactions = []nip47.Nip47Transaction{
 	{
 		Type:            "incoming",
 		Invoice:         mockInvoice,
@@ -385,9 +385,9 @@ func TestCreateResponse(t *testing.T) {
 	ss, err := nip04.ComputeSharedSecret(reqPubkey, svc.cfg.GetNostrSecretKey())
 	assert.NoError(t, err)
 
-	nip47Response := &Nip47Response{
+	nip47Response := &nip47.Nip47Response{
 		ResultType: nip47.GET_BALANCE_METHOD,
-		Result: Nip47BalanceResponse{
+		Result: nip47.Nip47BalanceResponse{
 			Balance: 1000,
 		},
 	}
@@ -399,14 +399,14 @@ func TestCreateResponse(t *testing.T) {
 
 	decrypted, err := nip04.Decrypt(res.Content, ss)
 	assert.NoError(t, err)
-	unmarshalledResponse := Nip47Response{
-		Result: &Nip47BalanceResponse{},
+	unmarshalledResponse := nip47.Nip47Response{
+		Result: &nip47.Nip47BalanceResponse{},
 	}
 
 	err = json.Unmarshal([]byte(decrypted), &unmarshalledResponse)
 	assert.NoError(t, err)
 	assert.Equal(t, nip47Response.ResultType, unmarshalledResponse.ResultType)
-	assert.Equal(t, nip47Response.Result, *unmarshalledResponse.Result.(*Nip47BalanceResponse))
+	assert.Equal(t, nip47Response.Result, *unmarshalledResponse.Result.(*nip47.Nip47BalanceResponse))
 }
 
 func TestHandleEncryption(t *testing.T) {}
@@ -421,7 +421,7 @@ func TestHandleMultiPayInvoiceEvent(t *testing.T) {
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
-	request := &Nip47Request{}
+	request := &nip47.Nip47Request{}
 	err = json.Unmarshal([]byte(nip47MultiPayJson), request)
 	assert.NoError(t, err)
 
@@ -440,10 +440,10 @@ func TestHandleMultiPayInvoiceEvent(t *testing.T) {
 	reqEvent.ID = "multi_pay_invoice_without_permission"
 	requestEvent.NostrId = reqEvent.ID
 
-	responses := []*Nip47Response{}
+	responses := []*nip47.Nip47Response{}
 	dTags := []nostr.Tags{}
 
-	publishResponse := func(response *Nip47Response, tags nostr.Tags) {
+	publishResponse := func(response *nip47.Nip47Response, tags nostr.Tags) {
 		responses = append(responses, response)
 		dTags = append(dTags, tags)
 	}
@@ -474,13 +474,13 @@ func TestHandleMultiPayInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "multi_pay_invoice_with_permission"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	dTags = []nostr.Tags{}
 	svc.HandleMultiPayInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
 	assert.Equal(t, 2, len(responses))
 	for i := 0; i < len(responses); i++ {
-		assert.Equal(t, responses[i].Result.(Nip47PayResponse).Preimage, "123preimage")
+		assert.Equal(t, responses[i].Result.(nip47.Nip47PayResponse).Preimage, "123preimage")
 		assert.Equal(t, mockPaymentHash, dTags[i].GetFirst([]string{"d"}).Value())
 	}
 
@@ -494,7 +494,7 @@ func TestHandleMultiPayInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "multi_pay_invoice_with_one_malformed_invoice"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	dTags = []nostr.Tags{}
 	svc.HandleMultiPayInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
@@ -503,7 +503,7 @@ func TestHandleMultiPayInvoiceEvent(t *testing.T) {
 	assert.Equal(t, responses[0].Error.Code, nip47.ERROR_INTERNAL)
 
 	assert.Equal(t, mockPaymentHash, dTags[1].GetFirst([]string{"d"}).Value())
-	assert.Equal(t, responses[1].Result.(Nip47PayResponse).Preimage, "123preimage")
+	assert.Equal(t, responses[1].Result.(nip47.Nip47PayResponse).Preimage, "123preimage")
 
 	// we've spent 369 till here in three payments
 
@@ -521,7 +521,7 @@ func TestHandleMultiPayInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "multi_pay_invoice_with_budget_overflow"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	dTags = []nostr.Tags{}
 	svc.HandleMultiPayInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
@@ -530,7 +530,7 @@ func TestHandleMultiPayInvoiceEvent(t *testing.T) {
 	// publishResponse as it's called earlier
 	assert.Equal(t, responses[0].Error.Code, nip47.ERROR_QUOTA_EXCEEDED)
 	assert.Equal(t, mockPaymentHash500, dTags[0].GetFirst([]string{"d"}).Value())
-	assert.Equal(t, responses[1].Result.(Nip47PayResponse).Preimage, "123preimage")
+	assert.Equal(t, responses[1].Result.(nip47.Nip47PayResponse).Preimage, "123preimage")
 	assert.Equal(t, mockPaymentHash, dTags[1].GetFirst([]string{"d"}).Value())
 }
 
@@ -545,7 +545,7 @@ func TestHandleMultiPayKeysendEvent(t *testing.T) {
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
-	request := &Nip47Request{}
+	request := &nip47.Nip47Request{}
 	err = json.Unmarshal([]byte(nip47MultiPayKeysendJson), request)
 	assert.NoError(t, err)
 
@@ -564,10 +564,10 @@ func TestHandleMultiPayKeysendEvent(t *testing.T) {
 	reqEvent.ID = "multi_pay_keysend_without_permission"
 	requestEvent.NostrId = reqEvent.ID
 
-	responses := []*Nip47Response{}
+	responses := []*nip47.Nip47Response{}
 	dTags := []nostr.Tags{}
 
-	publishResponse := func(response *Nip47Response, tags nostr.Tags) {
+	publishResponse := func(response *nip47.Nip47Response, tags nostr.Tags) {
 		responses = append(responses, response)
 		dTags = append(dTags, tags)
 	}
@@ -599,13 +599,13 @@ func TestHandleMultiPayKeysendEvent(t *testing.T) {
 
 	reqEvent.ID = "multi_pay_keysend_with_permission"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	dTags = []nostr.Tags{}
 	svc.HandleMultiPayKeysendEvent(ctx, request, requestEvent, app, publishResponse)
 
 	assert.Equal(t, 2, len(responses))
 	for i := 0; i < len(responses); i++ {
-		assert.Equal(t, responses[i].Result.(Nip47PayResponse).Preimage, "12345preimage")
+		assert.Equal(t, responses[i].Result.(nip47.Nip47PayResponse).Preimage, "12345preimage")
 		assert.Equal(t, "123pubkey", dTags[i].GetFirst([]string{"d"}).Value())
 	}
 
@@ -625,13 +625,13 @@ func TestHandleMultiPayKeysendEvent(t *testing.T) {
 
 	reqEvent.ID = "multi_pay_keysend_with_budget_overflow"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	dTags = []nostr.Tags{}
 	svc.HandleMultiPayKeysendEvent(ctx, request, requestEvent, app, publishResponse)
 
 	assert.Equal(t, responses[0].Error.Code, nip47.ERROR_QUOTA_EXCEEDED)
 	assert.Equal(t, "500pubkey", dTags[0].GetFirst([]string{"d"}).Value())
-	assert.Equal(t, responses[1].Result.(Nip47PayResponse).Preimage, "12345preimage")
+	assert.Equal(t, responses[1].Result.(nip47.Nip47PayResponse).Preimage, "12345preimage")
 	assert.Equal(t, "customId", dTags[1].GetFirst([]string{"d"}).Value())
 }
 
@@ -645,7 +645,7 @@ func TestHandleGetBalanceEvent(t *testing.T) {
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
-	request := &Nip47Request{}
+	request := &nip47.Nip47Request{}
 	err = json.Unmarshal([]byte(nip47GetBalanceJson), request)
 	assert.NoError(t, err)
 
@@ -664,9 +664,9 @@ func TestHandleGetBalanceEvent(t *testing.T) {
 	reqEvent.ID = "test_get_balance_without_permission"
 	requestEvent.NostrId = reqEvent.ID
 
-	responses := []*Nip47Response{}
+	responses := []*nip47.Nip47Response{}
 
-	publishResponse := func(response *Nip47Response, tags nostr.Tags) {
+	publishResponse := func(response *nip47.Nip47Response, tags nostr.Tags) {
 		responses = append(responses, response)
 	}
 
@@ -690,10 +690,10 @@ func TestHandleGetBalanceEvent(t *testing.T) {
 
 	reqEvent.ID = "test_get_balance_with_permission"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandleGetBalanceEvent(ctx, request, requestEvent, app, publishResponse)
 
-	assert.Equal(t, responses[0].Result.(*Nip47BalanceResponse).Balance, int64(21000))
+	assert.Equal(t, responses[0].Result.(*nip47.Nip47BalanceResponse).Balance, int64(21000))
 
 	// create pay_invoice permission
 	maxAmount := 1000
@@ -710,12 +710,12 @@ func TestHandleGetBalanceEvent(t *testing.T) {
 	assert.NoError(t, err)
 
 	reqEvent.ID = "test_get_balance_with_budget"
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandleGetBalanceEvent(ctx, request, requestEvent, app, publishResponse)
 
-	assert.Equal(t, int64(21000), responses[0].Result.(*Nip47BalanceResponse).Balance)
-	assert.Equal(t, 1000000, responses[0].Result.(*Nip47BalanceResponse).MaxAmount)
-	assert.Equal(t, "never", responses[0].Result.(*Nip47BalanceResponse).BudgetRenewal)
+	assert.Equal(t, int64(21000), responses[0].Result.(*nip47.Nip47BalanceResponse).Balance)
+	assert.Equal(t, 1000000, responses[0].Result.(*nip47.Nip47BalanceResponse).MaxAmount)
+	assert.Equal(t, "never", responses[0].Result.(*nip47.Nip47BalanceResponse).BudgetRenewal)
 }
 
 func TestHandlePayInvoiceEvent(t *testing.T) {
@@ -728,7 +728,7 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
-	request := &Nip47Request{}
+	request := &nip47.Nip47Request{}
 	err = json.Unmarshal([]byte(nip47PayJson), request)
 	assert.NoError(t, err)
 
@@ -747,9 +747,9 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 	reqEvent.ID = "pay_invoice_without_permission"
 	requestEvent.NostrId = reqEvent.ID
 
-	responses := []*Nip47Response{}
+	responses := []*nip47.Nip47Response{}
 
-	publishResponse := func(response *Nip47Response, tags nostr.Tags) {
+	publishResponse := func(response *nip47.Nip47Response, tags nostr.Tags) {
 		responses = append(responses, response)
 	}
 
@@ -774,10 +774,10 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "pay_invoice_with_permission"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandlePayInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
-	assert.Equal(t, responses[0].Result.(Nip47PayResponse).Preimage, "123preimage")
+	assert.Equal(t, responses[0].Result.(nip47.Nip47PayResponse).Preimage, "123preimage")
 
 	// malformed invoice
 	err = json.Unmarshal([]byte(nip47PayJsonNoInvoice), request)
@@ -789,7 +789,7 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "pay_invoice_with_malformed_invoice"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandlePayInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
 	assert.Equal(t, nip47.ERROR_INTERNAL, responses[0].Error.Code)
@@ -804,7 +804,7 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "pay_invoice_with_wrong_request_method"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandlePayInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
 	assert.Equal(t, nip47.ERROR_RESTRICTED, responses[0].Error.Code)
@@ -823,7 +823,7 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "pay_invoice_with_budget_overflow"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandlePayInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
 	assert.Equal(t, nip47.ERROR_QUOTA_EXCEEDED, responses[0].Error.Code)
@@ -835,7 +835,7 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "pay_invoice_with_budget_expiry"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandlePayInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
 	assert.Equal(t, nip47.ERROR_EXPIRED, responses[0].Error.Code)
@@ -846,10 +846,10 @@ func TestHandlePayInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "pay_invoice_after_change"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandlePayInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
-	assert.Equal(t, responses[0].Result.(Nip47PayResponse).Preimage, "123preimage")
+	assert.Equal(t, responses[0].Result.(nip47.Nip47PayResponse).Preimage, "123preimage")
 }
 
 func TestHandlePayKeysendEvent(t *testing.T) {
@@ -862,7 +862,7 @@ func TestHandlePayKeysendEvent(t *testing.T) {
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
-	request := &Nip47Request{}
+	request := &nip47.Nip47Request{}
 	err = json.Unmarshal([]byte(nip47KeysendJson), request)
 	assert.NoError(t, err)
 
@@ -881,9 +881,9 @@ func TestHandlePayKeysendEvent(t *testing.T) {
 	reqEvent.ID = "pay_keysend_without_permission"
 	requestEvent.NostrId = reqEvent.ID
 
-	responses := []*Nip47Response{}
+	responses := []*nip47.Nip47Response{}
 
-	publishResponse := func(response *Nip47Response, tags nostr.Tags) {
+	publishResponse := func(response *nip47.Nip47Response, tags nostr.Tags) {
 		responses = append(responses, response)
 	}
 
@@ -911,10 +911,10 @@ func TestHandlePayKeysendEvent(t *testing.T) {
 
 	reqEvent.ID = "pay_keysend_with_permission"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandlePayKeysendEvent(ctx, request, requestEvent, app, publishResponse)
 
-	assert.Equal(t, responses[0].Result.(Nip47PayResponse).Preimage, "12345preimage")
+	assert.Equal(t, responses[0].Result.(nip47.Nip47PayResponse).Preimage, "12345preimage")
 
 	// budget overflow
 	newMaxAmount := 100
@@ -930,7 +930,7 @@ func TestHandlePayKeysendEvent(t *testing.T) {
 
 	reqEvent.ID = "pay_keysend_with_budget_overflow"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandlePayKeysendEvent(ctx, request, requestEvent, app, publishResponse)
 
 	assert.Equal(t, nip47.ERROR_QUOTA_EXCEEDED, responses[0].Error.Code)
@@ -946,7 +946,7 @@ func TestHandleLookupInvoiceEvent(t *testing.T) {
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
-	request := &Nip47Request{}
+	request := &nip47.Nip47Request{}
 	err = json.Unmarshal([]byte(nip47LookupInvoiceJson), request)
 	assert.NoError(t, err)
 
@@ -965,9 +965,9 @@ func TestHandleLookupInvoiceEvent(t *testing.T) {
 	reqEvent.ID = "test_lookup_invoice_without_permission"
 	requestEvent.NostrId = reqEvent.ID
 
-	responses := []*Nip47Response{}
+	responses := []*nip47.Nip47Response{}
 
-	publishResponse := func(response *Nip47Response, tags nostr.Tags) {
+	publishResponse := func(response *nip47.Nip47Response, tags nostr.Tags) {
 		responses = append(responses, response)
 	}
 
@@ -988,10 +988,10 @@ func TestHandleLookupInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "test_lookup_invoice_with_permission"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandleLookupInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
-	transaction := responses[0].Result.(*Nip47LookupInvoiceResponse)
+	transaction := responses[0].Result.(*nip47.Nip47LookupInvoiceResponse)
 	assert.Equal(t, mockTransaction.Type, transaction.Type)
 	assert.Equal(t, mockTransaction.Invoice, transaction.Invoice)
 	assert.Equal(t, mockTransaction.Description, transaction.Description)
@@ -1013,7 +1013,7 @@ func TestHandleMakeInvoiceEvent(t *testing.T) {
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
-	request := &Nip47Request{}
+	request := &nip47.Nip47Request{}
 	err = json.Unmarshal([]byte(nip47MakeInvoiceJson), request)
 	assert.NoError(t, err)
 
@@ -1032,9 +1032,9 @@ func TestHandleMakeInvoiceEvent(t *testing.T) {
 	reqEvent.ID = "test_make_invoice_without_permission"
 	requestEvent.NostrId = reqEvent.ID
 
-	responses := []*Nip47Response{}
+	responses := []*nip47.Nip47Response{}
 
-	publishResponse := func(response *Nip47Response, tags nostr.Tags) {
+	publishResponse := func(response *nip47.Nip47Response, tags nostr.Tags) {
 		responses = append(responses, response)
 	}
 
@@ -1055,10 +1055,10 @@ func TestHandleMakeInvoiceEvent(t *testing.T) {
 
 	reqEvent.ID = "test_make_invoice_with_permission"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandleMakeInvoiceEvent(ctx, request, requestEvent, app, publishResponse)
 
-	assert.Equal(t, mockTransaction.Preimage, responses[0].Result.(*Nip47MakeInvoiceResponse).Preimage)
+	assert.Equal(t, mockTransaction.Preimage, responses[0].Result.(*nip47.Nip47MakeInvoiceResponse).Preimage)
 }
 
 func TestHandleListTransactionsEvent(t *testing.T) {
@@ -1071,7 +1071,7 @@ func TestHandleListTransactionsEvent(t *testing.T) {
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
-	request := &Nip47Request{}
+	request := &nip47.Nip47Request{}
 	err = json.Unmarshal([]byte(nip47ListTransactionsJson), request)
 	assert.NoError(t, err)
 
@@ -1090,9 +1090,9 @@ func TestHandleListTransactionsEvent(t *testing.T) {
 	reqEvent.ID = "test_list_transactions_without_permission"
 	requestEvent.NostrId = reqEvent.ID
 
-	responses := []*Nip47Response{}
+	responses := []*nip47.Nip47Response{}
 
-	publishResponse := func(response *Nip47Response, tags nostr.Tags) {
+	publishResponse := func(response *nip47.Nip47Response, tags nostr.Tags) {
 		responses = append(responses, response)
 	}
 
@@ -1113,11 +1113,11 @@ func TestHandleListTransactionsEvent(t *testing.T) {
 
 	reqEvent.ID = "test_list_transactions_with_permission"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandleListTransactionsEvent(ctx, request, requestEvent, app, publishResponse)
 
-	assert.Equal(t, 2, len(responses[0].Result.(*Nip47ListTransactionsResponse).Transactions))
-	transaction := responses[0].Result.(*Nip47ListTransactionsResponse).Transactions[0]
+	assert.Equal(t, 2, len(responses[0].Result.(*nip47.Nip47ListTransactionsResponse).Transactions))
+	transaction := responses[0].Result.(*nip47.Nip47ListTransactionsResponse).Transactions[0]
 	assert.Equal(t, mockTransactions[0].Type, transaction.Type)
 	assert.Equal(t, mockTransactions[0].Invoice, transaction.Invoice)
 	assert.Equal(t, mockTransactions[0].Description, transaction.Description)
@@ -1139,7 +1139,7 @@ func TestHandleGetInfoEvent(t *testing.T) {
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
-	request := &Nip47Request{}
+	request := &nip47.Nip47Request{}
 	err = json.Unmarshal([]byte(nip47GetInfoJson), request)
 	assert.NoError(t, err)
 
@@ -1158,9 +1158,9 @@ func TestHandleGetInfoEvent(t *testing.T) {
 	reqEvent.ID = "test_get_info_without_permission"
 	requestEvent.NostrId = reqEvent.ID
 
-	responses := []*Nip47Response{}
+	responses := []*nip47.Nip47Response{}
 
-	publishResponse := func(response *Nip47Response, tags nostr.Tags) {
+	publishResponse := func(response *nip47.Nip47Response, tags nostr.Tags) {
 		responses = append(responses, response)
 	}
 
@@ -1180,10 +1180,10 @@ func TestHandleGetInfoEvent(t *testing.T) {
 
 	reqEvent.ID = "test_get_info_with_permission"
 	requestEvent.NostrId = reqEvent.ID
-	responses = []*Nip47Response{}
+	responses = []*nip47.Nip47Response{}
 	svc.HandleGetInfoEvent(ctx, request, requestEvent, app, publishResponse)
 
-	nodeInfo := responses[0].Result.(*Nip47GetInfoResponse)
+	nodeInfo := responses[0].Result.(*nip47.Nip47GetInfoResponse)
 	assert.Equal(t, mockNodeInfo.Alias, nodeInfo.Alias)
 	assert.Equal(t, mockNodeInfo.Color, nodeInfo.Color)
 	assert.Equal(t, mockNodeInfo.Pubkey, nodeInfo.Pubkey)
@@ -1258,8 +1258,8 @@ func NewMockLn() (*MockLn, error) {
 	return &MockLn{}, nil
 }
 
-func (mln *MockLn) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.Nip47PayInvoiceResponse, error) {
-	return &lnclient.Nip47PayInvoiceResponse{
+func (mln *MockLn) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.PayInvoiceResponse, error) {
+	return &lnclient.PayInvoiceResponse{
 		Preimage: "123preimage",
 	}, nil
 }
@@ -1276,15 +1276,15 @@ func (mln *MockLn) GetInfo(ctx context.Context) (info *lnclient.NodeInfo, err er
 	return &mockNodeInfo, nil
 }
 
-func (mln *MockLn) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *Nip47Transaction, err error) {
+func (mln *MockLn) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Nip47Transaction, err error) {
 	return mockTransaction, nil
 }
 
-func (mln *MockLn) LookupInvoice(ctx context.Context, paymentHash string) (transaction *Nip47Transaction, err error) {
+func (mln *MockLn) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Nip47Transaction, err error) {
 	return mockTransaction, nil
 }
 
-func (mln *MockLn) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (invoices []Nip47Transaction, err error) {
+func (mln *MockLn) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (invoices []nip47.Nip47Transaction, err error) {
 	return mockTransactions, nil
 }
 func (mln *MockLn) Shutdown() error {

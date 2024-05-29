@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (svc *Service) HandleGetInfoEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Nip47Response, nostr.Tags)) {
+func (svc *Service) HandleGetInfoEvent(ctx context.Context, nip47Request *nip47.Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Nip47Response, nostr.Tags)) {
 
 	resp := svc.checkPermission(nip47Request, requestEvent.NostrId, app, 0)
 	if resp != nil {
@@ -29,9 +29,9 @@ func (svc *Service) HandleGetInfoEvent(ctx context.Context, nip47Request *Nip47R
 			"appId":               app.ID,
 		}).Infof("Failed to fetch node info: %v", err)
 
-		publishResponse(&Nip47Response{
+		publishResponse(&nip47.Nip47Response{
 			ResultType: nip47Request.Method,
-			Error: &Nip47Error{
+			Error: &nip47.Nip47Error{
 				Code:    nip47.ERROR_INTERNAL,
 				Message: err.Error(),
 			},
@@ -45,7 +45,7 @@ func (svc *Service) HandleGetInfoEvent(ctx context.Context, nip47Request *Nip47R
 		network = "mainnet"
 	}
 
-	responsePayload := &Nip47GetInfoResponse{
+	responsePayload := &nip47.Nip47GetInfoResponse{
 		Alias:       info.Alias,
 		Color:       info.Color,
 		Pubkey:      info.Pubkey,
@@ -55,7 +55,7 @@ func (svc *Service) HandleGetInfoEvent(ctx context.Context, nip47Request *Nip47R
 		Methods:     svc.GetMethods(app),
 	}
 
-	publishResponse(&Nip47Response{
+	publishResponse(&nip47.Nip47Response{
 		ResultType: nip47Request.Method,
 		Result:     responsePayload,
 	}, nostr.Tags{})

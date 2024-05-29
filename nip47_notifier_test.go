@@ -60,15 +60,15 @@ func TestSendNotification(t *testing.T) {
 
 	decrypted, err := nip04.Decrypt(relay.publishedEvent.Content, ss)
 	assert.NoError(t, err)
-	unmarshalledResponse := Nip47Notification{
-		Notification: &Nip47PaymentReceivedNotification{},
+	unmarshalledResponse := nip47.Nip47Notification{
+		Notification: &nip47.Nip47PaymentReceivedNotification{},
 	}
 
 	err = json.Unmarshal([]byte(decrypted), &unmarshalledResponse)
 	assert.NoError(t, err)
 	assert.Equal(t, nip47.PAYMENT_RECEIVED_NOTIFICATION, unmarshalledResponse.NotificationType)
 
-	transaction := (unmarshalledResponse.Notification.(*Nip47PaymentReceivedNotification))
+	transaction := (unmarshalledResponse.Notification.(*nip47.Nip47PaymentReceivedNotification))
 	assert.Equal(t, mockTransaction.Type, transaction.Type)
 	assert.Equal(t, mockTransaction.Invoice, transaction.Invoice)
 	assert.Equal(t, mockTransaction.Description, transaction.Description)

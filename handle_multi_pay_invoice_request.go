@@ -15,9 +15,9 @@ import (
 )
 
 // TODO: pass a channel instead of publishResponse function
-func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Nip47Response, nostr.Tags)) {
+func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request *nip47.Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Nip47Response, nostr.Tags)) {
 
-	multiPayParams := &Nip47MultiPayInvoiceParams{}
+	multiPayParams := &nip47.Nip47MultiPayInvoiceParams{}
 	resp := svc.decodeNip47Request(nip47Request, requestEvent, app, multiPayParams)
 	if resp != nil {
 		publishResponse(resp, nostr.Tags{})
@@ -29,7 +29,7 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request
 	for _, invoiceInfo := range multiPayParams.Invoices {
 		wg.Add(1)
 		// TODO: we should call the handle_payment_request (most of this code is duplicated)
-		go func(invoiceInfo Nip47MultiPayInvoiceElement) {
+		go func(invoiceInfo nip47.Nip47MultiPayInvoiceElement) {
 			defer wg.Done()
 			bolt11 := invoiceInfo.Invoice
 			// Convert invoice to lowercase string
@@ -44,9 +44,9 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request
 
 				// TODO: Decide what to do if id is empty
 				dTag := []string{"d", invoiceInfo.Id}
-				publishResponse(&Nip47Response{
+				publishResponse(&nip47.Nip47Response{
 					ResultType: nip47Request.Method,
-					Error: &Nip47Error{
+					Error: &nip47.Nip47Error{
 						Code:    nip47.ERROR_INTERNAL,
 						Message: fmt.Sprintf("Failed to decode bolt11 invoice: %s", err.Error()),
 					},
@@ -103,9 +103,9 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request
 					},
 				})
 
-				publishResponse(&Nip47Response{
+				publishResponse(&nip47.Nip47Response{
 					ResultType: nip47Request.Method,
-					Error: &Nip47Error{
+					Error: &nip47.Nip47Error{
 						Code:    nip47.ERROR_INTERNAL,
 						Message: err.Error(),
 					},
@@ -125,9 +125,9 @@ func (svc *Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request
 					"amount": paymentRequest.MSatoshi / 1000,
 				},
 			})
-			publishResponse(&Nip47Response{
+			publishResponse(&nip47.Nip47Response{
 				ResultType: nip47Request.Method,
-				Result: Nip47PayResponse{
+				Result: nip47.Nip47PayResponse{
 					Preimage: response.Preimage,
 					FeesPaid: response.Fee,
 				},

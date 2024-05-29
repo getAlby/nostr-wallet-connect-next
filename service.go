@@ -323,7 +323,7 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, r
 
 	err = sub.Relay.Publish(ctx, *resp)
 	if err != nil {
-		responseEvent.State = RESPONSE_EVENT_STATE_PUBLISH_FAILED
+		responseEvent.State = db.RESPONSE_EVENT_STATE_PUBLISH_FAILED
 		svc.Logger.WithFields(logrus.Fields{
 			"requestEventId":       requestEvent.ID,
 			"requestNostrEventId":  requestEvent.NostrId,
@@ -332,7 +332,7 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, r
 			"responseNostrEventId": resp.ID,
 		}).Errorf("Failed to publish reply: %v", err)
 	} else {
-		responseEvent.State = RESPONSE_EVENT_STATE_PUBLISH_CONFIRMED
+		responseEvent.State = db.RESPONSE_EVENT_STATE_PUBLISH_CONFIRMED
 		responseEvent.RepliedAt = time.Now()
 		svc.Logger.WithFields(logrus.Fields{
 			"requestEventId":       requestEvent.ID,
@@ -359,7 +359,7 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, r
 }
 
 func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, event *nostr.Event) {
-	var nip47Response *Nip47Response
+	var nip47Response *nip47.Nip47Response
 	svc.Logger.WithFields(logrus.Fields{
 		"requestEventNostrId": event.ID,
 		"eventKind":           event.Kind,
@@ -385,15 +385,15 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	}
 
 	// store request event
-	requestEvent = db.RequestEvent{AppId: nil, NostrId: event.ID, Content: event.Content, State: REQUEST_EVENT_STATE_HANDLER_EXECUTING}
+	requestEvent = db.RequestEvent{AppId: nil, NostrId: event.ID, Content: event.Content, State: db.REQUEST_EVENT_STATE_HANDLER_EXECUTING}
 	err = svc.db.Create(&requestEvent).Error
 	if err != nil {
 		svc.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
 			"eventKind":           event.Kind,
 		}).Errorf("Failed to save nostr event: %v", err)
-		nip47Response = &Nip47Response{
-			Error: &Nip47Error{
+		nip47Response = &nip47.Nip47Response{
+			Error: &nip47.Nip47Error{
 				Code:    nip47.ERROR_INTERNAL,
 				Message: fmt.Sprintf("Failed to save nostr event: %s", err.Error()),
 			},
@@ -418,8 +418,8 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 			"nostrPubkey": event.PubKey,
 		}).Errorf("Failed to find app for nostr pubkey: %v", err)
 
-		nip47Response = &Nip47Response{
-			Error: &Nip47Error{
+		nip47Response = &nip47.Nip47Response{
+			Error: &nip47.Nip47Error{
 				Code:    nip47.ERROR_UNAUTHORIZED,
 				Message: "The public key does not have a wallet connected.",
 			},
@@ -433,7 +433,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		}
 		svc.PublishEvent(ctx, sub, &requestEvent, resp, &app)
 
-		requestEvent.State = REQUEST_EVENT_STATE_HANDLER_ERROR
+		requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
 			svc.Logger.WithFields(logrus.Fields{
@@ -450,8 +450,8 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 			"nostrPubkey": event.PubKey,
 		}).Errorf("Failed to save app to nostr event: %v", err)
 
-		nip47Response = &Nip47Response{
-			Error: &Nip47Error{
+		nip47Response = &nip47.Nip47Response{
+			Error: &nip47.Nip47Error{
 				Code:    nip47.ERROR_UNAUTHORIZED,
 				Message: fmt.Sprintf("Failed to save app to nostr event: %s", err.Error()),
 			},
@@ -465,7 +465,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		}
 		svc.PublishEvent(ctx, sub, &requestEvent, resp, &app)
 
-		requestEvent.State = REQUEST_EVENT_STATE_HANDLER_ERROR
+		requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
 			svc.Logger.WithFields(logrus.Fields{
@@ -490,7 +490,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 			"eventKind":           event.Kind,
 		}).Errorf("Failed to process event: %v", err)
 
-		requestEvent.State = REQUEST_EVENT_STATE_HANDLER_ERROR
+		requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
 			svc.Logger.WithFields(logrus.Fields{
@@ -512,7 +512,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 			"eventKind":           event.Kind,
 		}).Errorf("Failed to process event: %v", err)
 
-		requestEvent.State = REQUEST_EVENT_STATE_HANDLER_ERROR
+		requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
 			svc.Logger.WithFields(logrus.Fields{
@@ -522,7 +522,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 
 		return
 	}
-	nip47Request := &Nip47Request{}
+	nip47Request := &nip47.Nip47Request{}
 	err = json.Unmarshal([]byte(payload), nip47Request)
 	if err != nil {
 		svc.Logger.WithFields(logrus.Fields{
@@ -530,7 +530,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 			"eventKind":           event.Kind,
 		}).Errorf("Failed to process event: %v", err)
 
-		requestEvent.State = REQUEST_EVENT_STATE_HANDLER_ERROR
+		requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		err = svc.db.Save(&requestEvent).Error
 		if err != nil {
 			svc.Logger.WithFields(logrus.Fields{
@@ -543,14 +543,14 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 
 	// TODO: replace with a channel
 	// TODO: update all previous occurences of svc.PublishEvent to also use the channel
-	publishResponse := func(nip47Response *Nip47Response, tags nostr.Tags) {
+	publishResponse := func(nip47Response *nip47.Nip47Response, tags nostr.Tags) {
 		resp, err := svc.createResponse(event, nip47Response, tags, ss)
 		if err != nil {
 			svc.Logger.WithFields(logrus.Fields{
 				"requestEventNostrId": event.ID,
 				"eventKind":           event.Kind,
 			}).Errorf("Failed to create response: %v", err)
-			requestEvent.State = REQUEST_EVENT_STATE_HANDLER_ERROR
+			requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 		} else {
 			err = svc.PublishEvent(ctx, sub, &requestEvent, resp, &app)
 			if err != nil {
@@ -558,9 +558,9 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 					"requestEventNostrId": event.ID,
 					"eventKind":           event.Kind,
 				}).Errorf("Failed to publish event: %v", err)
-				requestEvent.State = REQUEST_EVENT_STATE_HANDLER_ERROR
+				requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
 			} else {
-				requestEvent.State = REQUEST_EVENT_STATE_HANDLER_EXECUTED
+				requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_EXECUTED
 			}
 		}
 		err = svc.db.Save(&requestEvent).Error
@@ -597,10 +597,10 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	}
 }
 
-func (svc *Service) handleUnknownMethod(ctx context.Context, nip47Request *Nip47Request, publishResponse func(*Nip47Response, nostr.Tags)) {
-	publishResponse(&Nip47Response{
+func (svc *Service) handleUnknownMethod(ctx context.Context, nip47Request *nip47.Nip47Request, publishResponse func(*nip47.Nip47Response, nostr.Tags)) {
+	publishResponse(&nip47.Nip47Response{
 		ResultType: nip47Request.Method,
-		Error: &Nip47Error{
+		Error: &nip47.Nip47Error{
 			Code:    nip47.ERROR_NOT_IMPLEMENTED,
 			Message: fmt.Sprintf("Unknown method: %s", nip47Request.Method),
 		},
@@ -651,16 +651,16 @@ func (svc *Service) GetMethods(app *db.App) []string {
 	return requestMethods
 }
 
-func (svc *Service) decodeNip47Request(nip47Request *Nip47Request, requestEvent *db.RequestEvent, app *db.App, methodParams interface{}) *Nip47Response {
+func (svc *Service) decodeNip47Request(nip47Request *nip47.Nip47Request, requestEvent *db.RequestEvent, app *db.App, methodParams interface{}) *nip47.Nip47Response {
 	err := json.Unmarshal(nip47Request.Params, methodParams)
 	if err != nil {
 		svc.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 		}).Errorf("Failed to decode nostr event: %v", err)
-		return &Nip47Response{
+		return &nip47.Nip47Response{
 			ResultType: nip47Request.Method,
-			Error: &Nip47Error{
+			Error: &nip47.Nip47Error{
 				Code:    nip47.ERROR_BAD_REQUEST,
 				Message: err.Error(),
 			}}
@@ -668,7 +668,7 @@ func (svc *Service) decodeNip47Request(nip47Request *Nip47Request, requestEvent 
 	return nil
 }
 
-func (svc *Service) checkPermission(nip47Request *Nip47Request, requestNostrEventId string, app *db.App, amount int64) *Nip47Response {
+func (svc *Service) checkPermission(nip47Request *nip47.Nip47Request, requestNostrEventId string, app *db.App, amount int64) *nip47.Nip47Response {
 	hasPermission, code, message := svc.hasPermission(app, nip47Request.Method, amount)
 	if !hasPermission {
 		svc.Logger.WithFields(logrus.Fields{
@@ -689,9 +689,9 @@ func (svc *Service) checkPermission(nip47Request *Nip47Request, requestNostrEven
 			},
 		})
 
-		return &Nip47Response{
+		return &nip47.Nip47Response{
 			ResultType: nip47Request.Method,
-			Error: &Nip47Error{
+			Error: &nip47.Nip47Error{
 				Code:    code,
 				Message: message,
 			},

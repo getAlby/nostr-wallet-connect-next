@@ -70,3 +70,14 @@ type Payment struct {
 type DBService interface {
 	CreateApp(name string, pubkey string, maxAmount int, budgetRenewal string, expiresAt *time.Time, requestMethods []string) (*App, string, error)
 }
+
+const (
+	REQUEST_EVENT_STATE_HANDLER_EXECUTING = "executing"
+	REQUEST_EVENT_STATE_HANDLER_EXECUTED  = "executed"
+	REQUEST_EVENT_STATE_HANDLER_ERROR     = "error"
+)
+const (
+	RESPONSE_EVENT_STATE_PUBLISH_CONFIRMED   = "confirmed"
+	RESPONSE_EVENT_STATE_PUBLISH_FAILED      = "failed"
+	RESPONSE_EVENT_STATE_PUBLISH_UNCONFIRMED = "unconfirmed"
+)

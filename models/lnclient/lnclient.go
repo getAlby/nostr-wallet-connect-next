@@ -42,7 +42,7 @@ type NodeConnectionInfo struct {
 }
 
 type LNClient interface {
-	SendPaymentSync(ctx context.Context, payReq string) (*Nip47PayInvoiceResponse, error)
+	SendPaymentSync(ctx context.Context, payReq string) (*PayInvoiceResponse, error)
 	SendKeysend(ctx context.Context, amount int64, destination, preimage string, customRecords []TLVRecord) (preImage string, err error)
 	GetBalance(ctx context.Context) (balance int64, err error)
 	GetInfo(ctx context.Context) (info *NodeInfo, err error)
@@ -133,7 +133,7 @@ type LightningBalanceResponse struct {
 	NextMaxReceivableMPP int64 `json:"nextMaxReceivableMPP"`
 }
 
-type Nip47PayInvoiceResponse struct {
+type PayInvoiceResponse struct {
 	Preimage string  `json:"preimage"`
 	Fee      *uint64 `json:"fee"`
 }

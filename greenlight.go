@@ -20,6 +20,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 
 type GreenlightService struct {
@@ -111,7 +112,7 @@ func (gs *GreenlightService) Shutdown() error {
 	return nil
 }
 
-func (gs *GreenlightService) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.Nip47PayInvoiceResponse, error) {
+func (gs *GreenlightService) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.PayInvoiceResponse, error) {
 	response, err := gs.client.Pay(glalby.PayRequest{
 		Bolt11: payReq,
 	})
@@ -121,7 +122,7 @@ func (gs *GreenlightService) SendPaymentSync(ctx context.Context, payReq string)
 		return nil, err
 	}
 	log.Printf("SendPaymentSync succeeded: %v", response.Preimage)
-	return &lnclient.Nip47PayInvoiceResponse{
+	return &lnclient.PayInvoiceResponse{
 		Preimage: response.Preimage,
 	}, nil
 }
@@ -171,7 +172,7 @@ func (gs *GreenlightService) GetBalance(ctx context.Context) (balance int64, err
 	return balance, nil
 }
 
-func (gs *GreenlightService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *Nip47Transaction, err error) {
+func (gs *GreenlightService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Nip47Transaction, err error) {
 	uexpiry := uint64(expiry)
 	// TODO: it seems description hash cannot be passed to greenlight
 	invoice, err := gs.client.MakeInvoice(glalby.MakeInvoiceRequest{
@@ -197,7 +198,7 @@ func (gs *GreenlightService) MakeInvoice(ctx context.Context, amount int64, desc
 	description = paymentRequest.Description
 	descriptionHash = paymentRequest.DescriptionHash
 	expiresAt := int64(invoice.ExpiresAt)
-	transaction = &Nip47Transaction{
+	transaction = &nip47.Nip47Transaction{
 		Type:            "incoming",
 		Invoice:         invoice.Bolt11,
 		Description:     description,
@@ -211,7 +212,7 @@ func (gs *GreenlightService) MakeInvoice(ctx context.Context, amount int64, desc
 	return transaction, nil
 }
 
-func (gs *GreenlightService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *Nip47Transaction, err error) {
+func (gs *GreenlightService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Nip47Transaction, err error) {
 	response, err := gs.client.ListInvoices(glalby.ListInvoicesRequest{
 		PaymentHash: &paymentHash,
 	})
@@ -240,7 +241,7 @@ func (gs *GreenlightService) LookupInvoice(ctx context.Context, paymentHash stri
 	return transaction, nil
 }
 
-func (gs *GreenlightService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
+func (gs *GreenlightService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Nip47Transaction, err error) {
 	listInvoicesResponse, err := gs.client.ListInvoices(glalby.ListInvoicesRequest{})
 
 	if err != nil {
@@ -248,7 +249,7 @@ func (gs *GreenlightService) ListTransactions(ctx context.Context, from, until, 
 		return nil, err
 	}
 
-	transactions = []Nip47Transaction{}
+	transactions = []nip47.Nip47Transaction{}
 
 	if err != nil {
 		log.Printf("ListInvoices failed: %v", err)
@@ -542,7 +543,7 @@ func (gs *GreenlightService) SignMessage(ctx context.Context, message string) (s
 	return response.Zbase, nil
 }
 
-func (gs *GreenlightService) greenlightInvoiceToTransaction(invoice *glalby.ListInvoicesInvoice) (*Nip47Transaction, error) {
+func (gs *GreenlightService) greenlightInvoiceToTransaction(invoice *glalby.ListInvoicesInvoice) (*nip47.Nip47Transaction, error) {
 	description := ""
 	descriptionHash := ""
 	if invoice.Description != nil {
@@ -580,7 +581,7 @@ func (gs *GreenlightService) greenlightInvoiceToTransaction(invoice *glalby.List
 		settledAt = &paidAt
 	}
 
-	transaction := &Nip47Transaction{
+	transaction := &nip47.Nip47Transaction{
 		Type:            "incoming",
 		Invoice:         bolt11,
 		Description:     description,

@@ -9,9 +9,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (svc *Service) HandleMakeInvoiceEvent(ctx context.Context, nip47Request *Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Nip47Response, nostr.Tags)) {
+func (svc *Service) HandleMakeInvoiceEvent(ctx context.Context, nip47Request *nip47.Nip47Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Nip47Response, nostr.Tags)) {
 
-	makeInvoiceParams := &Nip47MakeInvoiceParams{}
+	makeInvoiceParams := &nip47.Nip47MakeInvoiceParams{}
 	resp := svc.decodeNip47Request(nip47Request, requestEvent, app, makeInvoiceParams)
 	if resp != nil {
 		publishResponse(resp, nostr.Tags{})
@@ -49,9 +49,9 @@ func (svc *Service) HandleMakeInvoiceEvent(ctx context.Context, nip47Request *Ni
 			"expiry":              makeInvoiceParams.Expiry,
 		}).Infof("Failed to make invoice: %v", err)
 
-		publishResponse(&Nip47Response{
+		publishResponse(&nip47.Nip47Response{
 			ResultType: nip47Request.Method,
-			Error: &Nip47Error{
+			Error: &nip47.Nip47Error{
 				Code:    nip47.ERROR_INTERNAL,
 				Message: err.Error(),
 			},
@@ -59,11 +59,11 @@ func (svc *Service) HandleMakeInvoiceEvent(ctx context.Context, nip47Request *Ni
 		return
 	}
 
-	responsePayload := &Nip47MakeInvoiceResponse{
+	responsePayload := &nip47.Nip47MakeInvoiceResponse{
 		Nip47Transaction: *transaction,
 	}
 
-	publishResponse(&Nip47Response{
+	publishResponse(&nip47.Nip47Response{
 		ResultType: nip47Request.Method,
 		Result:     responsePayload,
 	}, nostr.Tags{})

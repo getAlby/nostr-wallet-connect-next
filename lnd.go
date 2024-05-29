@@ -14,6 +14,7 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/lnd"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/nip47"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -37,7 +38,7 @@ func (svc *LNDService) GetBalance(ctx context.Context) (balance int64, err error
 	return int64(resp.LocalBalance.Msat), nil
 }
 
-func (svc *LNDService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
+func (svc *LNDService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Nip47Transaction, err error) {
 	// Fetch invoices
 	var invoices []*lnrpc.Invoice
 	if invoiceType == "" || invoiceType == "incoming" {
@@ -98,7 +99,7 @@ func (svc *LNDService) ListTransactions(ctx context.Context, from, until, limit,
 			settledAt = &settledAtUnix
 		}
 
-		transaction := Nip47Transaction{
+		transaction := nip47.Nip47Transaction{
 			Type:            "outgoing",
 			Invoice:         payment.PaymentRequest,
 			Preimage:        payment.PaymentPreimage,
@@ -143,7 +144,7 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 	return channels, nil
 }
 
-func (svc *LNDService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *Nip47Transaction, err error) {
+func (svc *LNDService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Nip47Transaction, err error) {
 	var descriptionHashBytes []byte
 
 	if descriptionHash != "" {
@@ -174,7 +175,7 @@ func (svc *LNDService) MakeInvoice(ctx context.Context, amount int64, descriptio
 	return transaction, nil
 }
 
-func (svc *LNDService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *Nip47Transaction, err error) {
+func (svc *LNDService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Nip47Transaction, err error) {
 	paymentHashBytes, err := hex.DecodeString(paymentHash)
 
 	if err != nil || len(paymentHashBytes) != 32 {
@@ -193,12 +194,12 @@ func (svc *LNDService) LookupInvoice(ctx context.Context, paymentHash string) (t
 	return transaction, nil
 }
 
-func (svc *LNDService) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.Nip47PayInvoiceResponse, error) {
+func (svc *LNDService) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.PayInvoiceResponse, error) {
 	resp, err := svc.client.SendPaymentSync(ctx, &lnrpc.SendRequest{PaymentRequest: payReq})
 	if err != nil {
 		return nil, err
 	}
-	return &lnclient.Nip47PayInvoiceResponse{
+	return &lnclient.PayInvoiceResponse{
 		Preimage: hex.EncodeToString(resp.PaymentPreimage),
 	}, nil
 }
@@ -406,7 +407,7 @@ func (svc *LNDService) GetBalances(ctx context.Context) (*lnclient.BalancesRespo
 	}, nil
 }
 
-func lndInvoiceToTransaction(invoice *lnrpc.Invoice) *Nip47Transaction {
+func lndInvoiceToTransaction(invoice *lnrpc.Invoice) *nip47.Nip47Transaction {
 	var settledAt *int64
 	var preimage string
 	if invoice.State == lnrpc.Invoice_SETTLED {
@@ -420,7 +421,7 @@ func lndInvoiceToTransaction(invoice *lnrpc.Invoice) *Nip47Transaction {
 		expiresAt = &expiresAtUnix
 	}
 
-	return &Nip47Transaction{
+	return &nip47.Nip47Transaction{
 		Type:            "incoming",
 		Invoice:         invoice.PaymentRequest,
 		Description:     invoice.Memo,

@@ -17,6 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 
 type BreezService struct {
@@ -102,7 +103,7 @@ func (bs *BreezService) Shutdown() error {
 	return bs.svc.Disconnect()
 }
 
-func (bs *BreezService) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.Nip47PayInvoiceResponse, error) {
+func (bs *BreezService) SendPaymentSync(ctx context.Context, payReq string) (*lnclient.PayInvoiceResponse, error) {
 	sendPaymentRequest := breez_sdk.SendPaymentRequest{
 		Bolt11: payReq,
 	}
@@ -114,7 +115,7 @@ func (bs *BreezService) SendPaymentSync(ctx context.Context, payReq string) (*ln
 	if resp.Payment.Details != nil {
 		lnDetails, _ = resp.Payment.Details.(breez_sdk.PaymentDetailsLn)
 	}
-	return &lnclient.Nip47PayInvoiceResponse{
+	return &lnclient.PayInvoiceResponse{
 		Preimage: lnDetails.Data.PaymentPreimage,
 	}, nil
 
@@ -153,7 +154,7 @@ func (bs *BreezService) GetBalance(ctx context.Context) (balance int64, err erro
 	return int64(info.MaxPayableMsat), nil
 }
 
-func (bs *BreezService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *Nip47Transaction, err error) {
+func (bs *BreezService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Nip47Transaction, err error) {
 	expiry32 := uint32(expiry)
 	receivePaymentRequest := breez_sdk.ReceivePaymentRequest{
 		// amount provided in msat
@@ -166,7 +167,7 @@ func (bs *BreezService) MakeInvoice(ctx context.Context, amount int64, descripti
 		return nil, err
 	}
 
-	tx := &Nip47Transaction{
+	tx := &nip47.Nip47Transaction{
 		Type:        "incoming",
 		Invoice:     resp.LnInvoice.Bolt11,
 		Preimage:    hex.EncodeToString(resp.LnInvoice.PaymentSecret),
@@ -191,7 +192,7 @@ func (bs *BreezService) MakeInvoice(ctx context.Context, amount int64, descripti
 	return tx, nil
 }
 
-func (bs *BreezService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *Nip47Transaction, err error) {
+func (bs *BreezService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Nip47Transaction, err error) {
 	log.Printf("p: %v", paymentHash)
 	payment, err := bs.svc.PaymentByHash(paymentHash)
 	if err != nil {
@@ -209,7 +210,7 @@ func (bs *BreezService) LookupInvoice(ctx context.Context, paymentHash string) (
 	}
 }
 
-func (bs *BreezService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
+func (bs *BreezService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Nip47Transaction, err error) {
 
 	request := breez_sdk.ListPaymentsRequest{}
 	if limit > 0 {
@@ -234,7 +235,7 @@ func (bs *BreezService) ListTransactions(ctx context.Context, from, until, limit
 		return nil, err
 	}
 
-	transactions = []Nip47Transaction{}
+	transactions = []nip47.Nip47Transaction{}
 	for _, payment := range payments {
 		if payment.PaymentType != breez_sdk.PaymentTypeReceived && payment.PaymentType != breez_sdk.PaymentTypeSent {
 			// skip other types of payments for now
@@ -280,7 +281,7 @@ func (bs *BreezService) CloseChannel(ctx context.Context, closeChannelRequest *l
 	return nil, nil
 }
 
-func breezPaymentToTransaction(payment *breez_sdk.Payment) (*Nip47Transaction, error) {
+func breezPaymentToTransaction(payment *breez_sdk.Payment) (*nip47.Nip47Transaction, error) {
 	var lnDetails breez_sdk.PaymentDetailsLn
 	if payment.Details != nil {
 		lnDetails, _ = payment.Details.(breez_sdk.PaymentDetailsLn)
@@ -312,7 +313,7 @@ func breezPaymentToTransaction(payment *breez_sdk.Payment) (*Nip47Transaction, e
 		descriptionHash = paymentRequest.DescriptionHash
 	}
 
-	tx := &Nip47Transaction{
+	tx := &nip47.Nip47Transaction{
 		Type:            txType,
 		Invoice:         lnDetails.Data.Bolt11,
 		Preimage:        lnDetails.Data.PaymentPreimage,

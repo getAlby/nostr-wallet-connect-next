@@ -24,6 +24,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lsp"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/getAlby/nostr-wallet-connect/utils"
 )
 
@@ -365,7 +366,7 @@ func (ls *LDKService) resetRouterInternal() {
 	}
 }
 
-func (gs *LDKService) SendPaymentSync(ctx context.Context, invoice string) (*lnclient.Nip47PayInvoiceResponse, error) {
+func (gs *LDKService) SendPaymentSync(ctx context.Context, invoice string) (*lnclient.PayInvoiceResponse, error) {
 	paymentRequest, err := decodepay.Decodepay(invoice)
 	if err != nil {
 		gs.svc.Logger.WithFields(logrus.Fields{
@@ -475,7 +476,7 @@ func (gs *LDKService) SendPaymentSync(ctx context.Context, invoice string) (*lnc
 		"fee":      fee,
 	}).Info("Successful payment")
 
-	return &lnclient.Nip47PayInvoiceResponse{
+	return &lnclient.PayInvoiceResponse{
 		Preimage: preimage,
 		Fee:      &fee,
 	}, nil
@@ -617,7 +618,7 @@ func (gs *LDKService) getMaxSpendable() int64 {
 	return int64(spendable)
 }
 
-func (gs *LDKService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *Nip47Transaction, err error) {
+func (gs *LDKService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Nip47Transaction, err error) {
 
 	maxReceivable := gs.getMaxReceivable()
 
@@ -657,7 +658,7 @@ func (gs *LDKService) MakeInvoice(ctx context.Context, amount int64, description
 	description = paymentRequest.Description
 	descriptionHash = paymentRequest.DescriptionHash
 
-	transaction = &Nip47Transaction{
+	transaction = &nip47.Nip47Transaction{
 		Type:            "incoming",
 		Invoice:         invoice,
 		PaymentHash:     paymentRequest.PaymentHash,
@@ -671,7 +672,7 @@ func (gs *LDKService) MakeInvoice(ctx context.Context, amount int64, description
 	return transaction, nil
 }
 
-func (gs *LDKService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *Nip47Transaction, err error) {
+func (gs *LDKService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Nip47Transaction, err error) {
 
 	payment := gs.node.Payment(paymentHash)
 	if payment == nil {
@@ -689,8 +690,8 @@ func (gs *LDKService) LookupInvoice(ctx context.Context, paymentHash string) (tr
 	return transaction, nil
 }
 
-func (ls *LDKService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []Nip47Transaction, err error) {
-	transactions = []Nip47Transaction{}
+func (ls *LDKService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Nip47Transaction, err error) {
+	transactions = []nip47.Nip47Transaction{}
 
 	// TODO: support pagination
 	payments := ls.node.ListPayments()
@@ -728,7 +729,7 @@ func (ls *LDKService) ListTransactions(ctx context.Context, from, until, limit, 
 		if offset < uint64(len(transactions)) {
 			transactions = transactions[offset:]
 		} else {
-			transactions = []Nip47Transaction{}
+			transactions = []nip47.Nip47Transaction{}
 		}
 	}
 
@@ -933,7 +934,7 @@ func (gs *LDKService) SignMessage(ctx context.Context, message string) (string, 
 	return sign, nil
 }
 
-func (gs *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) (*Nip47Transaction, error) {
+func (gs *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) (*nip47.Nip47Transaction, error) {
 	// gs.svc.Logger.WithField("payment", payment).Debug("Mapping LDK payment to transaction")
 
 	transactionType := "incoming"
@@ -990,7 +991,7 @@ func (gs *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) 
 		fee = *payment.FeeMsat
 	}
 
-	return &Nip47Transaction{
+	return &nip47.Nip47Transaction{
 		Type:            transactionType,
 		Preimage:        preimage,
 		PaymentHash:     paymentHash,
