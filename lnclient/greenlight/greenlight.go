@@ -1,4 +1,4 @@
-package main
+package greenlight
 
 import (
 	"context"
@@ -19,6 +19,7 @@ import (
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
 
+	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
@@ -26,12 +27,12 @@ import (
 type GreenlightService struct {
 	workdir string
 	client  *glalby.BlockingGreenlightAlbyClient
-	svc     *Service
+	logger  *logrus.Logger
 }
 
 const DEVICE_CREDENTIALS_KEY = "GreenlightCreds"
 
-func NewGreenlightService(svc *Service, mnemonic, inviteCode, workDir, encryptionKey string) (result lnclient.LNClient, err error) {
+func NewGreenlightService(cfg config.Config, logger *logrus.Logger, mnemonic, inviteCode, workDir, encryptionKey string) (result lnclient.LNClient, err error) {
 	if mnemonic == "" || inviteCode == "" || workDir == "" {
 		return nil, errors.New("one or more required greenlight configuration are missing")
 	}
@@ -45,35 +46,35 @@ func NewGreenlightService(svc *Service, mnemonic, inviteCode, workDir, encryptio
 	}
 
 	var credentials *glalby.GreenlightCredentials
-	existingDeviceCreds, _ := svc.cfg.Get(DEVICE_CREDENTIALS_KEY, encryptionKey)
+	existingDeviceCreds, _ := cfg.Get(DEVICE_CREDENTIALS_KEY, encryptionKey)
 
 	if existingDeviceCreds != "" {
 		credentials = &glalby.GreenlightCredentials{
 			GlCreds: existingDeviceCreds,
 		}
-		svc.Logger.Info("Using saved greenlight credentials")
+		logger.Info("Using saved greenlight credentials")
 	}
 
 	if credentials == nil {
-		svc.Logger.Info("No greenlight credentials found, attempting to recover existing node")
+		logger.Info("No greenlight credentials found, attempting to recover existing node")
 		recoveredCredentials, err := glalby.Recover(mnemonic)
 		credentials = &recoveredCredentials
 
 		if err != nil {
-			svc.Logger.Errorf("Failed to recover node: %v", err)
-			svc.Logger.Infof("Trying to register instead...")
+			logger.Errorf("Failed to recover node: %v", err)
+			logger.Infof("Trying to register instead...")
 			recoveredCredentials, err := glalby.Register(mnemonic, inviteCode)
 			credentials = &recoveredCredentials
 
 			if err != nil {
-				svc.Logger.Fatalf("Failed to register new node")
+				logger.Fatalf("Failed to register new node")
 			}
 		}
 
 		if credentials == nil || credentials.GlCreds == "" {
 			return nil, errors.New("unexpected response from Recover")
 		}
-		svc.cfg.SetUpdate(DEVICE_CREDENTIALS_KEY, credentials.GlCreds, encryptionKey)
+		cfg.SetUpdate(DEVICE_CREDENTIALS_KEY, credentials.GlCreds, encryptionKey)
 	}
 
 	client, err := glalby.NewBlockingGreenlightAlbyClient(mnemonic, *credentials)
@@ -89,7 +90,7 @@ func NewGreenlightService(svc *Service, mnemonic, inviteCode, workDir, encryptio
 	gs := GreenlightService{
 		workdir: newpath,
 		client:  client,
-		svc:     svc,
+		logger:  logger,
 	}
 
 	nodeInfo, err := client.GetInfo()
@@ -106,7 +107,7 @@ func NewGreenlightService(svc *Service, mnemonic, inviteCode, workDir, encryptio
 func (gs *GreenlightService) Shutdown() error {
 	_, err := gs.client.Shutdown()
 	if err != nil {
-		gs.svc.Logger.WithError(err).Error("Failed to shutdown greenlight node")
+		gs.logger.WithError(err).Error("Failed to shutdown greenlight node")
 		return err
 	}
 	return nil
@@ -118,7 +119,7 @@ func (gs *GreenlightService) SendPaymentSync(ctx context.Context, payReq string)
 	})
 
 	if err != nil {
-		gs.svc.Logger.Errorf("Failed to send payment: %v", err)
+		gs.logger.Errorf("Failed to send payment: %v", err)
 		return nil, err
 	}
 	log.Printf("SendPaymentSync succeeded: %v", response.Preimage)
@@ -147,7 +148,7 @@ func (gs *GreenlightService) SendKeysend(ctx context.Context, amount int64, dest
 	})
 
 	if err != nil {
-		gs.svc.Logger.Errorf("Failed to send keysend payment: %v", err)
+		gs.logger.Errorf("Failed to send keysend payment: %v", err)
 		return "", err
 	}
 
@@ -158,7 +159,7 @@ func (gs *GreenlightService) GetBalance(ctx context.Context) (balance int64, err
 	response, err := gs.client.ListFunds(glalby.ListFundsRequest{})
 
 	if err != nil {
-		gs.svc.Logger.Errorf("Failed to list funds: %v", err)
+		gs.logger.Errorf("Failed to list funds: %v", err)
 		return 0, err
 	}
 
@@ -183,13 +184,13 @@ func (gs *GreenlightService) MakeInvoice(ctx context.Context, amount int64, desc
 	})
 
 	if err != nil {
-		gs.svc.Logger.Errorf("MakeInvoice failed: %v", err)
+		gs.logger.Errorf("MakeInvoice failed: %v", err)
 		return nil, err
 	}
 
 	paymentRequest, err := decodepay.Decodepay(strings.ToLower(invoice.Bolt11))
 	if err != nil {
-		gs.svc.Logger.WithFields(logrus.Fields{
+		gs.logger.WithFields(logrus.Fields{
 			"invoice": invoice.Bolt11,
 		}).Errorf("Failed to decode bolt11 invoice: %v", invoice.Bolt11)
 		return nil, err
@@ -218,7 +219,7 @@ func (gs *GreenlightService) LookupInvoice(ctx context.Context, paymentHash stri
 	})
 
 	if err != nil {
-		gs.svc.Logger.Errorf("ListInvoices failed: %v", err)
+		gs.logger.Errorf("ListInvoices failed: %v", err)
 		return nil, err
 	}
 
@@ -234,7 +235,7 @@ func (gs *GreenlightService) LookupInvoice(ctx context.Context, paymentHash stri
 	transaction, err = gs.greenlightInvoiceToTransaction(&invoice)
 
 	if err != nil {
-		gs.svc.Logger.Errorf("Failed to map invoice: %v", err)
+		gs.logger.Errorf("Failed to map invoice: %v", err)
 		return nil, err
 	}
 
@@ -245,7 +246,7 @@ func (gs *GreenlightService) ListTransactions(ctx context.Context, from, until, 
 	listInvoicesResponse, err := gs.client.ListInvoices(glalby.ListInvoicesRequest{})
 
 	if err != nil {
-		gs.svc.Logger.Errorf("ListInvoices failed: %v", err)
+		gs.logger.Errorf("ListInvoices failed: %v", err)
 		return nil, err
 	}
 
@@ -273,7 +274,7 @@ func (gs *GreenlightService) ListTransactions(ctx context.Context, from, until, 
 	listPaymentsResponse, err := gs.client.ListPayments(glalby.ListPaymentsRequest{})
 
 	if err != nil {
-		gs.svc.Logger.Errorf("ListPayments failed: %v", err)
+		gs.logger.Errorf("ListPayments failed: %v", err)
 		return nil, err
 	}
 
@@ -342,7 +343,7 @@ func (gs *GreenlightService) GetInfo(ctx context.Context) (info *lnclient.NodeIn
 	nodeInfo, err := gs.client.GetInfo()
 
 	if err != nil {
-		gs.svc.Logger.Errorf("GetInfo failed: %v", err)
+		gs.logger.Errorf("GetInfo failed: %v", err)
 		return nil, err
 	}
 
@@ -360,7 +361,7 @@ func (gs *GreenlightService) ListChannels(ctx context.Context) ([]lnclient.Chann
 	response, err := gs.client.ListFunds(glalby.ListFundsRequest{})
 
 	if err != nil {
-		gs.svc.Logger.Errorf("Failed to list funds: %v", err)
+		gs.logger.Errorf("Failed to list funds: %v", err)
 		return nil, err
 	}
 
@@ -397,7 +398,7 @@ func (gs *GreenlightService) ListChannels(ctx context.Context) ([]lnclient.Chann
 func (gs *GreenlightService) GetNodeConnectionInfo(ctx context.Context) (nodeConnectionInfo *lnclient.NodeConnectionInfo, err error) {
 	info, err := gs.GetInfo(ctx)
 	if err != nil {
-		gs.svc.Logger.Errorf("GetInfo failed: %v", err)
+		gs.logger.Errorf("GetInfo failed: %v", err)
 		return nil, err
 	}
 	return &lnclient.NodeConnectionInfo{
@@ -420,7 +421,7 @@ func (gs *GreenlightService) ConnectPeer(ctx context.Context, connectPeerRequest
 		Port: port,
 	})
 	if err != nil {
-		gs.svc.Logger.Errorf("ConnectPeer failed: %v", err)
+		gs.logger.Errorf("ConnectPeer failed: %v", err)
 		return err
 	}
 	return nil
@@ -437,7 +438,7 @@ func (gs *GreenlightService) OpenChannel(ctx context.Context, openChannelRequest
 		// Minconf:    &minConf,
 	})
 	if err != nil {
-		gs.svc.Logger.Errorf("OpenChannel failed: %v", err)
+		gs.logger.Errorf("OpenChannel failed: %v", err)
 		return nil, err
 	}
 
@@ -451,7 +452,7 @@ func (gs *GreenlightService) CloseChannel(ctx context.Context, closeChannelReque
 		Id: closeChannelRequest.ChannelId,
 	})
 	if err != nil {
-		gs.svc.Logger.WithError(err).Error("CloseChannel failed")
+		gs.logger.WithError(err).Error("CloseChannel failed")
 		return nil, err
 	}
 
@@ -462,7 +463,7 @@ func (gs *GreenlightService) GetNewOnchainAddress(ctx context.Context) (string, 
 
 	newAddressResponse, err := gs.client.NewAddress(glalby.NewAddressRequest{})
 	if err != nil {
-		gs.svc.Logger.Errorf("NewAddress failed: %v", err)
+		gs.logger.Errorf("NewAddress failed: %v", err)
 		return "", err
 	}
 	if newAddressResponse.Bech32 == nil {
@@ -474,10 +475,10 @@ func (gs *GreenlightService) GetNewOnchainAddress(ctx context.Context) (string, 
 
 func (gs *GreenlightService) GetOnchainBalance(ctx context.Context) (*lnclient.OnchainBalanceResponse, error) {
 	response, err := gs.client.ListFunds(glalby.ListFundsRequest{})
-	gs.svc.Logger.WithField("response", response).Info("Listed funds")
+	gs.logger.WithField("response", response).Info("Listed funds")
 
 	if err != nil {
-		gs.svc.Logger.Errorf("Failed to list funds: %v", err)
+		gs.logger.Errorf("Failed to list funds: %v", err)
 		return nil, err
 	}
 
@@ -506,10 +507,10 @@ func (gs *GreenlightService) RedeemOnchainFunds(ctx context.Context, toAddress s
 		Amount:      &amountAll,
 	})
 	if err != nil {
-		gs.svc.Logger.WithError(err).Error("Withdraw failed")
+		gs.logger.WithError(err).Error("Withdraw failed")
 		return "", err
 	}
-	gs.svc.Logger.WithField("txId", txId).Info("Redeeming On-Chain funds")
+	gs.logger.WithField("txId", txId).Info("Redeeming On-Chain funds")
 
 	return txId.Txid, nil
 }
@@ -536,7 +537,7 @@ func (gs *GreenlightService) SignMessage(ctx context.Context, message string) (s
 	})
 
 	if err != nil {
-		gs.svc.Logger.Errorf("SignMessage failed: %v", err)
+		gs.logger.Errorf("SignMessage failed: %v", err)
 		return "", err
 	}
 
@@ -552,7 +553,7 @@ func (gs *GreenlightService) greenlightInvoiceToTransaction(invoice *glalby.List
 	bolt11 := *invoice.Bolt11
 	paymentRequest, err := decodepay.Decodepay(strings.ToLower(bolt11))
 	if err != nil {
-		gs.svc.Logger.WithFields(logrus.Fields{
+		gs.logger.WithFields(logrus.Fields{
 			"invoice": bolt11,
 		}).Errorf("Failed to decode bolt11 invoice: %v", bolt11)
 		return nil, err
@@ -604,14 +605,14 @@ func (gs *GreenlightService) ResetRouter(key string) error {
 func (gs *GreenlightService) GetBalances(ctx context.Context) (*lnclient.BalancesResponse, error) {
 	onchainBalance, err := gs.GetOnchainBalance(ctx)
 	if err != nil {
-		gs.svc.Logger.WithError(err).Error("Failed to retrieve onchain balance")
+		gs.logger.WithError(err).Error("Failed to retrieve onchain balance")
 		return nil, err
 	}
 
 	response, err := gs.client.ListFunds(glalby.ListFundsRequest{})
 
 	if err != nil {
-		gs.svc.Logger.Errorf("Failed to list funds: %v", err)
+		gs.logger.Errorf("Failed to list funds: %v", err)
 		return nil, err
 	}
 
@@ -663,3 +664,5 @@ func (gs *GreenlightService) GetNodeStatus(ctx context.Context) (nodeStatus *lnc
 func (gs *GreenlightService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
 	return nil, nil
 }
+
+func (gs *GreenlightService) UpdateLastWalletSyncRequest() {}

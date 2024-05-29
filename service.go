@@ -32,6 +32,11 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/breez"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/greenlight"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/ldk"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/lnd"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/phoenixd"
 	"github.com/getAlby/nostr-wallet-connect/migrations"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
@@ -56,7 +61,6 @@ type Service struct {
 	wg                     *sync.WaitGroup
 	nip47NotificationQueue nip47.Nip47NotificationQueue
 	appCancelFn            context.CancelFunc
-	lastWalletSyncRequest  time.Time
 }
 
 // TODO: move to service.go
@@ -206,27 +210,27 @@ func (svc *Service) launchLNBackend(ctx context.Context, encryptionKey string) e
 		LNDAddress, _ := svc.cfg.Get("LNDAddress", encryptionKey)
 		LNDCertHex, _ := svc.cfg.Get("LNDCertHex", encryptionKey)
 		LNDMacaroonHex, _ := svc.cfg.Get("LNDMacaroonHex", encryptionKey)
-		lnClient, err = NewLNDService(ctx, svc, LNDAddress, LNDCertHex, LNDMacaroonHex)
+		lnClient, err = lnd.NewLNDService(ctx, svc.Logger, LNDAddress, LNDCertHex, LNDMacaroonHex)
 	case config.LDKBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		LDKWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "ldk")
 
-		lnClient, err = NewLDKService(ctx, svc, Mnemonic, LDKWorkdir, svc.cfg.GetEnv().LDKNetwork, svc.cfg.GetEnv().LDKEsploraServer, svc.cfg.GetEnv().LDKGossipSource)
+		lnClient, err = ldk.NewLDKService(ctx, svc.Logger, svc.cfg, svc.EventPublisher, Mnemonic, LDKWorkdir, svc.cfg.GetEnv().LDKNetwork, svc.cfg.GetEnv().LDKEsploraServer, svc.cfg.GetEnv().LDKGossipSource)
 	case config.GreenlightBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
 		GreenlightWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "greenlight")
 
-		lnClient, err = NewGreenlightService(svc, Mnemonic, GreenlightInviteCode, GreenlightWorkdir, encryptionKey)
+		lnClient, err = greenlight.NewGreenlightService(svc.cfg, svc.Logger, Mnemonic, GreenlightInviteCode, GreenlightWorkdir, encryptionKey)
 	case config.BreezBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		BreezAPIKey, _ := svc.cfg.Get("BreezAPIKey", encryptionKey)
 		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
 		BreezWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "breez")
 
-		lnClient, err = NewBreezService(svc.Logger, Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
+		lnClient, err = breez.NewBreezService(svc.Logger, Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
 	case config.PhoenixBackendType:
-		lnClient, err = NewPhoenixService(svc, svc.cfg.GetEnv().PhoenixdAddress, svc.cfg.GetEnv().PhoenixdAuthorization)
+		lnClient, err = phoenixd.NewPhoenixService(svc.Logger, svc.cfg.GetEnv().PhoenixdAddress, svc.cfg.GetEnv().PhoenixdAuthorization)
 	default:
 		svc.Logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
 	}
@@ -826,10 +830,6 @@ func (svc *Service) StopDb() error {
 
 func (svc *Service) GetConfig() config.Config {
 	return svc.cfg
-}
-
-func (svc *Service) UpdateLastWalletSyncRequest() {
-	svc.lastWalletSyncRequest = time.Now()
 }
 
 func (svc *Service) GetAlbyOAuthSvc() alby.AlbyOAuthService {

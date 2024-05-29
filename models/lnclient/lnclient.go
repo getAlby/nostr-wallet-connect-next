@@ -68,6 +68,7 @@ type LNClient interface {
 	SignMessage(ctx context.Context, message string) (string, error)
 	GetStorageDir() (string, error)
 	GetNetworkGraph(nodeIds []string) (NetworkGraphResponse, error)
+	UpdateLastWalletSyncRequest()
 }
 
 type Channel struct {

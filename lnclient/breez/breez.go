@@ -1,6 +1,6 @@
 //go:build !skip_breez
 
-package main
+package breez
 
 import (
 	"context"
@@ -464,3 +464,5 @@ func (bs *BreezService) GetStorageDir() (string, error) {
 func (bs *BreezService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
 	return nil, nil
 }
+
+func (bs *BreezService) UpdateLastWalletSyncRequest() {}

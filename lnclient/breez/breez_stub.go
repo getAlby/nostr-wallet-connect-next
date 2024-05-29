@@ -1,6 +1,6 @@
 //go:build skip_breez
 
-package main
+package breez
 
 import (
 	"github.com/sirupsen/logrus"

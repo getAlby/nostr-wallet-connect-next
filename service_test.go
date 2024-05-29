@@ -1345,3 +1345,4 @@ func (mln *MockLn) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.Node
 func (mln *MockLn) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
 	return nil, nil
 }
+func (mln *MockLn) UpdateLastWalletSyncRequest() {}

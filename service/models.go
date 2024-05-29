@@ -16,6 +16,5 @@ type Service interface {
 	StopDb() error
 	GetBudgetUsage(appPermission *db.AppPermission) int64
 	GetLogFilePath() string
-	UpdateLastWalletSyncRequest()
 	GetAlbyOAuthSvc() alby.AlbyOAuthService
 }

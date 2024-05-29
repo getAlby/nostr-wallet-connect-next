@@ -1,4 +1,4 @@
-package main
+package phoenixd
 
 import (
 	"context"
@@ -16,7 +16,6 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 type InvoiceResponse struct {
@@ -68,13 +67,12 @@ type BalanceResponse struct {
 type PhoenixService struct {
 	Address       string
 	Authorization string
-	db            *gorm.DB
 	Logger        *logrus.Logger
 }
 
-func NewPhoenixService(svc *Service, address string, authorization string) (result lnclient.LNClient, err error) {
+func NewPhoenixService(logger *logrus.Logger, address string, authorization string) (result lnclient.LNClient, err error) {
 	authorizationBase64 := b64.StdEncoding.EncodeToString([]byte(":" + authorization))
-	phoenixService := &PhoenixService{Logger: svc.Logger, db: svc.db, Address: address, Authorization: authorizationBase64}
+	phoenixService := &PhoenixService{Logger: logger, Address: address, Authorization: authorizationBase64}
 
 	return phoenixService, nil
 }
@@ -481,3 +479,5 @@ func (svc *PhoenixService) GetStorageDir() (string, error) {
 func (svc *PhoenixService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
 	return nil, nil
 }
+
+func (svc *PhoenixService) UpdateLastWalletSyncRequest() {}

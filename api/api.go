@@ -600,8 +600,12 @@ func (api *api) GetNetworkGraph(nodeIds []string) (NetworkGraphResponse, error) 
 	return api.svc.GetLNClient().GetNetworkGraph(nodeIds)
 }
 
-func (api *api) SyncWallet() {
-	api.svc.UpdateLastWalletSyncRequest()
+func (api *api) SyncWallet() error {
+	if api.svc.GetLNClient() == nil {
+		return errors.New("LNClient not started")
+	}
+	api.svc.GetLNClient().UpdateLastWalletSyncRequest()
+	return nil
 }
 
 func (api *api) GetLogOutput(ctx context.Context, logType string, getLogRequest *GetLogOutputRequest) (*GetLogOutputResponse, error) {

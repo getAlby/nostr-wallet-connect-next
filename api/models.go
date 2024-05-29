@@ -41,7 +41,7 @@ type API interface {
 	SendPaymentProbes(ctx context.Context, sendPaymentProbesRequest *SendPaymentProbesRequest) (*SendPaymentProbesResponse, error)
 	SendSpontaneousPaymentProbes(ctx context.Context, sendSpontaneousPaymentProbesRequest *SendSpontaneousPaymentProbesRequest) (*SendSpontaneousPaymentProbesResponse, error)
 	GetNetworkGraph(nodeIds []string) (NetworkGraphResponse, error)
-	SyncWallet()
+	SyncWallet() error
 	GetLogOutput(ctx context.Context, logType string, getLogRequest *GetLogOutputRequest) (*GetLogOutputResponse, error)
 	GetLSPService() lsp.LSPService
 	GetBackupService() backup.BackupService

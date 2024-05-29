@@ -1,4 +1,4 @@
-package main
+package lnd
 
 import (
 	"context"
@@ -12,12 +12,12 @@ import (
 
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 
-	"github.com/getAlby/nostr-wallet-connect/lnd"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/lnd/wrapper"
 	"github.com/getAlby/nostr-wallet-connect/models/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
+	// "gorm.io/gorm"
 
 	"github.com/lightningnetwork/lnd/lnrpc"
 )
@@ -25,8 +25,8 @@ import (
 // wrap it again :sweat_smile:
 // todo: drop dependency on lndhub package
 type LNDService struct {
-	client *lnd.LNDWrapper
-	db     *gorm.DB
+	client *wrapper.LNDWrapper
+	// db     *gorm.DB
 	Logger *logrus.Logger
 }
 
@@ -303,18 +303,18 @@ func makePreimageHex() ([]byte, error) {
 	return bytes, nil
 }
 
-func NewLNDService(ctx context.Context, svc *Service, lndAddress, lndCertHex, lndMacaroonHex string) (result lnclient.LNClient, err error) {
+func NewLNDService(ctx context.Context, logger *logrus.Logger, lndAddress, lndCertHex, lndMacaroonHex string) (result lnclient.LNClient, err error) {
 	if lndAddress == "" || lndCertHex == "" || lndMacaroonHex == "" {
 		return nil, errors.New("one or more required LND configuration are missing")
 	}
 
-	lndClient, err := lnd.NewLNDclient(lnd.LNDoptions{
+	lndClient, err := wrapper.NewLNDclient(wrapper.LNDoptions{
 		Address:     lndAddress,
 		CertHex:     lndCertHex,
 		MacaroonHex: lndMacaroonHex,
 	})
 	if err != nil {
-		svc.Logger.Errorf("Failed to create new LND client %v", err)
+		logger.Errorf("Failed to create new LND client %v", err)
 		return nil, err
 	}
 	info, err := lndClient.GetInfo(ctx, &lnrpc.GetInfoRequest{})
@@ -322,9 +322,9 @@ func NewLNDService(ctx context.Context, svc *Service, lndAddress, lndCertHex, ln
 		return nil, err
 	}
 
-	lndService := &LNDService{client: lndClient, Logger: svc.Logger, db: svc.db}
+	lndService := &LNDService{client: lndClient, Logger: logger}
 
-	svc.Logger.Infof("Connected to LND - alias %s", info.Alias)
+	logger.Infof("Connected to LND - alias %s", info.Alias)
 
 	return lndService, nil
 }
@@ -452,3 +452,5 @@ func (svc *LNDService) GetNodeStatus(ctx context.Context) (nodeStatus *lnclient.
 func (svc *LNDService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphResponse, error) {
 	return nil, nil
 }
+
+func (svc *LNDService) UpdateLastWalletSyncRequest() {}
