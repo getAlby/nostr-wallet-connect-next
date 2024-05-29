@@ -40,8 +40,8 @@ func (svc *Service) HandleGetInfoEvent(ctx context.Context, nip47Request *Nip47R
 
 	network := info.Network
 	// Some implementations return "bitcoin" while NIP47 expects "mainnet"
-	if info.Network == "bitcoin" {
-		info.Network = "mainnet"
+	if network == "bitcoin" {
+		network = "mainnet"
 	}
 
 	responsePayload := &Nip47GetInfoResponse{
