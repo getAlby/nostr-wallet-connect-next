@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import useSetupStore from "src/state/SetupStore";
 
 import * as bip39 from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
-import Container from "src/components/Container";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
 import { Button } from "src/components/ui/button";
+import { Checkbox } from "src/components/ui/checkbox";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { useToast } from "src/components/ui/use-toast";
@@ -20,6 +20,7 @@ export function SetupPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const wallet = searchParams.get("wallet");
+  const [securePassword, setSecurePassword] = useState<boolean>(false);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,16 +55,16 @@ export function SetupPassword() {
 
   return (
     <>
-      <Container>
+      <div className="grid max-w-sm">
         <form onSubmit={onSubmit} className="flex flex-col items-center w-full">
-          <div className="grid gap-5">
+          <div className="grid gap-4">
             <TwoColumnLayoutHeader
               title="Create Password"
-              description="You'll use it to access your Alby Hub on any device."
+              description="It used to access your wallet, and it can't be reset If you loose it. Make sure to back it up!"
             />
             <div className="grid gap-4 w-full">
-              <div className="grid gap-1.5">
-                <Label htmlFor="unlock-password">New Password</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="unlock-password">Password</Label>
                 <Input
                   type="password"
                   name="unlock-password"
@@ -75,8 +76,8 @@ export function SetupPassword() {
                   required={true}
                 />
               </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="confirm-password">Confirm Password</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="confirm-password">Repeat Password</Label>
                 <Input
                   type="password"
                   name="confirm-password"
@@ -89,7 +90,24 @@ export function SetupPassword() {
                 />
               </div>
             </div>
-            <Button type="submit">Create Password</Button>
+            <div className="grid gap-6">
+              <div className="flex items-center">
+                <Checkbox
+                  id="securePassword"
+                  onCheckedChange={() => setSecurePassword(!securePassword)}
+                />
+                <Label
+                  htmlFor="securePassword"
+                  className="ml-2 text-foreground leading-4"
+                >
+                  I secured this password in a safe place
+                </Label>
+              </div>
+              <Button type="submit" disabled={!securePassword}>
+                Create Password
+              </Button>
+            </div>
+
             {wallet === "import" && (
               <div className="flex flex-col justify-center items-center gap-4">
                 <p className="text-muted-foreground">or</p>
@@ -102,7 +120,7 @@ export function SetupPassword() {
             )}
           </div>
         </form>
-      </Container>
+      </div>
     </>
   );
 }
