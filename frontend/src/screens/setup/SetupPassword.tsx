@@ -20,7 +20,7 @@ export function SetupPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const wallet = searchParams.get("wallet");
-  const [securePassword, setSecurePassword] = useState<boolean>(false);
+  const [isPasswordSecured, setIsPasswordSecured] = useState<boolean>(false);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,7 +60,7 @@ export function SetupPassword() {
           <div className="grid gap-4">
             <TwoColumnLayoutHeader
               title="Create Password"
-              description="It used to access your wallet, and it can't be reset If you loose it. Make sure to back it up!"
+              description="Your password is used to access your wallet, and it can't be reset If you loose it. Make sure to back it up!"
             />
             <div className="grid gap-4 w-full">
               <div className="grid gap-2">
@@ -94,7 +94,7 @@ export function SetupPassword() {
               <div className="flex items-center">
                 <Checkbox
                   id="securePassword"
-                  onCheckedChange={() => setSecurePassword(!securePassword)}
+                  onCheckedChange={() => setIsPasswordSecured(!isPasswordSecured)}
                 />
                 <Label
                   htmlFor="securePassword"
@@ -103,7 +103,7 @@ export function SetupPassword() {
                   I secured this password in a safe place
                 </Label>
               </div>
-              <Button type="submit" disabled={!securePassword}>
+              <Button type="submit" disabled={!isPasswordSecured}>
                 Create Password
               </Button>
             </div>
