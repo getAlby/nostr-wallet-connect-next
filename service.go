@@ -543,7 +543,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 
 	requestEvent.Method = nip47Request.Method
 	requestEvent.ContentData = payload
-	err = svc.db.Save(&requestEvent).Error
+	svc.db.Save(&requestEvent) // we ignore potential DB errors here as this only saves the method and content data
 
 	// TODO: replace with a channel
 	// TODO: update all previous occurences of svc.PublishEvent to also use the channel
