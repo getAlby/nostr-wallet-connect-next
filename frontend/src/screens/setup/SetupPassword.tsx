@@ -60,7 +60,7 @@ export function SetupPassword() {
           <div className="grid gap-4">
             <TwoColumnLayoutHeader
               title="Create Password"
-              description="Your password is used to access your wallet, and it can't be reset If you loose it. Make sure to back it up!"
+              description="Your password is used to access your wallet, and it can't be reset or recovered if you lose it."
             />
             <div className="grid gap-4 w-full">
               <div className="grid gap-2">
@@ -94,7 +94,9 @@ export function SetupPassword() {
               <div className="flex items-center">
                 <Checkbox
                   id="securePassword"
-                  onCheckedChange={() => setIsPasswordSecured(!isPasswordSecured)}
+                  onCheckedChange={() =>
+                    setIsPasswordSecured(!isPasswordSecured)
+                  }
                 />
                 <Label
                   htmlFor="securePassword"
