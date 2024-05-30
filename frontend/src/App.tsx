@@ -41,7 +41,7 @@ import { Intro } from "src/screens/Intro";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
 import { CurrentChannelOrder } from "src/screens/channels/CurrentChannelOrder";
 import { Success } from "src/screens/onboarding/Success";
-import DisconnectPeer from "src/screens/peers/DisconnectPeer";
+import Peers from "src/screens/peers/Peers";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 import DebugTools from "src/screens/settings/DebugTools";
 import { RestoreNode } from "src/screens/setup/RestoreNode";
@@ -97,8 +97,8 @@ function App() {
                 />
               </Route>
               <Route path="peers" element={<DefaultRedirect />}>
+                <Route index element={<Peers />} />
                 <Route path="new" element={<ConnectPeer />} />
-                <Route path="disconnect" element={<DisconnectPeer />} />
               </Route>
             </Route>
             <Route path="intro" element={<Intro />} />
