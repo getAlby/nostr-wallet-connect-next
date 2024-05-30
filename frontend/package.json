@@ -10,7 +10,12 @@
     "build:wails": "yarn prepare:wails && tsc && vite build",
     "prepare:wails": "shx cp ./platform_specific/wails/src/utils/*.ts src/utils/",
     "prepare:http": "shx cp ./platform_specific/http/src/utils/*.ts src/utils/",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "yarn lint:js && yarn tsc:compile && yarn format:fix --report-unused-disable-directives --max-warnings 0",
+    "lint:js": "eslint src --ext .js,.ts,.tsx --max-warnings 0",
+    "lint:js:fix": "eslint src --ext .js,.ts,.tsx --fix",
+    "tsc:compile": "tsc --noEmit",
+    "format": "prettier --check '**/*.(md|json)' 'src/**/*.(js|ts)' 'example/**/*.(js|jsx)'",
+    "format:fix": "prettier --loglevel silent --write '**/*.(md|json)' 'src/**/*.(js|ts)' 'example/**/*.(js|jsx)'",
     "preview": "vite preview",
     "prepare": "cd .. && husky frontend/.husky"
   },
