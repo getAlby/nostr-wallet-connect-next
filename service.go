@@ -541,6 +541,10 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 		return
 	}
 
+	requestEvent.Method = nip47Request.Method
+	requestEvent.ContentData = payload
+	err = svc.db.Save(&requestEvent).Error
+
 	// TODO: replace with a channel
 	// TODO: update all previous occurences of svc.PublishEvent to also use the channel
 	publishResponse := func(nip47Response *nip47.Response, tags nostr.Tags) {
