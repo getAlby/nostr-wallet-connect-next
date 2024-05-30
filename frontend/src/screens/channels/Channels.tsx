@@ -266,6 +266,9 @@ export default function Channels() {
                         <Link to="/peers/new">Connect Peer</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem>
+                        <Link to="/peers/disconnect">Disconnect Peer</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
                         <Link to="/wallet/sign-message">Sign Message</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={resetRouter}>
