@@ -11,7 +11,8 @@
     "prepare:wails": "shx cp ./platform_specific/wails/src/utils/*.ts src/utils/",
     "prepare:http": "shx cp ./platform_specific/http/src/utils/*.ts src/utils/",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "cd .. && husky frontend/.husky"
   },
   "dependencies": {
     "@getalby/bitcoin-connect-react": "^3.4.1",
@@ -38,6 +39,7 @@
     "dayjs": "^1.11.10",
     "embla-carousel-react": "^8.0.2",
     "gradient-avatar": "^1.0.2",
+    "husky": "^9.0.11",
     "lucide-react": "^0.363.0",
     "posthog-js": "^1.116.6",
     "react": "^18.2.0",
@@ -51,6 +53,8 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-conventional": "^19.2.2",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.10",
