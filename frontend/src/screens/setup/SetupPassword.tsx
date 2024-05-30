@@ -100,7 +100,7 @@ export function SetupPassword() {
                   htmlFor="securePassword"
                   className="ml-2 text-foreground leading-4"
                 >
-                  I secured this password in a safe place
+                  I've secured this password in a safe place
                 </Label>
               </div>
               <Button type="submit" disabled={!isPasswordSecured}>
