@@ -84,7 +84,7 @@ export default function AppConnect() {
             </div>
             {timeout && <div className="text-sm flex flex-col gap-2 items-center text-center">
               Connecting is taking longer than usual.
-              <Link to="/apps">
+              <Link to={`/apps/${app?.nostrPubkey}`}>
                 <Button variant="secondary">Continue anyway</Button>
               </Link>
             </div>}
