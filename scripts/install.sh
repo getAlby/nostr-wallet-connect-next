@@ -28,6 +28,12 @@ RestartSec=1
 User=root
 ExecStart=/opt/albyhub/app/nostr-wallet-connect
 
+# Limit CPU: https://unix.stackexchange.com/a/495013
+CPUWeight=20
+CPUQuota=80%
+IOWeight=20
+MemorySwapMax=0
+
 Environment="PORT=80"
 Environment="WORK_DIR=/opt/albyhub/data"
 Environment="LDK_ESPLORA_SERVER=https://electrs.albylabs.com"
