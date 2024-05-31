@@ -12,12 +12,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
+
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/oauth2"
 )
 
 type albyOAuthService struct {
@@ -369,6 +370,12 @@ func (svc *albyOAuthService) LinkAccount(ctx context.Context) error {
 }
 
 func (svc *albyOAuthService) ConsumeEvent(ctx context.Context, event *events.Event, globalProperties map[string]interface{}) error {
+	if event.Event == "nwc_backup_channels" {
+		if err := svc.backupChannels(ctx, event); err != nil {
+			svc.logger.WithError(err).Error("Failed to backup channels")
+		}
+	}
+
 	// TODO: rename this config option to be specific to the alby API
 	if !svc.appConfig.LogEvents {
 		svc.logger.WithField("event", event).Debug("Skipped sending to alby events API")
@@ -448,6 +455,69 @@ func (svc *albyOAuthService) ConsumeEvent(ctx context.Context, event *events.Eve
 			"status": resp.StatusCode,
 		}).Error("Request to /events returned non-success status")
 		return errors.New("request to /events returned non-success status")
+	}
+
+	return nil
+}
+
+func (svc *albyOAuthService) backupChannels(ctx context.Context, event *events.Event) error {
+	bkpEvent, ok := event.Properties.(*ChannelBackupEvent)
+	if !ok {
+		return fmt.Errorf("invalid nwc_backup_channels event properties, could not cast to the expected type: %+v", event.Properties)
+	}
+
+	token, err := svc.fetchUserToken(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch user token: %w", err)
+	}
+
+	client := svc.oauthConf.Client(ctx, token)
+
+	type channelsBackup struct {
+		Description string `json:"description"`
+		Data        string `json:"data"`
+	}
+
+	channelsData := bytes.NewBuffer([]byte{})
+	err = json.NewEncoder(channelsData).Encode(bkpEvent.Channels)
+	if err != nil {
+		return fmt.Errorf("failed to encode channels backup data:  %w", err)
+	}
+
+	encryptionKey, err := svc.config.Get("Mnemonic", "")
+	if err != nil {
+		return fmt.Errorf("failed to fetch encryption key: %w", err)
+	}
+
+	encrypted, err := config.AesGcmEncrypt(channelsData.String(), encryptionKey)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt channels backup data: %w", err)
+	}
+
+	body := bytes.NewBuffer([]byte{})
+	err = json.NewEncoder(body).Encode(&channelsBackup{
+		Description: "channels",
+		Data:        encrypted,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to encode channels backup request payload: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/internal/backups", svc.appConfig.AlbyAPIURL), body)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("User-Agent", "NWC-next")
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send request to /internal/backups: %w", err)
+	}
+
+	if resp.StatusCode >= 300 {
+		return fmt.Errorf("request to /internal/backups returned non-success status: %d", resp.StatusCode)
 	}
 
 	return nil

@@ -55,6 +55,18 @@ type ChannelPeerSuggestion struct {
 	Lsp                string `json:"lsp"`
 }
 
+type ChannelBackupInfo struct {
+	ChannelID   string `json:"channel_id"`
+	NodeID      string `json:"node_id"`
+	PeerID      string `json:"peer_id"`
+	ChannelSize uint64 `json:"channel_size"`
+	FundingTxID string `json:"funding_tx_id"`
+}
+
+type ChannelBackupEvent struct {
+	Channels []ChannelBackupInfo `json:"channels"`
+}
+
 type ErrorResponse struct {
 	Message string `json:"message"`
 }
