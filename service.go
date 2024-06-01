@@ -172,7 +172,7 @@ func NewService(ctx context.Context) (*Service, error) {
 		startProfiler(ctx, appConfig.GoProfilerAddr)
 	}
 
-	if appConfig.DdProfilerAgentAddr != "" {
+	if appConfig.DdProfilerEnabled {
 		startDataDogProfiler(ctx)
 	}
 
