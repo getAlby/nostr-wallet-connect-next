@@ -68,7 +68,9 @@ export default function AppDetail() {
     }
   };
 
-  if (!app) return;
+  if (!app) {
+    return;
+  }
 
   return (
     <>
