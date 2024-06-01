@@ -43,13 +43,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "src/components/ui/tooltip";
-import { toast, useToast } from "src/components/ui/use-toast";
+import { useToast } from "src/components/ui/use-toast";
 import { useBalances } from "src/hooks/useBalances";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useChannels } from "src/hooks/useChannels";
 import { useMempoolApi } from "src/hooks/useMempoolApi";
 import { useSyncWallet } from "src/hooks/useSyncWallet";
 import { copyToClipboard } from "src/lib/clipboard";
+import { splitSocketAddress } from "src/lib/utils";
 import { Success } from "src/screens/onboarding/Success";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 import {
@@ -307,7 +308,6 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
               size="icon"
               onClick={() => {
                 copyToClipboard(onchainAddress);
-                toast({ title: "Copied to clipboard." });
               }}
             >
               <Copy className="w-4 h-4" />
@@ -410,10 +410,12 @@ function PayBitcoinChannelOrderWithSpendableFunds({
     if (!nodeDetails && !host) {
       throw new Error("node details not found");
     }
-    const _host = nodeDetails?.sockets
+    const socketAddress = nodeDetails?.sockets
       ? nodeDetails.sockets.split(",")[0]
       : host;
-    const [address, port] = _host.split(":");
+
+    const { address, port } = splitSocketAddress(socketAddress);
+
     if (!address || !port) {
       throw new Error("host not found");
     }
@@ -471,7 +473,7 @@ function PayBitcoinChannelOrderWithSpendableFunds({
         openChannelResponse.fundingTxId
       );
       toast({
-        title: "Channel opening transaction published!",
+        title: "Successfully published channel opening transaction",
       });
       useChannelOrderStore.getState().updateOrder({
         fundingTxId: openChannelResponse.fundingTxId,
@@ -528,14 +530,15 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
     channels && prevChannels
       ? channels.find(
           (newChannel) =>
-            !prevChannels.some((current) => current.id === newChannel.id)
+            !prevChannels.some((current) => current.id === newChannel.id) &&
+            newChannel.fundingTxId
         )
       : undefined;
 
   React.useEffect(() => {
     if (newChannel) {
       (async () => {
-        toast({ title: "Channel opened!" });
+        toast({ title: "Successfully opened channel" });
         setTimeout(() => {
           useChannelOrderStore.getState().updateOrder({
             status: "opening",

@@ -20,7 +20,7 @@ export const NIP_47_SIGN_MESSAGE_METHOD = "sign_message";
 
 export const NIP_47_NOTIFICATIONS_PERMISSION = "notifications";
 
-export type BackendType = "LND" | "BREEZ" | "GREENLIGHT" | "LDK";
+export type BackendType = "LND" | "BREEZ" | "GREENLIGHT" | "LDK" | "PHOENIX";
 
 export type RequestMethodType =
   | "pay_invoice"
@@ -133,12 +133,11 @@ export interface InfoResponse {
   backendType: BackendType;
   setupCompleted: boolean;
   oauthRedirect: boolean;
-  onboardingCompleted: boolean;
   albyAccountConnected: boolean;
   running: boolean;
   unlocked: boolean;
   albyAuthUrl: string;
-  showBackupReminder: boolean;
+  nextBackupReminder: string;
   albyUserIdentifier: string;
   network?: Network;
 }
@@ -167,6 +166,13 @@ export type Channel = {
   public: boolean;
   confirmations?: number;
   confirmationsRequired?: number;
+};
+
+export type Peer = {
+  nodeId: string;
+  address: string;
+  isPersisted: boolean;
+  isConnected: boolean;
 };
 
 export type NodeConnectionInfo = {

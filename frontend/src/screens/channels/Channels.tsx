@@ -10,7 +10,7 @@ import {
   Unplug,
 } from "lucide-react";
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader.tsx";
 import EmptyState from "src/components/EmptyState.tsx";
 import Loading from "src/components/Loading.tsx";
@@ -64,16 +64,9 @@ export default function Channels() {
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const { data: info, mutate: reloadInfo } = useInfo();
   const { data: csrf } = useCSRF();
-  const navigate = useNavigate();
   const redeemOnchainFunds = useRedeemOnchainFunds();
 
-  React.useEffect(() => {
-    if (!info || info.running) {
-      return;
-    }
-    navigate("/");
-  }, [info, navigate]);
-
+  // TODO: move to NWC backend
   const loadNodeStats = React.useCallback(async () => {
     if (!channels) {
       return [];
@@ -167,7 +160,7 @@ export default function Channels() {
         );
       }
       await reloadChannels();
-      toast({ title: "Sucessfully closed channel." });
+      toast({ title: "Sucessfully closed channel" });
     } catch (error) {
       console.error(error);
       alert("Something went wrong: " + error);
@@ -205,36 +198,6 @@ export default function Channels() {
     }
   }
 
-  async function stopNode() {
-    try {
-      if (!csrf) {
-        throw new Error("csrf not loaded");
-      }
-
-      if (
-        !confirm(
-          "After restarting, you'll need to re-enter your unlock password."
-        )
-      ) {
-        console.error("User cancelled reset");
-        return;
-      }
-
-      await request("/api/stop", {
-        method: "POST",
-        headers: {
-          "X-CSRF-Token": csrf,
-          "Content-Type": "application/json",
-        },
-      });
-      await reloadInfo();
-      alert(`🎉 Node stopped`);
-    } catch (error) {
-      console.error(error);
-      alert("Something went wrong: " + error);
-    }
-  }
-
   return (
     <>
       <AppHeader
@@ -264,7 +227,6 @@ export default function Channels() {
                           className="shrink-0 w-4 h-4"
                           onClick={() => {
                             copyToClipboard(nodeConnectionInfo.pubkey);
-                            toast({ title: "Copied to clipboard." });
                           }}
                         />
                       )}
@@ -274,7 +236,7 @@ export default function Channels() {
                 <DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
-                    <Link to="/channels/onchain/new-address">
+                    <Link to="/channels/onchain/new-address" className="w-full">
                       On-Chain Address
                     </Link>
                   </DropdownMenuItem>
@@ -282,6 +244,7 @@ export default function Channels() {
                     <DropdownMenuItem
                       onClick={redeemOnchainFunds.redeemFunds}
                       disabled={redeemOnchainFunds.isLoading}
+                      className="w-full cursor-pointer"
                     >
                       Redeem Onchain Funds
                       {redeemOnchainFunds.isLoading && <Loading />}
@@ -294,16 +257,20 @@ export default function Channels() {
                     <DropdownMenuGroup>
                       <DropdownMenuLabel>Management</DropdownMenuLabel>
                       <DropdownMenuItem>
-                        <Link to="/peers/new">Connect Peer</Link>
+                        <Link className="w-full" to="/peers">
+                          Connected Peers
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        <Link to="/wallet/sign-message">Sign Message</Link>
+                        <Link className="w-full" to="/wallet/sign-message">
+                          Sign Message
+                        </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={resetRouter}>
+                      <DropdownMenuItem
+                        className="w-full cursor-pointer"
+                        onClick={resetRouter}
+                      >
                         Clear Routing Data
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={stopNode}>
-                        Restart
                       </DropdownMenuItem>
                     </DropdownMenuGroup>
                   </>
@@ -476,8 +443,7 @@ export default function Channels() {
                             rel="noopener noreferer"
                           >
                             <Button variant="link" className="p-0 mr-2">
-                              {alias ||
-                                channel.remotePubkey.substring(0, 5) + "..."}
+                              {alias}
                             </Button>
                           </a>
                           <Badge variant="outline">
