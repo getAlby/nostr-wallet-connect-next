@@ -33,6 +33,8 @@ type AppConfig struct {
 	LogEvents             bool   `envconfig:"LOG_EVENTS" default:"false"`
 	PhoenixdAddress       string `envconfig:"PHOENIXD_ADDRESS" default:"http://127.0.0.1:9740"`
 	PhoenixdAuthorization string `envconfig:"PHOENIXD_AUTHORIZATION"`
+	GoProfilerAddr        string `envconfig:"GO_PROFILER_ADDR"`
+	DdProfilerAgentAddr   string `envconfig:"DD_PROFILER_AGENT_ADDR"`
 }
 
 func (c *AppConfig) IsDefaultClientId() bool {
