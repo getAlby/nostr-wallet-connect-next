@@ -9,9 +9,9 @@ jobs:
       fail-fast: false
       matrix:
         build: [
-          {name: nostr-wallet-connect, platform: linux/amd64, os: ubuntu-20.04},
-          {name: nostr-wallet-connect, platform: windows/amd64, os: windows-2019},
-          {name: nostr-wallet-connect, platform: darwin/universal, os: macos-12}
+          {name: albyhub, platform: linux/amd64, os: ubuntu-20.04},
+          {name: albyhub, platform: windows/amd64, os: windows-2019},
+          {name: albyhub, platform: darwin/universal, os: macos-12}
         ]
     runs-on: ${{ matrix.build.os }}
     steps:
