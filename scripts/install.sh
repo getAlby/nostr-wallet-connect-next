@@ -29,16 +29,19 @@ User=root
 ExecStart=/opt/albyhub/app/nostr-wallet-connect
 
 # Limit CPU: https://unix.stackexchange.com/a/495013
+# This prevents the RPI from overheating and ensures the RPI is still accessible via ssh
 CPUWeight=20
-CPUQuota=80%
+CPUQuota=90%
 IOWeight=20
-MemorySwapMax=0
+# MemorySwapMax=0 # not needed? see https://github.com/getAlby/nostr-wallet-connect-next/pull/364
 
 Environment="PORT=80"
 Environment="WORK_DIR=/opt/albyhub/data"
 Environment="LDK_ESPLORA_SERVER=https://electrs.albylabs.com"
 Environment="LOG_EVENTS=true"
 Environment="LDK_GOSSIP_SOURCE="
+# RPI workaround - 4 threads is not enough to avoid LDK deadlock (on shutdown and sometimes on sync)
+Environment="TOKIO_WORKER_THREADS=8"
 
 [Install]
 WantedBy=multi-user.target
