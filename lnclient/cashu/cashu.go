@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/elnosh/gonuts/wallet"
@@ -131,21 +132,7 @@ func (cs *CashuService) LookupInvoice(ctx context.Context, paymentHash string) (
 		return nil, errors.New("failed to lookup payment request by payment hash")
 	}
 
-	if cashuInvoice.TransactionType == storage.Mint && !cashuInvoice.Paid {
-		proofs, err := cs.wallet.MintTokens(cashuInvoice.Id)
-		if err != nil {
-			cs.logger.WithFields(logrus.Fields{
-				"paymentHash": paymentHash,
-			}).WithError(err).Warn("failed to mint")
-		}
-
-		if proofs != nil {
-			cs.logger.WithFields(logrus.Fields{
-				"paymentHash": paymentHash,
-				"amount":      proofs.Amount(),
-			}).Info("sats successfully minted")
-		}
-	}
+	cs.checkInvoice(cashuInvoice)
 
 	transaction, err = cs.cashuInvoiceToTransaction(cashuInvoice)
 
@@ -158,12 +145,26 @@ func (cs *CashuService) ListTransactions(ctx context.Context, from, until, limit
 	invoices := cs.wallet.GetAllInvoices()
 
 	for _, invoice := range invoices {
+		invoiceCreated := time.UnixMilli(invoice.CreatedAt * 1000)
+
+		if time.Since(invoiceCreated) < 24*time.Hour {
+			cs.checkInvoice(&invoice)
+		}
+
 		transaction, err := cs.cashuInvoiceToTransaction(&invoice)
 		if err != nil {
 			continue
 		}
+		if transaction.SettledAt == nil {
+			continue
+		}
 		transactions = append(transactions, *transaction)
 	}
+
+	// sort by created date descending
+	sort.SliceStable(transactions, func(i, j int) bool {
+		return transactions[i].CreatedAt > transactions[j].CreatedAt
+	})
 
 	return transactions, nil
 }
@@ -313,4 +314,26 @@ func (cs *CashuService) cashuInvoiceToTransaction(cashuInvoice *storage.Invoice)
 		SettledAt:       settledAt,
 		FeesPaid:        int64(cashuInvoice.QuoteAmount*1000) - paymentRequest.MSatoshi,
 	}, nil
+}
+
+func (cs *CashuService) checkInvoice(cashuInvoice *storage.Invoice) {
+	if cashuInvoice.TransactionType == storage.Mint && !cashuInvoice.Paid {
+		cs.logger.WithFields(logrus.Fields{
+			"paymentHash": cashuInvoice.PaymentHash,
+		}).Info("Checking unpaid invoice")
+
+		proofs, err := cs.wallet.MintTokens(cashuInvoice.Id)
+		if err != nil {
+			cs.logger.WithFields(logrus.Fields{
+				"paymentHash": cashuInvoice.PaymentHash,
+			}).WithError(err).Warn("failed to mint")
+		}
+
+		if proofs != nil {
+			cs.logger.WithFields(logrus.Fields{
+				"paymentHash": cashuInvoice.PaymentHash,
+				"amount":      proofs.Amount(),
+			}).Info("sats successfully minted")
+		}
+	}
 }
