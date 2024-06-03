@@ -25,6 +25,7 @@ import {
 } from "src/components/ui/select";
 import { useChannelPeerSuggestions } from "src/hooks/useChannelPeerSuggestions";
 import { useInfo } from "src/hooks/useInfo";
+import { usePeers } from "src/hooks/usePeers";
 import { cn, formatAmount } from "src/lib/utils";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 import {
@@ -320,39 +321,45 @@ function NewChannelLightning(props: NewChannelLightningProps) {
 
 type NewChannelOnchainProps = {
   order: Partial<NewChannelOrder>;
-  setOrder(order: Partial<NewChannelOrder>): void;
+  setOrder: React.Dispatch<React.SetStateAction<Partial<NewChannelOrder>>>;
   showCustomOptions: boolean;
 };
 
 function NewChannelOnchain(props: NewChannelOnchainProps) {
   const [nodeDetails, setNodeDetails] = React.useState<Node | undefined>();
-
+  const { data: peers } = usePeers();
   // const { data: csrf } = useCSRF();
   if (props.order.paymentMethod !== "onchain") {
     throw new Error("unexpected payment method");
   }
   const { pubkey, host, isPublic } = props.order;
+  const { setOrder } = props;
+  const isAlreadyPeered =
+    pubkey && peers?.some((peer) => peer.nodeId === pubkey);
 
   function setPubkey(pubkey: string) {
-    props.setOrder({
-      ...props.order,
+    props.setOrder((current) => ({
+      ...current,
       paymentMethod: "onchain",
       pubkey,
-    });
+    }));
   }
-  function setHost(host: string) {
-    props.setOrder({
-      ...props.order,
-      paymentMethod: "onchain",
-      host,
-    });
-  }
+  const setHost = React.useCallback(
+    (host: string) => {
+      setOrder((current) => ({
+        ...current,
+        paymentMethod: "onchain",
+        host,
+      }));
+    },
+    [setOrder]
+  );
   function setPublic(isPublic: boolean) {
-    props.setOrder({
-      ...props.order,
+    props.setOrder((current) => ({
+      ...current,
       paymentMethod: "onchain",
       isPublic,
-    });
+    }));
   }
 
   const fetchNodeDetails = React.useCallback(async () => {
@@ -364,12 +371,17 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
       const data = await request<Node>(
         `/api/mempool?endpoint=/v1/lightning/nodes/${pubkey}`
       );
+
       setNodeDetails(data);
+      const socketAddress = data?.sockets?.split(",")?.[0];
+      if (socketAddress) {
+        setHost(socketAddress);
+      }
     } catch (error) {
       console.error(error);
       setNodeDetails(undefined);
     }
-  }, [pubkey]);
+  }, [pubkey, setHost]);
 
   React.useEffect(() => {
     fetchNodeDetails();
@@ -409,14 +421,14 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
               )}
             </div>
 
-            {!nodeDetails && pubkey && (
+            {!isAlreadyPeered && /*!nodeDetails && */ pubkey && (
               <div className="grid gap-1.5">
                 <Label htmlFor="host">Host:Port</Label>
                 <Input
                   id="host"
                   type="text"
                   value={host}
-                  placeholder="0.0.0.0:9735"
+                  placeholder="0.0.0.0:9735 or [2600::]:9735"
                   onChange={(e) => {
                     setHost(e.target.value.trim());
                   }}
