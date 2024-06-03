@@ -208,7 +208,7 @@ func (svc *albyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 	return me, nil
 }
 
-func (svc *AlbyOAuthService) GetTopupUrl(ctx context.Context, amount int64, address string) (*AlbyTopup, error) {
+func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, address string) (*AlbyTopup, error) {
 
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {

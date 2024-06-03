@@ -70,9 +70,9 @@ func (albyHttpSvc *AlbyHttpService) albyMeHandler(c echo.Context) error {
 }
 
 func (albyHttpSvc *AlbyHttpService) albyTopupHandler(c echo.Context) error {
-	var topupParams api.AlbyTopupRequest
+	var topupParams AlbyTopupRequest
 	if err := c.Bind(&topupParams); err != nil {
-		return c.JSON(http.StatusBadRequest, models.ErrorResponse{
+		return c.JSON(http.StatusBadRequest, ErrorResponse{
 			Message: fmt.Sprintf("Bad request: %s", err.Error()),
 		})
 	}
@@ -80,7 +80,7 @@ func (albyHttpSvc *AlbyHttpService) albyTopupHandler(c echo.Context) error {
 	topup, err := albyHttpSvc.albyOAuthSvc.GetTopupUrl(c.Request().Context(), topupParams.Amount, topupParams.Address)
 	if err != nil {
 		albyHttpSvc.logger.WithError(err).Error("Failed to request alby /topups endpoint")
-		return c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Message: fmt.Sprintf("Failed to request alby topups endpoint: %s", err.Error()),
 		})
 	}
