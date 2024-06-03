@@ -147,10 +147,10 @@ github.com/docker/go-units v0.5.0 h1:69rxXcBk27SvSaaxTtLh/8llcHD8vYHT7WSdRZ/jvr4
 github.com/docker/go-units v0.5.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
-github.com/elnosh/btc-docker-test v0.0.0-20240523211148-14c62fc20775 h1:d49YXlSBmcVjc6ZeUfhvQjK+2aNQ2vKBlz9w6TRzphg=
-github.com/elnosh/btc-docker-test v0.0.0-20240523211148-14c62fc20775/go.mod h1:5GQRdR6yg5zIuTV8ZM6bPsp1R10d7XJNQHys/knsXsg=
-github.com/elnosh/gonuts v0.1.1-0.20240601172129-d8e6bd240bcd h1:Fulg75Tz3Bzd0DqUTS8c2dy4bXm5Uyg9eo6x+vZCliA=
-github.com/elnosh/gonuts v0.1.1-0.20240601172129-d8e6bd240bcd/go.mod h1:TGM2QdRbI95rMOyiMF6EvQuXLpFS5sBktLHdPsRq0yA=
+github.com/elnosh/btc-docker-test v0.0.0-20240602161019-ac58a1896987 h1:FkDUi3qv5o9fXu8ogVzWHap8kwjO6/Yr9mtftMn7zWg=
+github.com/elnosh/btc-docker-test v0.0.0-20240602161019-ac58a1896987/go.mod h1:d8Davq0wBSo4IZRelaqRgGGq/DS+Bk3hh28ZiEtl/e0=
+github.com/elnosh/gonuts v0.1.1-0.20240602162005-49da741613e4 h1:hFGWjBiJP74QUnwxQiucjcyvTK4HW50eSgCkmPv264Y=
+github.com/elnosh/gonuts v0.1.1-0.20240602162005-49da741613e4/go.mod h1:lVJuixW4KCHPqfPBhcKx07MaCNQWAr/GCJdxcYp4KZ4=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
@@ -420,8 +420,8 @@ github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display h1:pRdza2wl
 github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20230823005744-06182b1d7d2f h1:Pua7+5TcFEJXIIZ1I2YAUapmbcttmLj4TTi786bIi3s=
 github.com/lightningnetwork/lightning-onion v1.2.1-0.20230823005744-06182b1d7d2f/go.mod h1:c0kvRShutpj3l6B9WtTsNTBUtjSmjZXbJd9ZBRQOSKI=
-github.com/lightningnetwork/lnd v0.17.4-beta.rc1 h1:z2rb3MlSvwLMgjRl/IEMCmWCBZeFeM6cJtMxBlrgX1E=
-github.com/lightningnetwork/lnd v0.17.4-beta.rc1/go.mod h1:S5hugoB/FWyF9Up9sjEnOsA/ohmhXzIqRHHMLlrtyFk=
+github.com/lightningnetwork/lnd v0.17.4-beta h1:BXYbETYZWtcNrYcAosGGXnWsq4Nr5R9PRqlRuEA9AUs=
+github.com/lightningnetwork/lnd v0.17.4-beta/go.mod h1:S5hugoB/FWyF9Up9sjEnOsA/ohmhXzIqRHHMLlrtyFk=
 github.com/lightningnetwork/lnd/clock v1.1.1 h1:OfR3/zcJd2RhH0RU+zX/77c0ZiOnIMsDIBjgjWdZgA0=
 github.com/lightningnetwork/lnd/clock v1.1.1/go.mod h1:mGnAhPyjYZQJmebS7aevElXKTFDuO+uNFFfMXK1W8xQ=
 github.com/lightningnetwork/lnd/fn v1.0.5 h1:ffDgMSn83avw6rNzxhbt6w5/2oIrwQKTPGfyaLupZtE=

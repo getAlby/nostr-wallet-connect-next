@@ -8,7 +8,7 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/breez/breez-sdk-go v0.3.4
 	github.com/davrux/echo-logrus/v4 v4.0.3
-	github.com/elnosh/gonuts v0.1.1-0.20240601172129-d8e6bd240bcd
+	github.com/elnosh/gonuts v0.1.1-0.20240602162005-49da741613e4
 	github.com/getAlby/glalby-go v0.0.0-20240416174357-e6e2faa2fbd8
 	github.com/getAlby/ldk-node-go v0.0.0-20240530073543-78ba992cedd7
 	github.com/go-gormigrate/gormigrate/v2 v2.1.1
@@ -41,7 +41,7 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.5 // indirect
 	github.com/btcsuite/btcd/btcutil/psbt v1.1.9 // indirect
 	github.com/btcsuite/btclog v0.0.0-20170628155309-84c8d2346e9f // indirect
-	github.com/btcsuite/btcwallet v0.16.10-0.20240404104514-b2f31f9045fb // indirect
+	github.com/btcsuite/btcwallet v0.16.10-0.20240127010340-16b422a2e8bf // indirect
 	github.com/btcsuite/btcwallet/wallet/txauthor v1.3.4 // indirect
 	github.com/btcsuite/btcwallet/wallet/txrules v1.2.1 // indirect
 	github.com/btcsuite/btcwallet/wallet/txsizes v1.2.4 // indirect
@@ -230,13 +230,9 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/lightningnetwork/lnd v0.17.4-beta.rc1
+	github.com/lightningnetwork/lnd v0.17.4-beta
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 )
 
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display
-
-replace github.com/elnosh/gonuts v0.1.0 => github.com/elnosh/gonuts v0.1.1-0.20240601172129-d8e6bd240bcd
-
-replace github.com/btcsuite/btcwallet => github.com/btcsuite/btcwallet v0.16.10-0.20240127010340-16b422a2e8bf
