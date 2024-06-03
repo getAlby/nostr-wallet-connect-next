@@ -625,17 +625,17 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 	}
 
 	if strings.HasPrefix(route, "/api/alby/topup") {
-		topupRequest := &api.AlbyTopupRequest{}
+		topupRequest := &alby.AlbyTopupRequest{}
 		err := json.Unmarshal([]byte(body), topupRequest)
 		if err != nil {
-			app.svc.Logger.WithFields(logrus.Fields{
+			app.svc.logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
 			}).WithError(err).Error("Failed to decode request to wails router")
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
-		topupResponse, err := app.svc.AlbyOAuthSvc.GetTopupUrl(ctx, topupRequest.Amount, topupRequest.Address)
+		topupResponse, err := app.svc.albyOAuthSvc.GetTopupUrl(ctx, topupRequest.Amount, topupRequest.Address)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}

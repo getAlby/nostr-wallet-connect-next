@@ -41,7 +41,6 @@ export default function BuyBitcoin() {
   const [value, setValue] = React.useState("usd");
   const [amount, setAmount] = React.useState("250");
   const [loading, setLoading] = React.useState(false);
-  const [providerUrl, setProviderUrl] = React.useState("");
 
   async function apiRequest(
     endpoint: string,
@@ -68,7 +67,9 @@ export default function BuyBitcoin() {
       const data = await request(endpoint, requestOptions);
 
       return data;
-    } catch (error) {}
+    } catch (error) {
+      console.error("failed to do api request", error);
+    }
   }
 
   const currencies = [
@@ -148,8 +149,7 @@ export default function BuyBitcoin() {
       localStorage.setItem(localStorageKeys.onchainAddress, response.address);
       setOnchainAddress(response.address);
     } catch (error) {
-      alert("Failed to request a new address: " + error);
-    } finally {
+      console.error("Failed to request a new address: " + error);
     }
   }, [csrf]);
 
@@ -227,7 +227,7 @@ export default function BuyBitcoin() {
                               <CommandItem
                                 key={currency.value}
                                 value={currency.value}
-                                onSelect={(currentValue) => {
+                                onSelect={(currentValue: string) => {
                                   setValue(
                                     currentValue === value ? "" : currentValue
                                   );
@@ -269,19 +269,6 @@ export default function BuyBitcoin() {
             </Step>
           </Stepper>
         </div>
-
-        {providerUrl && (
-          <div className="mx-auto w-full">
-            <iframe
-              allow="accelerometer; autoplay; camera; gyroscope; payment"
-              src={providerUrl}
-              height="720"
-              className="w-full sm:w-[500px] outline-0 rounded-md shadow mx-auto"
-            >
-              <p>Your browser does not support iframes.</p>
-            </iframe>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -307,7 +294,7 @@ export default function BuyBitcoin() {
                 )) as { url: string };
 
                 setLoading(false);
-                setProviderUrl(response.url);
+                window.open(response.url);
                 nextStep();
               } else {
                 nextStep();
