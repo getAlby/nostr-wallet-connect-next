@@ -235,4 +235,7 @@ require (
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 )
 
+// See https://github.com/lightningnetwork/lnd/blob/v0.17.4-beta/go.mod#L12C58-L12C70
+// We want to format raw bytes as hex instead of base64. The forked version
+// allows us to specify that as an option.
 replace google.golang.org/protobuf => github.com/lightninglabs/protobuf-go-hex-display v1.30.0-hex-display
