@@ -1,6 +1,7 @@
 import {
   ExternalLink
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AlbyHead from "src/assets/images/alby-head.svg";
 import AppHeader from "src/components/AppHeader";
@@ -17,9 +18,18 @@ import {
 import { useBalances } from "src/hooks/useBalances";
 import { useInfo } from "src/hooks/useInfo";
 
+declare global {
+  interface Window { alby: any; }
+}
+
 function Wallet() {
   const { data: info } = useInfo();
   const { data: balances } = useBalances();
+  const [extensionInstalled, setExtensionInstalled] = useState(false);
+
+  useEffect(() => {
+    setExtensionInstalled(window.alby !== undefined);
+  }, []);
 
   if (!info || !balances) {
     return <Loading />;
@@ -70,34 +80,36 @@ function Wallet() {
             </CardContent>
           </Card>
         </Link>
-        <Link to={`https://www.getalby.com`} target="_blank">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-row items-center">
-                <img
-                  src={AlbyHead}
-                  className="w-12 h-12 rounded-xl p-1 border bg-[#FFDF6F]"
-                />
-                <div>
-                  <CardTitle>
-                    <div className="flex-1 leading-5 font-semibold text-xl whitespace-nowrap text-ellipsis overflow-hidden ml-4">
-                      Alby Browser Extension
-                    </div>
-                  </CardTitle>
-                  <CardDescription className="ml-4">
-                    Best to use when using your favourite Internet browser
-                  </CardDescription>
+        {!extensionInstalled &&
+          <Link to={`https://www.getalby.com`} target="_blank">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-row items-center">
+                  <img
+                    src={AlbyHead}
+                    className="w-12 h-12 rounded-xl p-1 border bg-[#FFDF6F]"
+                  />
+                  <div>
+                    <CardTitle>
+                      <div className="flex-1 leading-5 font-semibold text-xl whitespace-nowrap text-ellipsis overflow-hidden ml-4">
+                        Alby Browser Extension
+                      </div>
+                    </CardTitle>
+                    <CardDescription className="ml-4">
+                      Best to use when using your favourite Internet browser
+                    </CardDescription>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="text-right">
-              <Button variant="outline">
-                Install Alby Extension
-                <ExternalLink className="w-4 h-4 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
-        </Link>
+              </CardHeader>
+              <CardContent className="text-right">
+                <Button variant="outline">
+                  Install Alby Extension
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+          </Link>
+        }
       </div>
 
       <BreezRedeem />
