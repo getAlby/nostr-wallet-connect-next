@@ -17,12 +17,12 @@ export function SetupAdvanced() {
             <Link to="/setup/node-restore">
               <Button className="w-full">Import Wallet with Backup File</Button>
             </Link>
-            <Link to="/setup/node?wallet=import" className="w-full">
+            <Link to="/setup/password?wallet=import" className="w-full">
               <Button className="w-full" variant="secondary">
                 Import Existing Mnemonic
               </Button>
             </Link>
-            <Link to="/setup/node?wallet=new" className="w-full">
+            <Link to="/setup/password?wallet=new" className="w-full">
               <Button className="w-full" variant="secondary">
                 Create Wallet with Custom Node
               </Button>
