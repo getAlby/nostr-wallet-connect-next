@@ -11,7 +11,7 @@ export function LDKForm() {
 
   async function handleSubmit(data: object) {
     setupStore.updateNodeInfo({
-      backendType: "BREEZ",
+      backendType: "LDK",
       ...data,
     });
     navigate("/setup/import-mnemonic");

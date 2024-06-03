@@ -47,6 +47,7 @@ import Peers from "src/screens/peers/Peers";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 import DebugTools from "src/screens/settings/DebugTools";
 import { RestoreNode } from "src/screens/setup/RestoreNode";
+import { SetupAdvanced } from "src/screens/setup/SetupAdvanced";
 import { BreezForm } from "src/screens/setup/node/BreezForm";
 import { GreenlightForm } from "src/screens/setup/node/GreenlightForm";
 import { LDKForm } from "src/screens/setup/node/LDKForm";
@@ -132,6 +133,7 @@ function App() {
                   <Route path="ldk" element={<LDKForm />} />
                   <Route path="lnd" element={<LNDForm />} />
                 </Route>
+                <Route path="advanced" element={<SetupAdvanced />} />
                 <Route path="wallet" element={<SetupWallet />} />
                 <Route path="import-mnemonic" element={<ImportMnemonic />} />
                 <Route path="node-restore" element={<RestoreNode />} />
