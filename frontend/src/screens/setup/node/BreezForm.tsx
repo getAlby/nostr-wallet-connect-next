@@ -47,7 +47,7 @@ export function BreezForm() {
         title={"Configure Breez"}
         description={"Fill out wallet details to finish setup."}
       />
-      <form className="w-full grid gap-5" onSubmit={onSubmit}>
+      <form className="w-full grid gap-5 mt-6" onSubmit={onSubmit}>
         <div className="grid gap-1.5">
           <Label htmlFor="greenlight-invite-code">Greenlight Invite Code</Label>
           <Input
