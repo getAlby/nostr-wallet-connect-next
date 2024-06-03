@@ -47,6 +47,10 @@ import Peers from "src/screens/peers/Peers";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 import DebugTools from "src/screens/settings/DebugTools";
 import { RestoreNode } from "src/screens/setup/RestoreNode";
+import { BreezForm } from "src/screens/setup/node/BreezForm";
+import { GreenlightForm } from "src/screens/setup/node/GreenlightForm";
+import { LDKForm } from "src/screens/setup/node/LDKForm";
+import { LNDForm } from "src/screens/setup/node/LNDForm";
 
 function App() {
   usePosthog();
@@ -121,7 +125,13 @@ function App() {
               <Route path="setup" element={<SetupRedirect />}>
                 <Route path="" element={<Navigate to="password" replace />} />
                 <Route path="password" element={<SetupPassword />} />
-                <Route path="node" element={<SetupNode />} />
+                <Route path="node">
+                  <Route index element={<SetupNode />} />
+                  <Route path="breez" element={<BreezForm />} />
+                  <Route path="greenlight" element={<GreenlightForm />} />
+                  <Route path="ldk" element={<LDKForm />} />
+                  <Route path="lnd" element={<LNDForm />} />
+                </Route>
                 <Route path="wallet" element={<SetupWallet />} />
                 <Route path="import-mnemonic" element={<ImportMnemonic />} />
                 <Route path="node-restore" element={<RestoreNode />} />
