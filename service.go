@@ -230,7 +230,11 @@ func (svc *Service) launchLNBackend(ctx context.Context, encryptionKey string) e
 
 		lnClient, err = breez.NewBreezService(svc.logger, Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
 	case config.PhoenixBackendType:
-		lnClient, err = phoenixd.NewPhoenixService(svc.logger, svc.cfg.GetEnv().PhoenixdAddress, svc.cfg.GetEnv().PhoenixdAuthorization)
+		PhoenixdAddress, _ := svc.cfg.Get("PhoenixdAddress", encryptionKey)
+		PhoenixdAuthorization, _ := svc.cfg.Get("PhoenixdAuthorization", encryptionKey)
+
+		svc.logger.Info(PhoenixdAuthorization)
+		lnClient, err = phoenixd.NewPhoenixService(svc.logger, PhoenixdAddress, PhoenixdAuthorization)
 	default:
 		svc.logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
 	}

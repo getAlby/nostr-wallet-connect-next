@@ -114,7 +114,11 @@ type SetupRequest struct {
 	LNDMacaroonFile string `json:"lndMacaroonFile"`
 	LNDCertHex      string `json:"lndCertHex"`
 	LNDMacaroonHex  string `json:"lndMacaroonHex"`
-	UnlockPassword  string `json:"unlockPassword"`
+
+	PhoenixdAddress       string `json:"phoenixdAddress"`
+	PhoenixdAuthorization string `json:"phoenixdAuthorization"`
+
+	UnlockPassword string `json:"unlockPassword"`
 }
 
 type CreateAppResponse struct {
