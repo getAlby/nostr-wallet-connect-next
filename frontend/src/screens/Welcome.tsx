@@ -41,8 +41,8 @@ export function Welcome() {
             <Button className="w-full">Get Started</Button>
           </Link>
           {!info?.backendType && (
-            <Link to="/setup/password?wallet=import" className="w-full">
-              <Button variant="link" className="w-full">
+            <Link to="/setup/advanced" className="w-full">
+              <Button variant="secondary" className="w-full">
                 Advanced Setup
               </Button>
             </Link>
