@@ -1,10 +1,10 @@
 import { ZapIcon } from "lucide-react";
 import React, { ReactElement } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Container from "src/components/Container";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
 import { Button } from "src/components/ui/button";
-import { cn } from "src/lib/utils";
+import { backendTypeHasMnemonic, cn } from "src/lib/utils";
 import { BackendType } from "src/types";
 
 type BackendTypeDefinition = {
@@ -42,13 +42,18 @@ const backendTypes: BackendTypeDefinition[] = [
 ];
 
 export function SetupNode() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [selectedBackendType, setSelectedBackupType] =
     React.useState<BackendTypeDefinition>();
-  const navigate = useNavigate();
 
   function next() {
-    navigate(`/setup/node/${selectedBackendType?.id.toLowerCase()}`);
+    navigate(
+      `/setup/node/${selectedBackendType?.id.toLowerCase()}?wallet=${searchParams.get("wallet")}`
+    );
   }
+
+  const importSelected = searchParams.get("wallet") === "import";
 
   return (
     <>
@@ -59,18 +64,23 @@ export function SetupNode() {
         />
         <div className="flex flex-col gap-5 w-full mt-6">
           <div className="w-full grid grid-cols-2 gap-4">
-            {backendTypes.map((item) => (
-              <div
-                className={cn(
-                  "border-foreground-muted border px-4 py-6 flex flex-col gap-3 items-center rounded cursor-pointer",
-                  selectedBackendType === item && "border-primary"
-                )}
-                onClick={() => setSelectedBackupType(item)}
-              >
-                {item.icon}
-                {item.title}
-              </div>
-            ))}
+            {backendTypes
+              .filter((item) =>
+                importSelected ? backendTypeHasMnemonic(item.id) : true
+              )
+              .map((item) => (
+                <div
+                  key={item.id}
+                  className={cn(
+                    "border-foreground-muted border px-4 py-6 flex flex-col gap-3 items-center rounded cursor-pointer",
+                    selectedBackendType === item && "border-primary"
+                  )}
+                  onClick={() => setSelectedBackupType(item)}
+                >
+                  {item.icon}
+                  {item.title}
+                </div>
+              ))}
           </div>
           <Button onClick={() => next()} disabled={!selectedBackendType}>
             Next
