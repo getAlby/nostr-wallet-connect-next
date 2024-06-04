@@ -51,6 +51,7 @@ import { BreezForm } from "src/screens/setup/node/BreezForm";
 import { GreenlightForm } from "src/screens/setup/node/GreenlightForm";
 import { LDKForm } from "src/screens/setup/node/LDKForm";
 import { LNDForm } from "src/screens/setup/node/LNDForm";
+import { PhoenixForm } from "src/screens/setup/node/PhoenixForm";
 
 function App() {
   usePosthog();
@@ -131,6 +132,7 @@ function App() {
                   <Route path="greenlight" element={<GreenlightForm />} />
                   <Route path="ldk" element={<LDKForm />} />
                   <Route path="lnd" element={<LNDForm />} />
+                  <Route path="phoenix" element={<PhoenixForm />} />
                 </Route>
                 <Route path="advanced" element={<SetupAdvanced />} />
                 <Route path="import-mnemonic" element={<ImportMnemonic />} />
