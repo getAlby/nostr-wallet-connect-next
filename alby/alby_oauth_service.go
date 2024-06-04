@@ -208,7 +208,7 @@ func (svc *albyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 	return me, nil
 }
 
-func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, address string) (*AlbyTopup, error) {
+func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, address string) ([]AlbyTopup, error) {
 
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
@@ -254,13 +254,13 @@ func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, addr
 		svc.logger.WithFields(logrus.Fields{
 			"body":       res.Body,
 			"statusCode": res.StatusCode,
-		}).Error("fee endpoint returned non-success code")
+		}).Error("Topups endpoint returned non-success code")
 		return nil, fmt.Errorf("failed to retrieve topup url %s", res.Body)
 	}
 
-	topup := &AlbyTopup{}
+	var topup []AlbyTopup
 
-	err = json.NewDecoder(res.Body).Decode(topup)
+	err = json.NewDecoder(res.Body).Decode(&topup)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to decode API response")
 		return nil, err
