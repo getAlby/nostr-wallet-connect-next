@@ -105,7 +105,7 @@ Now, you should be able to access the pprof web interface at `http://localhost:6
 You can use the `go tool pprof` command to collect and inspect the profiling data. For example, to profile the application for 30 seconds and then open the pprof web UI, run:
 
 ```sh
-go tool pprof -http=localhost:8080 -seconds=30 http://localhost:6060/debug/pprof/profile
+go tool pprof -http=localhost:8081 -seconds=30 http://localhost:6060/debug/pprof/profile
 ```
 
 For more information on the Go pprof library, see the [official documentation](https://pkg.go.dev/net/http/pprof).
