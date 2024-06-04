@@ -41,6 +41,8 @@ export default function BuyBitcoin() {
   const [value, setValue] = React.useState("usd");
   const [amount, setAmount] = React.useState("250");
   const [loading, setLoading] = React.useState(false);
+  const { data: csrf } = useCSRF();
+  const [onchainAddress, setOnchainAddress] = React.useState<string>();
 
   async function apiRequest(
     endpoint: string,
@@ -122,9 +124,6 @@ export default function BuyBitcoin() {
       label: "XAF - CFA Franc BEAC",
     },
   ];
-
-  const { data: csrf } = useCSRF();
-  const [onchainAddress, setOnchainAddress] = React.useState<string>();
 
   const getNewAddress = React.useCallback(async () => {
     if (!csrf) {
@@ -291,10 +290,10 @@ export default function BuyBitcoin() {
                     amount: parseInt(amount),
                     address: onchainAddress,
                   }
-                )) as { url: string };
+                )) as [{ name: string; url: string }];
 
                 setLoading(false);
-                window.open(response.url);
+                window.open(response[0].url);
                 nextStep();
               } else {
                 nextStep();
