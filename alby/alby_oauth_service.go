@@ -252,15 +252,15 @@ func (svc *albyOAuthService) SendPayment(ctx context.Context, invoice string) er
 
 	client := svc.oauthConf.Client(ctx, token)
 
-	type PayRequest struct {
+	type payRequest struct {
 		Invoice string `json:"invoice"`
 	}
 
 	body := bytes.NewBuffer([]byte{})
-	payload := &PayRequest{
+	payload := payRequest{
 		Invoice: invoice,
 	}
-	err = json.NewEncoder(body).Encode(payload)
+	err = json.NewEncoder(body).Encode(&payload)
 
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to encode request payload")
@@ -401,12 +401,12 @@ func (svc *albyOAuthService) ConsumeEvent(ctx context.Context, event *events.Eve
 		return err
 	}
 
-	type EventWithPropertiesMap struct {
+	type eventWithPropertiesMap struct {
 		Event      string                 `json:"event"`
 		Properties map[string]interface{} `json:"properties"`
 	}
 
-	var eventWithGlobalProperties EventWithPropertiesMap
+	var eventWithGlobalProperties eventWithPropertiesMap
 	err = json.Unmarshal(originalEventBuffer.Bytes(), &eventWithGlobalProperties)
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to decode request payload")
@@ -427,7 +427,7 @@ func (svc *albyOAuthService) ConsumeEvent(ctx context.Context, event *events.Eve
 	}
 
 	body := bytes.NewBuffer([]byte{})
-	err = json.NewEncoder(body).Encode(eventWithGlobalProperties)
+	err = json.NewEncoder(body).Encode(&eventWithGlobalProperties)
 
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to encode request payload")
@@ -534,16 +534,16 @@ func (svc *albyOAuthService) createAlbyAccountNWCNode(ctx context.Context) (stri
 
 	client := svc.oauthConf.Client(ctx, token)
 
-	type CreateNWCNodeRequest struct {
+	type createNWCNodeRequest struct {
 		WalletPubkey string `json:"wallet_pubkey"`
 	}
 
-	createNodeRequest := CreateNWCNodeRequest{
+	createNodeRequest := createNWCNodeRequest{
 		WalletPubkey: svc.config.GetNostrPublicKey(),
 	}
 
 	body := bytes.NewBuffer([]byte{})
-	err = json.NewEncoder(body).Encode(createNodeRequest)
+	err = json.NewEncoder(body).Encode(&createNodeRequest)
 
 	if err != nil {
 		svc.logger.WithError(err).Error("Failed to encode request payload")
