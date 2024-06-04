@@ -370,15 +370,17 @@ func (svc *albyOAuthService) LinkAccount(ctx context.Context) error {
 }
 
 func (svc *albyOAuthService) ConsumeEvent(ctx context.Context, event *events.Event, globalProperties map[string]interface{}) error {
-	if event.Event == "nwc_backup_channels" {
-		if err := svc.backupChannels(ctx, event); err != nil {
-			svc.logger.WithError(err).Error("Failed to backup channels")
-		}
-	}
-
 	// TODO: rename this config option to be specific to the alby API
 	if !svc.appConfig.LogEvents {
 		svc.logger.WithField("event", event).Debug("Skipped sending to alby events API")
+		return nil
+	}
+
+	if event.Event == "nwc_backup_channels" {
+		if err := svc.backupChannels(ctx, event); err != nil {
+			svc.logger.WithError(err).Error("Failed to backup channels")
+			return err
+		}
 		return nil
 	}
 
@@ -461,7 +463,7 @@ func (svc *albyOAuthService) ConsumeEvent(ctx context.Context, event *events.Eve
 }
 
 func (svc *albyOAuthService) backupChannels(ctx context.Context, event *events.Event) error {
-	bkpEvent, ok := event.Properties.(*ChannelBackupEvent)
+	bkpEvent, ok := event.Properties.(*events.ChannelBackupEvent)
 	if !ok {
 		return fmt.Errorf("invalid nwc_backup_channels event properties, could not cast to the expected type: %+v", event.Properties)
 	}
@@ -484,12 +486,13 @@ func (svc *albyOAuthService) backupChannels(ctx context.Context, event *events.E
 		return fmt.Errorf("failed to encode channels backup data:  %w", err)
 	}
 
-	encryptionKey, err := svc.config.Get("Mnemonic", "")
+	// use the encrypted mnemonic as the password to encrypt the backup data
+	encryptedMnemonic, err := svc.config.Get("Mnemonic", "")
 	if err != nil {
 		return fmt.Errorf("failed to fetch encryption key: %w", err)
 	}
 
-	encrypted, err := config.AesGcmEncrypt(channelsData.String(), encryptionKey)
+	encrypted, err := config.AesGcmEncrypt(channelsData.String(), encryptedMnemonic)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt channels backup data: %w", err)
 	}
