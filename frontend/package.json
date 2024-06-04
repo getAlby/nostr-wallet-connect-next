@@ -44,7 +44,6 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cmdk": "^1.0.0",
-    "crypto-js": "^4.2.0",
     "dayjs": "^1.11.10",
     "embla-carousel-react": "^8.0.2",
     "gradient-avatar": "^1.0.2",
