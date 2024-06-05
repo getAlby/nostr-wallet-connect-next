@@ -39,6 +39,11 @@ const backendTypes: BackendTypeDefinition[] = [
     title: "LND",
     icon: <ZapIcon />,
   },
+  {
+    id: "CASHU",
+    title: "Cashu Mint",
+    icon: <ZapIcon />,
+  },
 ];
 
 export function SetupNode() {

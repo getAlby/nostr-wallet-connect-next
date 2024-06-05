@@ -48,6 +48,7 @@ import DebugTools from "src/screens/settings/DebugTools";
 import { RestoreNode } from "src/screens/setup/RestoreNode";
 import { SetupAdvanced } from "src/screens/setup/SetupAdvanced";
 import { BreezForm } from "src/screens/setup/node/BreezForm";
+import { CashuForm } from "src/screens/setup/node/CashuForm";
 import { GreenlightForm } from "src/screens/setup/node/GreenlightForm";
 import { LDKForm } from "src/screens/setup/node/LDKForm";
 import { LNDForm } from "src/screens/setup/node/LNDForm";
@@ -133,6 +134,7 @@ function App() {
                   <Route path="ldk" element={<LDKForm />} />
                   <Route path="lnd" element={<LNDForm />} />
                   <Route path="phoenix" element={<PhoenixForm />} />
+                  <Route path="cashu" element={<CashuForm />} />
                 </Route>
                 <Route path="advanced" element={<SetupAdvanced />} />
                 <Route path="import-mnemonic" element={<ImportMnemonic />} />
