@@ -44,7 +44,7 @@ const quotes = [
 ];
 
 export default function TwoColumnFullScreenLayout() {
-  const location = useLocation();
+  const { pathname } = useLocation();
   const [quote, setQuote] = useState(
     quotes[Math.floor(Math.random() * quotes.length)]
   );
@@ -52,7 +52,7 @@ export default function TwoColumnFullScreenLayout() {
   // Change quote on route changes
   useEffect(() => {
     setQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-  }, [location]);
+  }, [pathname]);
 
   return (
     <div className="w-full lg:grid lg:h-screen lg:grid-cols-2 items-stretch text-background">
