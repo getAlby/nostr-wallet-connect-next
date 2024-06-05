@@ -9,22 +9,37 @@ const quotes = [
         largest economy. It is the first transnational economy, and it needs a
         transnational currency.`,
     author: "Andreas M. Antonopoulos",
-    imageUrl: "/images/quotes/andreas-antonopoulos.svg",
+    imageUrl: "/images/quotes/antonopoulos.svg",
   },
   {
     content: `It might make sense just to get some in case it catches on. If enough people think the same way, that becomes a self fulfilling prophecy. Once it gets bootstrapped, there are so many applications if you could effortlessly pay a few cents to a website as easily as dropping coins in a vending machine.`,
     author: "Satoshi Nakamoto",
-    imageUrl: "/images/quotes/satoshi-nakamoto.svg",
+    imageUrl: "/images/quotes/nakamoto.svg",
   },
   {
     content: `Since we’re all rich with bitcoins, or we will be once they’re worth a million dollars like everyone expects, we ought to put some of this unearned wealth to good use.`,
     author: "Hal Finney",
-    imageUrl: "/images/quotes/hal-finney.svg",
+    imageUrl: "/images/quotes/finney.svg",
   },
   {
     content: `I don't believe we shall ever have a good money again before we take the thing out of the hands of government, that is, we can't take it violently out of the hands of government, all we can do is by some sly roundabout way introduce something that they can't stop.`,
     author: "Friedrich August von Hayek",
-    imageUrl: "/images/quotes/friedrich-hayek.svg",
+    imageUrl: "/images/quotes/hayek.svg",
+  },
+  {
+    content: `Bitcoin is what they fear it is.`,
+    author: "Cody Wilson",
+    imageUrl: "/images/quotes/wilson.svg",
+  },
+  {
+    content: `If in fact you can't crack that at all, government can't get in then —everybody's walking around with a Swiss bank account in their pocket.`,
+    author: "Barack Obama",
+    imageUrl: "/images/quotes/obama.svg",
+  },
+  {
+    content: `Bitcoin is the new wonder of the world, more work and human ingenuity, than went into the great pyramids of Egypt. The biggest computation ever done, a digital monument, a verifiable artefact of digital gold - the foundation of a new digital age.`,
+    author: "Adam Back",
+    imageUrl: "/images/quotes/back.svg",
   },
 ];
 
