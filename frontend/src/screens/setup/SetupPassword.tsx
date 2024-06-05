@@ -20,6 +20,7 @@ export function SetupPassword() {
 
   const [searchParams] = useSearchParams();
   const wallet = searchParams.get("wallet") || "new";
+  const node = searchParams.get("node") || "";
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,6 +37,8 @@ export function SetupPassword() {
 
     if (wallet === "import") {
       navigate(`/setup/import-mnemonic`);
+    } else if (node) {
+      navigate(`/setup/node/${node}`);
     } else {
       navigate(`/setup/node?wallet=new`);
     }

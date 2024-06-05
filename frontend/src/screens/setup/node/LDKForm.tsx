@@ -1,47 +1,30 @@
 import { wordlist } from "@scure/bip39/wordlists/english";
-import React from "react";
+import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import Container from "src/components/Container";
-import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
-import { Button } from "src/components/ui/button";
 import useSetupStore from "src/state/SetupStore";
 
 import * as bip39 from "@scure/bip39";
+import Loading from "src/components/Loading";
 
 export function LDKForm() {
   const navigate = useNavigate();
   const setupStore = useSetupStore();
   const [searchParams] = useSearchParams();
 
-  async function handleSubmit(data: object) {
+  // No configuration needed, automatically proceed with the next step
+  useEffect(() => {
     setupStore.updateNodeInfo({
       backendType: "LDK",
-      ...data,
     });
 
-    if (searchParams.get("wallet") === "new") {
+    if (searchParams.get("wallet") !== "import") {
       setupStore.updateNodeInfo({
         mnemonic: bip39.generateMnemonic(wordlist, 128),
       });
     }
 
     navigate("/setup/finish");
-  }
+  }, [navigate, searchParams, setupStore]);
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    handleSubmit({});
-  }
-
-  return (
-    <Container>
-      <TwoColumnLayoutHeader
-        title="Configure LDK"
-        description="Fill out wallet details to finish setup."
-      />
-      <form onSubmit={onSubmit} className="w-full grid gap-5 mt-6">
-        <Button>Next</Button>
-      </form>
-    </Container>
-  );
+  return <Loading />;
 }

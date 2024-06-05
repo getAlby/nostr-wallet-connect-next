@@ -37,7 +37,7 @@ export function Welcome() {
           </p>
         </div>
         <div className="grid gap-2">
-          <Link to="/setup/password" className="w-full">
+          <Link to="/setup/password?node=ldk" className="w-full">
             <Button className="w-full">Get Started</Button>
           </Link>
           {!info?.backendType && (
