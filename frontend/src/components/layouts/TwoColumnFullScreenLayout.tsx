@@ -57,7 +57,7 @@ export default function TwoColumnFullScreenLayout() {
   return (
     <div className="w-full lg:grid lg:h-screen lg:grid-cols-2 items-stretch text-background">
       <div
-        className="hidden lg:flex flex-col bg-foreground justify-end p-10 gap-2 bg-cover bg-no-repeat bg-bottom bg-opacity-50"
+        className="hidden lg:flex flex-col bg-foreground justify-end p-10 gap-2 bg-cover bg-no-repeat bg-bottom"
         style={{ backgroundImage: `url(${quote.imageUrl})` }}
       >
         <div className="flex-1 w-full h-full flex flex-col">
