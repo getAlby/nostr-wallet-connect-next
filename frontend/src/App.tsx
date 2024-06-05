@@ -26,7 +26,6 @@ import { ImportMnemonic } from "src/screens/setup/ImportMnemonic";
 import { SetupFinish } from "src/screens/setup/SetupFinish";
 import { SetupNode } from "src/screens/setup/SetupNode";
 import { SetupPassword } from "src/screens/setup/SetupPassword";
-import { SetupWallet } from "src/screens/setup/SetupWallet";
 import Wallet from "src/screens/wallet";
 import SignMessage from "src/screens/wallet/SignMessage";
 import { usePosthog } from "./hooks/usePosthog";
@@ -134,7 +133,6 @@ function App() {
                   <Route path="lnd" element={<LNDForm />} />
                 </Route>
                 <Route path="advanced" element={<SetupAdvanced />} />
-                <Route path="wallet" element={<SetupWallet />} />
                 <Route path="import-mnemonic" element={<ImportMnemonic />} />
                 <Route path="node-restore" element={<RestoreNode />} />
                 <Route path="finish" element={<SetupFinish />} />
