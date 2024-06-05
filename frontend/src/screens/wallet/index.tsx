@@ -1,7 +1,4 @@
-import {
-  ExternalLink
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import AlbyHead from "src/assets/images/alby-head.svg";
 import AppHeader from "src/components/AppHeader";
@@ -18,18 +15,12 @@ import {
 import { useBalances } from "src/hooks/useBalances";
 import { useInfo } from "src/hooks/useInfo";
 
-declare global {
-  interface Window { alby: any; }
-}
-
 function Wallet() {
   const { data: info } = useInfo();
   const { data: balances } = useBalances();
-  const [extensionInstalled, setExtensionInstalled] = useState(false);
 
-  useEffect(() => {
-    setExtensionInstalled(window.alby !== undefined);
-  }, []);
+  /* eslint-disable  @typescript-eslint/no-explicit-any */
+  const extensionInstalled = (window as any).alby !== undefined;
 
   if (!info || !balances) {
     return <Loading />;
@@ -37,10 +28,7 @@ function Wallet() {
 
   return (
     <>
-      <AppHeader
-        title="Wallet"
-        description="Send and receive transactions"
-      />
+      <AppHeader title="Wallet" description="Send and receive transactions" />
 
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5">
         <div className="text-5xl font-semibold">
@@ -80,7 +68,7 @@ function Wallet() {
             </CardContent>
           </Card>
         </Link>
-        {!extensionInstalled &&
+        {!extensionInstalled && (
           <Link to={`https://www.getalby.com`} target="_blank">
             <Card>
               <CardHeader>
@@ -96,7 +84,8 @@ function Wallet() {
                       </div>
                     </CardTitle>
                     <CardDescription className="ml-4">
-                      Best to use when using your favourite Internet browser
+                      Seamless bitcoin payments in your favourite internet
+                      browser.
                     </CardDescription>
                   </div>
                 </div>
@@ -109,7 +98,7 @@ function Wallet() {
               </CardContent>
             </Card>
           </Link>
-        }
+        )}
       </div>
 
       <BreezRedeem />
