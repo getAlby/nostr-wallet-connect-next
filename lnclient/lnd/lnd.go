@@ -6,7 +6,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -140,7 +142,33 @@ func (svc *LNDService) GetInfo(ctx context.Context) (info *lnclient.NodeInfo, er
 }
 
 func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, error) {
-	channels := []lnclient.Channel{}
+	resp, err := svc.client.ListChannels(ctx, &lnrpc.ListChannelsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	channels := make([]lnclient.Channel, len(resp.Channels))
+	for i, lndChannel := range resp.Channels {
+		channelPointParts := strings.Split(lndChannel.ChannelPoint, ":")
+		fundingTxId := ""
+		if len(channelPointParts) == 2 {
+			fundingTxId = channelPointParts[0]
+		}
+
+		channels[i] = lnclient.Channel{
+			LocalBalance:          lndChannel.LocalBalance,
+			RemoteBalance:         lndChannel.RemoteBalance,
+			Id:                    fmt.Sprintf("%d", lndChannel.ChanId),
+			RemotePubkey:          lndChannel.RemotePubkey,
+			FundingTxId:           fundingTxId,
+			Active:                lndChannel.Active,
+			Public:                !lndChannel.Private,
+			InternalChannel:       lndChannel,
+			Confirmations:         nil,
+			ConfirmationsRequired: nil,
+		}
+	}
+
 	return channels, nil
 }
 
@@ -334,12 +362,28 @@ func (svc *LNDService) Shutdown() error {
 }
 
 func (svc *LNDService) GetNodeConnectionInfo(ctx context.Context) (nodeConnectionInfo *lnclient.NodeConnectionInfo, err error) {
-	return &lnclient.NodeConnectionInfo{}, nil
+	info, err := svc.client.GetInfo(ctx, &lnrpc.GetInfoRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &lnclient.NodeConnectionInfo{
+		Pubkey: info.IdentityPubkey,
+		//Address: address,
+		//Port:    port,
+	}, nil
 }
 
 func (svc *LNDService) ConnectPeer(ctx context.Context, connectPeerRequest *lnclient.ConnectPeerRequest) error {
-	return nil
+	_, err := svc.client.ConnectPeer(ctx, &lnrpc.ConnectPeerRequest{
+		Addr: &lnrpc.LightningAddress{
+			Pubkey: connectPeerRequest.Pubkey,
+			Host:   connectPeerRequest.Address + ":" + strconv.Itoa(int(connectPeerRequest.Port)),
+		},
+	})
+	return err
 }
+
 func (svc *LNDService) OpenChannel(ctx context.Context, openChannelRequest *lnclient.OpenChannelRequest) (*lnclient.OpenChannelResponse, error) {
 	return nil, nil
 }
@@ -369,7 +413,17 @@ func (svc *LNDService) SendSpontaneousPaymentProbes(ctx context.Context, amountM
 }
 
 func (svc *LNDService) ListPeers(ctx context.Context) ([]lnclient.PeerDetails, error) {
-	return nil, nil
+	resp, err := svc.client.ListPeers(ctx, &lnrpc.ListPeersRequest{})
+	ret := make([]lnclient.PeerDetails, 0, len(resp.Peers))
+	for _, peer := range resp.Peers {
+		ret = append(ret, lnclient.PeerDetails{
+			NodeId:      peer.PubKey,
+			Address:     peer.Address,
+			IsPersisted: true,
+			IsConnected: true,
+		})
+	}
+	return ret, err
 }
 
 func (svc *LNDService) GetLogOutput(ctx context.Context, maxLen int) ([]byte, error) {

@@ -144,3 +144,11 @@ func (wrapper *LNDWrapper) GetMainPubkey() (pubkey string) {
 func (wrapper *LNDWrapper) SignMessage(ctx context.Context, req *lnrpc.SignMessageRequest, options ...grpc.CallOption) (*lnrpc.SignMessageResponse, error) {
 	return wrapper.client.SignMessage(ctx, req, options...)
 }
+
+func (wrapper *LNDWrapper) ConnectPeer(ctx context.Context, req *lnrpc.ConnectPeerRequest, options ...grpc.CallOption) (*lnrpc.ConnectPeerResponse, error) {
+	return wrapper.client.ConnectPeer(ctx, req, options...)
+}
+
+func (wrapper *LNDWrapper) ListPeers(ctx context.Context, req *lnrpc.ListPeersRequest, options ...grpc.CallOption) (*lnrpc.ListPeersResponse, error) {
+	return wrapper.client.ListPeers(ctx, req, options...)
+}
