@@ -177,6 +177,21 @@ func NewService(ctx context.Context) (*Service, error) {
 		startDataDogProfiler(ctx)
 	}
 
+	svc.CleanupStaleEvents()
+	go func() {
+		timer := time.NewTicker(1 * time.Hour)
+		defer timer.Stop()
+		for {
+			select {
+			case <-timer.C:
+				svc.CleanupStaleEvents()
+			case <-ctx.Done():
+				svc.Shutdown()
+				return
+			}
+		}
+	}()
+
 	return svc, nil
 }
 
@@ -906,4 +921,19 @@ func (svc *Service) GetConfig() config.Config {
 
 func (svc *Service) GetAlbyOAuthSvc() alby.AlbyOAuthService {
 	return svc.albyOAuthSvc
+}
+
+func (svc *Service) CleanupStaleEvents() {
+	svc.logger.Info("Cleaning up stale events")
+
+	now := time.Now()
+	olderThan := now.AddDate(0, -3, 0)
+
+	if err := svc.db.Where("created_at < ?", olderThan).Delete(&db.RequestEvent{}).Error; err != nil {
+		svc.logger.WithError(err).Error("Failed to delete stale request events")
+	}
+
+	if err := svc.db.Where("created_at < ?", olderThan).Delete(&db.ResponseEvent{}).Error; err != nil {
+		svc.logger.WithError(err).Error("Failed to delete stale response events")
+	}
 }
