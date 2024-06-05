@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
@@ -156,14 +157,14 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 		}
 
 		channels[i] = lnclient.Channel{
-			LocalBalance:          lndChannel.LocalBalance,
-			RemoteBalance:         lndChannel.RemoteBalance,
-			Id:                    fmt.Sprintf("%d", lndChannel.ChanId),
+			InternalChannel:       lndChannel,
+			LocalBalance:          lndChannel.LocalBalance * 1000,
+			RemoteBalance:         lndChannel.RemoteBalance * 1000,
 			RemotePubkey:          lndChannel.RemotePubkey,
-			FundingTxId:           fundingTxId,
+			Id:                    strconv.FormatUint(lndChannel.ChanId, 10),
 			Active:                lndChannel.Active,
 			Public:                !lndChannel.Private,
-			InternalChannel:       lndChannel,
+			FundingTxId:           fundingTxId,
 			Confirmations:         nil,
 			ConfirmationsRequired: nil,
 		}
@@ -385,19 +386,132 @@ func (svc *LNDService) ConnectPeer(ctx context.Context, connectPeerRequest *lncl
 }
 
 func (svc *LNDService) OpenChannel(ctx context.Context, openChannelRequest *lnclient.OpenChannelRequest) (*lnclient.OpenChannelResponse, error) {
-	return nil, nil
+	peers, err := svc.ListPeers(ctx)
+	var foundPeer *lnclient.PeerDetails
+	for _, peer := range peers {
+		if peer.NodeId == openChannelRequest.Pubkey {
+
+			foundPeer = &peer
+			break
+		}
+	}
+
+	if foundPeer == nil {
+		return nil, errors.New("node is not peered yet")
+	}
+
+	svc.Logger.WithField("peer_id", foundPeer.NodeId).Info("Opening channel")
+
+	nodePub, err := hex.DecodeString(openChannelRequest.Pubkey)
+	if err != nil {
+		return nil, errors.New("failed to decode pubkey")
+	}
+
+	channel, err := svc.client.OpenChannelSync(ctx, &lnrpc.OpenChannelRequest{
+		NodePubkey:         nodePub,
+		Private:            !openChannelRequest.Public,
+		LocalFundingAmount: openChannelRequest.Amount,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to open channel with %s: %s", foundPeer.NodeId, err)
+	}
+
+	return &lnclient.OpenChannelResponse{
+		FundingTxId: hex.EncodeToString(channel.GetFundingTxidBytes()),
+	}, err
 }
 
 func (svc *LNDService) CloseChannel(ctx context.Context, closeChannelRequest *lnclient.CloseChannelRequest) (*lnclient.CloseChannelResponse, error) {
-	return nil, nil
+	svc.Logger.WithFields(logrus.Fields{
+		"request": closeChannelRequest,
+	}).Info("Closing Channel")
+
+	resp, err := svc.client.ListChannels(ctx, &lnrpc.ListChannelsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	var foundChannel *lnrpc.Channel
+	for _, channel := range resp.Channels {
+		if strconv.FormatUint(channel.ChanId, 10) == closeChannelRequest.ChannelId {
+
+			foundChannel = channel
+			break
+		}
+	}
+
+	if foundChannel == nil {
+		return nil, errors.New("no channel exists with the given id")
+	}
+
+	channelPointParts := strings.Split(foundChannel.ChannelPoint, ":")
+
+	channelPoint := &lnrpc.ChannelPoint{}
+	channelPoint.FundingTxid = &lnrpc.ChannelPoint_FundingTxidStr{
+		FundingTxidStr: channelPointParts[0],
+	}
+
+	outputIndex, err := strconv.ParseUint(channelPointParts[1], 10, 32)
+	if err != nil {
+		return nil, err
+	}
+	channelPoint.OutputIndex = uint32(outputIndex)
+
+	stream, err := svc.client.CloseChannel(ctx, &lnrpc.CloseChannelRequest{
+		ChannelPoint: channelPoint,
+		Force:        closeChannelRequest.Force,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		resp, err := stream.Recv()
+		if err != nil {
+			return nil, err
+		}
+
+		switch update := resp.Update.(type) {
+		case *lnrpc.CloseStatusUpdate_ClosePending:
+			closingHash := update.ClosePending.Txid
+			txid, err := chainhash.NewHash(closingHash)
+			if err != nil {
+				return nil, err
+			}
+			svc.Logger.WithFields(logrus.Fields{
+				"closingTxid": txid.String(),
+			}).Info("Channel close pending")
+		case *lnrpc.CloseStatusUpdate_ChanClose:
+			svc.Logger.Info("Channel close successful")
+			return &lnclient.CloseChannelResponse{}, nil
+		}
+	}
 }
 
 func (svc *LNDService) GetNewOnchainAddress(ctx context.Context) (string, error) {
-	return "", nil
+	resp, err := svc.client.NewAddress(ctx, &lnrpc.NewAddressRequest{
+		Type: lnrpc.AddressType_TAPROOT_PUBKEY,
+	})
+	if err != nil {
+		svc.Logger.WithError(err).Error("NewOnchainAddress failed")
+		return "", err
+	}
+	return resp.Address, nil
 }
 
 func (svc *LNDService) GetOnchainBalance(ctx context.Context) (*lnclient.OnchainBalanceResponse, error) {
-	return nil, nil
+	balances, err := svc.client.WalletBalance(ctx, &lnrpc.WalletBalanceRequest{})
+	if err != nil {
+		return nil, err
+	}
+	svc.Logger.WithFields(logrus.Fields{
+		"balances": balances,
+	}).Debug("Listed Balances")
+	return &lnclient.OnchainBalanceResponse{
+		Spendable: int64(balances.ConfirmedBalance),
+		Total:     int64(balances.TotalBalance - balances.ReservedBalanceAnchorChan),
+		Reserved:  int64(balances.ReservedBalanceAnchorChan),
+	}, nil
 }
 
 func (svc *LNDService) RedeemOnchainFunds(ctx context.Context, toAddress string) (txId string, err error) {

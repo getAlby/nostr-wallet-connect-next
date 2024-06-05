@@ -152,3 +152,19 @@ func (wrapper *LNDWrapper) ConnectPeer(ctx context.Context, req *lnrpc.ConnectPe
 func (wrapper *LNDWrapper) ListPeers(ctx context.Context, req *lnrpc.ListPeersRequest, options ...grpc.CallOption) (*lnrpc.ListPeersResponse, error) {
 	return wrapper.client.ListPeers(ctx, req, options...)
 }
+
+func (wrapper *LNDWrapper) OpenChannelSync(ctx context.Context, req *lnrpc.OpenChannelRequest, options ...grpc.CallOption) (*lnrpc.ChannelPoint, error) {
+	return wrapper.client.OpenChannelSync(ctx, req, options...)
+}
+
+func (wrapper *LNDWrapper) CloseChannel(ctx context.Context, req *lnrpc.CloseChannelRequest, options ...grpc.CallOption) (lnrpc.Lightning_CloseChannelClient, error) {
+	return wrapper.client.CloseChannel(ctx, req, options...)
+}
+
+func (wrapper *LNDWrapper) WalletBalance(ctx context.Context, req *lnrpc.WalletBalanceRequest, options ...grpc.CallOption) (*lnrpc.WalletBalanceResponse, error) {
+	return wrapper.client.WalletBalance(ctx, req, options...)
+}
+
+func (wrapper *LNDWrapper) NewAddress(ctx context.Context, req *lnrpc.NewAddressRequest, options ...grpc.CallOption) (*lnrpc.NewAddressResponse, error) {
+	return wrapper.client.NewAddress(ctx, req, options...)
+}
