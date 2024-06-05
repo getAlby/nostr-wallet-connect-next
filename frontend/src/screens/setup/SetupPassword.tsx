@@ -19,7 +19,7 @@ export function SetupPassword() {
   const [isPasswordSecured, setIsPasswordSecured] = useState<boolean>(false);
 
   const [searchParams] = useSearchParams();
-  const wallet = searchParams.get("wallet");
+  const wallet = searchParams.get("wallet") || "new";
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,32 +34,11 @@ export function SetupPassword() {
       return;
     }
 
-    if (wallet == "new") {
+    if (wallet === "import") {
+      navigate(`/setup/import-mnemonic`);
+    } else {
       navigate(`/setup/node?wallet=new`);
-    } else if (wallet == "import") {
-      navigate(`/setup/node?wallet=import`);
     }
-
-    // TODO: redirect to appropriate pages based on import / new
-
-    // if (!backendTypeHasMnemonic(info.backendType)) {
-    //   // NOTE: LND flow does not setup a mnemonic
-    //   navigate(`/setup/node?wallet=new`);
-    //   return;
-    // }
-
-    // // Import flow (All options)
-    // if (wallet === "import") {
-    //   navigate(`/setup/node?wallet=import`);
-    //   return;
-    // }
-
-    // // Default flow (LDK)
-    // useSetupStore.getState().updateNodeInfo({
-    //   backendType: "LDK",
-    //   mnemonic: bip39.generateMnemonic(wordlist, 128),
-    // });
-    // navigate(`/setup/finish`);
   }
 
   return (

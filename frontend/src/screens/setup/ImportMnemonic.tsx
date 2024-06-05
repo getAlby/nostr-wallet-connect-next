@@ -40,7 +40,8 @@ export function ImportMnemonic() {
       mnemonic,
       nextBackupReminder: sixMonthsLater.toISOString(),
     });
-    navigate(`/setup/finish`);
+
+    navigate(`/setup/node?wallet=import`);
   }
 
   return (
@@ -77,7 +78,7 @@ export function ImportMnemonic() {
         </Alert>
 
         <MnemonicInputs mnemonic={mnemonic} setMnemonic={setMnemonic} />
-        <Button>Finish</Button>
+        <Button>Next</Button>
       </form>
     </>
   );
