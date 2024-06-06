@@ -22,14 +22,6 @@ var _202406061259_delete_content = &gormigrate.Migration{
 		return nil
 	},
 	Rollback: func(tx *gorm.DB) error {
-		if err := tx.Exec("ALTER TABLE response_events ADD COLUMN content TEXT").Error; err != nil {
-			return err
-		}
-
-		if err := tx.Exec("ALTER TABLE request_events ADD COLUMN content TEXT").Error; err != nil {
-			return err
-		}
-
 		return nil
 	},
 }
