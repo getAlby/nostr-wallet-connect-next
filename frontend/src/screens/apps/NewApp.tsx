@@ -139,7 +139,7 @@ const NewApp = () => {
           <div className="w-full grid gap-1.5">
             <Label htmlFor="name">Name</Label>
             <Input
-              readOnly={!!nameParam}
+              autoFocus
               type="text"
               name="name"
               value={appName}
@@ -158,12 +158,17 @@ const NewApp = () => {
           <Permissions
             initialPermissions={permissions}
             onPermissionsChange={setPermissions}
-            isEditing={!reqMethodsParam}
-            isNew
+            canEditPermissions={!reqMethodsParam}
+            isNewConnection
           />
         </div>
 
         <Separator />
+        {returnTo && (
+          <p className="text-xs text-muted-foreground">
+            You will automatically return to {returnTo}
+          </p>
+        )}
 
         <Button type="submit">{pubkey ? "Connect" : "Next"}</Button>
       </form>
