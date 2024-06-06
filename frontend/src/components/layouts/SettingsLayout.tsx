@@ -65,7 +65,7 @@ export default function SettingsLayout() {
                 size="icon"
                 loading={loading}
               >
-                <Power className="w-4 h-4" />
+                {!loading && <Power className="w-4 h-4" />}
               </LoadingButton>
             </AlertDialogTrigger>
             <AlertDialogContent>
