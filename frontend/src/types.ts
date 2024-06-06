@@ -283,6 +283,11 @@ export type NewInstantChannelInvoiceResponse = {
   fee: number;
 };
 
+export type AlbyTopupResponse = {
+  name: string;
+  url: string;
+}[];
+
 export type RedeemOnchainFundsResponse = {
   txId: string;
 };

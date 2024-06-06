@@ -49,7 +49,6 @@ export default function DepositBitcoin() {
       setOnchainAddress(response.address);
     } catch (error) {
       alert("Failed to request a new address: " + error);
-    } finally {
     }
   }, [csrf]);
 
@@ -89,7 +88,7 @@ export default function DepositBitcoin() {
       </Breadcrumb>
       <AppHeader
         title="Deposit Bitcoin to Savings Balance"
-        description="Deposit bitcoin to on-chain address below to add it to your savings balance, which you can use to open new lightning channels."
+        description="Deposit bitcoin to your on-chain address which then can be used to open new lightning channels."
         contentRight={
           <Link to="/channels/onchain/buy-bitcoin">
             <Button>

@@ -28,10 +28,10 @@ import {
   PopoverTrigger,
 } from "src/components/ui/popover";
 import { Step, StepItem, Stepper, useStepper } from "src/components/ui/stepper";
-import { localStorageKeys } from "src/constants";
+import { localStorageKeys, MOONPAY_SUPPORTED_CURRENCIES } from "src/constants";
 import { useCSRF } from "src/hooks/useCSRF";
 import { cn } from "src/lib/utils";
-import { GetOnchainAddressResponse } from "src/types";
+import { AlbyTopupResponse, GetOnchainAddressResponse } from "src/types";
 import { request } from "src/utils/request";
 
 export default function BuyBitcoin() {
@@ -44,86 +44,38 @@ export default function BuyBitcoin() {
   const { data: csrf } = useCSRF();
   const [onchainAddress, setOnchainAddress] = React.useState<string>();
 
-  async function apiRequest(
-    endpoint: string,
-    method: string,
-    requestBody?: object
-  ) {
+  async function getMoonpayUrl() {
+    if (!csrf) {
+      throw new Error("csrf not loaded");
+    }
+    setLoading(true);
     try {
-      if (!csrf) {
-        throw new Error("csrf not loaded");
+      const response = await request<AlbyTopupResponse>(
+        `/api/alby/topup?&currency=${value}`,
+        {
+          method: "POST",
+          headers: {
+            "X-CSRF-Token": csrf,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            amount: parseInt(amount),
+            address: onchainAddress,
+          }),
+        }
+      );
+
+      if (!response) {
+        throw new Error("No provider url in response");
       }
 
-      const requestOptions: RequestInit = {
-        method: method,
-        headers: {
-          "X-CSRF-Token": csrf,
-          "Content-Type": "application/json",
-        },
-      };
-
-      if (requestBody) {
-        requestOptions.body = JSON.stringify(requestBody);
-      }
-
-      const data = await request(endpoint, requestOptions);
-
-      return data;
+      return response[0].url;
     } catch (error) {
-      console.error("failed to do api request", error);
+      alert("Failed to request provider url: " + error);
+    } finally {
+      setLoading(false);
     }
   }
-
-  const currencies = [
-    {
-      value: "usd",
-      label: "USD - American Dollar",
-    },
-    {
-      value: "ars",
-      label: "ARS - Argentine Peso",
-    },
-    {
-      value: "aud",
-      label: "AUD - Australian Dollar",
-    },
-    {
-      value: "thb",
-      label: "THB - Baht",
-    },
-    {
-      value: "bbd",
-      label: "BBD - Barbados Dollar",
-    },
-    {
-      value: "bzd",
-      label: "BZD - Belize Dollar",
-    },
-    {
-      value: "bmd",
-      label: "BMD - Bermudian Dollar",
-    },
-    {
-      value: "brl",
-      label: "BRL - Brazilian Real",
-    },
-    {
-      value: "bnd",
-      label: "BND - Brunei Dollar",
-    },
-    {
-      value: "bgn",
-      label: "BGN - Bulgarian Lev",
-    },
-    {
-      value: "cad",
-      label: "CAD - Canadian Dollar",
-    },
-    {
-      value: "xaf",
-      label: "XAF - CFA Franc BEAC",
-    },
-  ];
 
   const getNewAddress = React.useCallback(async () => {
     if (!csrf) {
@@ -209,7 +161,7 @@ export default function BuyBitcoin() {
                         className="w-full justify-between"
                       >
                         {value
-                          ? currencies.find(
+                          ? MOONPAY_SUPPORTED_CURRENCIES.find(
                               (currency) => currency.value === value
                             )?.label
                           : "Select Currency"}
@@ -222,7 +174,7 @@ export default function BuyBitcoin() {
                         <CommandEmpty>NO Currency Found</CommandEmpty>
                         <CommandGroup>
                           <CommandList>
-                            {currencies.map((currency) => (
+                            {MOONPAY_SUPPORTED_CURRENCIES.map((currency) => (
                               <CommandItem
                                 key={currency.value}
                                 value={currency.value}
@@ -272,8 +224,7 @@ export default function BuyBitcoin() {
     </div>
   );
   function StepButtons(props: StepButtonProps) {
-    const { nextStep, isLastStep } = useStepper();
-
+    const { nextStep } = useStepper();
     return (
       <div className="w-full flex mt-4 mb-4">
         {!props.blockNext && (
@@ -281,21 +232,10 @@ export default function BuyBitcoin() {
             size="sm"
             loading={loading}
             onClick={async () => {
-              if (isLastStep) {
-                setLoading(true);
-                const response = (await apiRequest(
-                  `/api/alby/topup?&currency=${value}`,
-                  "POST",
-                  {
-                    amount: parseInt(amount),
-                    address: onchainAddress,
-                  }
-                )) as [{ name: string; url: string }];
+              const response: string | undefined = await getMoonpayUrl();
 
-                setLoading(false);
-                window.open(response[0].url);
-                nextStep();
-              } else {
+              if (response) {
+                window.open(response);
                 nextStep();
               }
             }}
