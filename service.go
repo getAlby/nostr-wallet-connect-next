@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/pprof"
 	"os"
 	"path"
 	"path/filepath"
@@ -19,6 +21,7 @@ import (
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 
 	"github.com/glebarez/sqlite"
 	"github.com/joho/godotenv"
@@ -34,6 +37,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/breez"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/cashu"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/greenlight"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/ldk"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/lnd"
@@ -165,6 +169,14 @@ func NewService(ctx context.Context) (*Service, error) {
 		Event: "nwc_started",
 	})
 
+	if appConfig.GoProfilerAddr != "" {
+		startProfiler(ctx, appConfig.GoProfilerAddr)
+	}
+
+	if appConfig.DdProfilerEnabled {
+		startDataDogProfiler(ctx)
+	}
+
 	return svc, nil
 }
 
@@ -230,7 +242,15 @@ func (svc *Service) launchLNBackend(ctx context.Context, encryptionKey string) e
 
 		lnClient, err = breez.NewBreezService(svc.logger, Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
 	case config.PhoenixBackendType:
-		lnClient, err = phoenixd.NewPhoenixService(svc.logger, svc.cfg.GetEnv().PhoenixdAddress, svc.cfg.GetEnv().PhoenixdAuthorization)
+		PhoenixdAddress, _ := svc.cfg.Get("PhoenixdAddress", encryptionKey)
+		PhoenixdAuthorization, _ := svc.cfg.Get("PhoenixdAuthorization", encryptionKey)
+
+		lnClient, err = phoenixd.NewPhoenixService(svc.logger, PhoenixdAddress, PhoenixdAuthorization)
+	case config.CashuBackendType:
+		cashuMintUrl, _ := svc.cfg.Get("CashuMintUrl", encryptionKey)
+		cashuWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "cashu")
+
+		lnClient, err = cashu.NewCashuService(svc.logger, cashuWorkdir, cashuMintUrl)
 	default:
 		svc.logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
 	}
@@ -314,7 +334,7 @@ func (svc *Service) PublishEvent(ctx context.Context, sub *nostr.Subscription, r
 	if app != nil {
 		appId = &app.ID
 	}
-	responseEvent := db.ResponseEvent{NostrId: resp.ID, RequestId: requestEvent.ID, Content: resp.Content, State: "received"}
+	responseEvent := db.ResponseEvent{NostrId: resp.ID, RequestId: requestEvent.ID, State: "received"}
 	err := svc.db.Create(&responseEvent).Error
 	if err != nil {
 		svc.logger.WithFields(logrus.Fields{
@@ -379,7 +399,7 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 	}
 
 	// store request event
-	requestEvent := db.RequestEvent{AppId: nil, NostrId: event.ID, Content: event.Content, State: db.REQUEST_EVENT_STATE_HANDLER_EXECUTING}
+	requestEvent := db.RequestEvent{AppId: nil, NostrId: event.ID, State: db.REQUEST_EVENT_STATE_HANDLER_EXECUTING}
 	err = svc.db.Create(&requestEvent).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
@@ -540,6 +560,10 @@ func (svc *Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, ev
 
 		return
 	}
+
+	requestEvent.Method = nip47Request.Method
+	requestEvent.ContentData = payload
+	svc.db.Save(&requestEvent) // we ignore potential DB errors here as this only saves the method and content data
 
 	// TODO: replace with a channel
 	// TODO: update all previous occurences of svc.PublishEvent to also use the channel
@@ -809,6 +833,58 @@ func finishRestoreNode(logger *logrus.Logger, workDir string) {
 		}
 		logger.WithField("restoreDir", restoreDir).Info("removed restore directory")
 	}
+}
+
+func startProfiler(ctx context.Context, addr string) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/debug/pprof/", pprof.Index)
+	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+	server := &http.Server{
+		Addr:    addr,
+		Handler: mux,
+	}
+
+	go func() {
+		<-ctx.Done()
+		err := server.Shutdown(context.Background())
+		if err != nil {
+			panic("pprof server shutdown failed: " + err.Error())
+		}
+	}()
+
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			panic("pprof server failed: " + err.Error())
+		}
+	}()
+}
+
+func startDataDogProfiler(ctx context.Context) {
+	opts := make([]profiler.Option, 0)
+
+	opts = append(opts, profiler.WithProfileTypes(
+		profiler.CPUProfile,
+		profiler.HeapProfile,
+		// higher overhead
+		profiler.BlockProfile,
+		profiler.MutexProfile,
+		profiler.GoroutineProfile,
+	))
+
+	err := profiler.Start(opts...)
+	if err != nil {
+		panic("failed to start DataDog profiler: " + err.Error())
+	}
+
+	go func() {
+		<-ctx.Done()
+		profiler.Stop()
+	}()
 }
 
 func (svc *Service) StopDb() error {

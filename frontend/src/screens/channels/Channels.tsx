@@ -4,6 +4,7 @@ import {
   Bitcoin,
   ChevronDown,
   CopyIcon,
+  ExternalLinkIcon,
   Hotel,
   MoreHorizontal,
   Trash2,
@@ -13,6 +14,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader.tsx";
 import EmptyState from "src/components/EmptyState.tsx";
+import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading.tsx";
 import { Badge } from "src/components/ui/badge.tsx";
 import { Button } from "src/components/ui/button.tsx";
@@ -130,7 +132,7 @@ export default function Channels() {
         return;
       }
 
-      console.log(`🎬 Closing channel with ${nodeId}`);
+      console.info(`🎬 Closing channel with ${nodeId}`);
 
       const closeChannelResponse = await request<CloseChannelResponse>(
         `/api/peers/${nodeId}/channels/${channelId}?force=${
@@ -152,7 +154,7 @@ export default function Channels() {
       const closedChannel = channels?.find(
         (c) => c.id === channelId && c.remotePubkey === nodeId
       );
-      console.log("Closed channel", closedChannel);
+      console.info("Closed channel", closedChannel);
       if (closedChannel) {
         prompt(
           "Closed channel. Copy channel funding TX to view on mempool",
@@ -285,7 +287,7 @@ export default function Channels() {
       ></AppHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {(albyBalance?.sats || 0) >= 100 && (
+        {albyBalance && albyBalance?.sats >= 100 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -294,7 +296,9 @@ export default function Channels() {
               <Hotel className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{albyBalance?.sats} sats</div>
+              <div className="text-2xl font-bold">
+                {new Intl.NumberFormat().format(albyBalance?.sats)} sats
+              </div>
             </CardContent>
           </Card>
         )}
@@ -465,8 +469,17 @@ export default function Channels() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              <DropdownMenuItem className="flex flex-row items-center gap-2 cursor-pointer">
+                                <ExternalLink
+                                  to={`https://mempool.space/tx/${channel.fundingTxId}`}
+                                  className="w-full flex flex-row items-center gap-2"
+                                >
+                                  <ExternalLinkIcon className="w-4 h-4" />
+                                  <p>View Funding Transaction</p>
+                                </ExternalLink>
+                              </DropdownMenuItem>
                               <DropdownMenuItem
-                                className="flex flex-row items-center gap-2"
+                                className="flex flex-row items-center gap-2 cursor-pointer"
                                 onClick={() =>
                                   closeChannel(
                                     channel.id,
@@ -475,7 +488,7 @@ export default function Channels() {
                                   )
                                 }
                               >
-                                <Trash2 className="text-destructive" />
+                                <Trash2 className="h-4 w-4 text-destructive" />
                                 Close Channel
                               </DropdownMenuItem>
                             </DropdownMenuContent>

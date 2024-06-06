@@ -6,6 +6,7 @@ const (
 	LDKBackendType        = "LDK"
 	BreezBackendType      = "BREEZ"
 	PhoenixBackendType    = "PHOENIX"
+	CashuBackendType      = "CASHU"
 )
 
 type AppConfig struct {
@@ -33,6 +34,8 @@ type AppConfig struct {
 	LogEvents             bool   `envconfig:"LOG_EVENTS" default:"false"`
 	PhoenixdAddress       string `envconfig:"PHOENIXD_ADDRESS" default:"http://127.0.0.1:9740"`
 	PhoenixdAuthorization string `envconfig:"PHOENIXD_AUTHORIZATION"`
+	GoProfilerAddr        string `envconfig:"GO_PROFILER_ADDR"`
+	DdProfilerEnabled     bool   `envconfig:"DD_PROFILER_ENABLED" default:"false"`
 }
 
 func (c *AppConfig) IsDefaultClientId() bool {
