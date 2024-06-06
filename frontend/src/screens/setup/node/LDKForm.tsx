@@ -13,18 +13,23 @@ export function LDKForm() {
 
   // No configuration needed, automatically proceed with the next step
   useEffect(() => {
-    setupStore.updateNodeInfo({
-      backendType: "LDK",
-    });
-
     if (searchParams.get("wallet") !== "import") {
       setupStore.updateNodeInfo({
+        backendType: "LDK",
         mnemonic: bip39.generateMnemonic(wordlist, 128),
+      });
+    } else {
+      setupStore.updateNodeInfo({
+        backendType: "LDK",
       });
     }
 
     navigate("/setup/finish");
-  }, [navigate, searchParams, setupStore]);
+
+    // This method should only be run once, adding dependencies
+    // causes endless loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return <Loading />;
 }

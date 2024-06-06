@@ -1,11 +1,17 @@
-import { ZapIcon } from "lucide-react";
 import React, { ReactElement } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import Container from "src/components/Container";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
+import { BreezIcon } from "src/components/icons/Breez";
+import { GreenlightIcon } from "src/components/icons/Greenlight";
+import { LDKIcon } from "src/components/icons/LDK";
+import { PhoenixdIcon } from "src/components/icons/Phoenixd";
 import { Button } from "src/components/ui/button";
 import { backendTypeHasMnemonic, cn } from "src/lib/utils";
 import { BackendType } from "src/types";
+
+import cashu from "src/assets/images/node/cashu.png";
+import lnd from "src/assets/images/node/lnd.png";
 
 type BackendTypeDefinition = {
   id: BackendType;
@@ -17,32 +23,32 @@ const backendTypes: BackendTypeDefinition[] = [
   {
     id: "LDK",
     title: "LDK",
-    icon: <ZapIcon />,
+    icon: <LDKIcon />,
   },
   {
     id: "PHOENIX",
-    title: "Phoenixd",
-    icon: <ZapIcon />,
+    title: "phoenixd",
+    icon: <PhoenixdIcon />,
   },
   {
     id: "BREEZ",
     title: "Breez SDK",
-    icon: <ZapIcon />,
+    icon: <BreezIcon />,
   },
   {
     id: "GREENLIGHT",
     title: "Greenlight",
-    icon: <ZapIcon />,
+    icon: <GreenlightIcon />,
   },
   {
     id: "LND",
     title: "LND",
-    icon: <ZapIcon />,
+    icon: <img src={lnd} />,
   },
   {
     id: "CASHU",
     title: "Cashu Mint",
-    icon: <ZapIcon />,
+    icon: <img src={cashu} />,
   },
 ];
 
@@ -82,7 +88,7 @@ export function SetupNode() {
                   )}
                   onClick={() => setSelectedBackupType(item)}
                 >
-                  {item.icon}
+                  <div className="h-6 w-6">{item.icon}</div>
                   {item.title}
                 </div>
               ))}

@@ -52,7 +52,7 @@ import { CashuForm } from "src/screens/setup/node/CashuForm";
 import { GreenlightForm } from "src/screens/setup/node/GreenlightForm";
 import { LDKForm } from "src/screens/setup/node/LDKForm";
 import { LNDForm } from "src/screens/setup/node/LNDForm";
-import { PhoenixForm } from "src/screens/setup/node/PhoenixForm";
+import { PhoenixdForm } from "src/screens/setup/node/PhoenixdForm";
 
 function App() {
   usePosthog();
@@ -134,7 +134,7 @@ function App() {
                   <Route path="ldk" element={<LDKForm />} />
                   <Route path="lnd" element={<LNDForm />} />
                   <Route path="cashu" element={<CashuForm />} />
-                  <Route path="phoenix" element={<PhoenixForm />} />
+                  <Route path="phoenix" element={<PhoenixdForm />} />
                 </Route>
                 <Route path="advanced" element={<SetupAdvanced />} />
                 <Route path="import-mnemonic" element={<ImportMnemonic />} />

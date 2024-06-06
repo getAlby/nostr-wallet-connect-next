@@ -8,7 +8,7 @@ import { Label } from "src/components/ui/label";
 import { useToast } from "src/components/ui/use-toast";
 import useSetupStore from "src/state/SetupStore";
 
-export function PhoenixForm() {
+export function PhoenixdForm() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const setupStore = useSetupStore();
