@@ -35,19 +35,26 @@ export default function SettingsLayout() {
     }
 
     setLoading(true);
+    try {
+      await request("/api/stop", {
+        method: "POST",
+        headers: {
+          "X-CSRF-Token": csrf,
+          "Content-Type": "application/json",
+        },
+      });
 
-    await request("/api/stop", {
-      method: "POST",
-      headers: {
-        "X-CSRF-Token": csrf,
-        "Content-Type": "application/json",
-      },
-    });
-
-    await refetchInfo();
-    setLoading(false);
-    navigate("/", { replace: true });
-    toast({ title: "Your node has been turned off." });
+      await refetchInfo();
+      setLoading(false);
+      navigate("/", { replace: true });
+      toast({ title: "Your node has been turned off." });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Failed to shutdown node: " + error,
+        variant: "destructive",
+      });
+    }
   }, [csrf, navigate, refetchInfo, toast]);
 
   const { data: info } = useInfo();
