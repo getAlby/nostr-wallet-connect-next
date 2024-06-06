@@ -27,14 +27,14 @@ export default function SettingsLayout() {
   const { mutate: refetchInfo } = useInfo();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const [shuttingDown, setShuttingDown] = useState(false);
 
   const shutdown = React.useCallback(async () => {
     if (!csrf) {
       throw new Error("csrf not loaded");
     }
 
-    setLoading(true);
+    setShuttingDown(true);
 
     await request("/api/stop", {
       method: "POST",
@@ -45,7 +45,7 @@ export default function SettingsLayout() {
     });
 
     await refetchInfo();
-    setLoading(false);
+    setShuttingDown(false);
     navigate("/", { replace: true });
     toast({ title: "Your node has been turned off." });
   }, [csrf, navigate, refetchInfo, toast]);
@@ -63,9 +63,9 @@ export default function SettingsLayout() {
               <LoadingButton
                 variant="destructive"
                 size="icon"
-                loading={loading}
+                loading={shuttingDown}
               >
-                {!loading && <Power className="w-4 h-4" />}
+                {!shuttingDown && <Power className="w-4 h-4" />}
               </LoadingButton>
             </AlertDialogTrigger>
             <AlertDialogContent>
