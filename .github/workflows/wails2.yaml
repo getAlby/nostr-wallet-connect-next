@@ -165,21 +165,6 @@ jobs:
           rm -Rf ./build/bin/*
           mv ./build/out/albyhub-${{runner.os}}.tar.bz2 ./build/bin/
 
-      - name: Install codesign
-        if: runner.os == 'macOS'
-        run: |
-          brew install codesign
-
-      - name: Sign the macOS binary
-        if: runner.os == 'macOS'
-        run: |
-          echo "Signing Package"
-          /usr/bin/codesign --deep --force --verify --verbose --timestamp --sign "Developer ID Application: Alby Inc. (${{ secrets.APPLE_TEAM_ID }})" --entitlements ./build/darwin/entitlements.plist ./build/bin/AlbyHub.app
-        env:
-          AC_USERNAME: ${{ secrets.APPLE_USERNAME }}
-          AC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          AC_PROVIDER: ${{ secrets.APPLE_TEAM_ID }}
-
       - name: Make DMG image for macOS
         if: runner.os == 'macOS'
         run: |
@@ -187,6 +172,16 @@ jobs:
           hdiutil create -volname "AlbyHub" -srcfolder ./build/bin/${{ matrix.build.name }}.app -ov -format UDZO ./build/out/albyhub-${{runner.os}}.dmg
           rm -Rf ./build/bin/*
           mv ./build/out/albyhub-${{runner.os}}.dmg ./build/bin/
+
+      - name: Sign the macOS binary
+        if: runner.os == 'macOS'
+        run: |
+          echo "Signing Package"
+          gon -log-level=info ./build/darwin/gon-sign.json
+        env:
+          AC_USERNAME: ${{ secrets.APPLE_USERNAME }}
+          AC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          AC_PROVIDER: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Notarize the DMG image
         if: runner.os == 'macOS'

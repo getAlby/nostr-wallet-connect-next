@@ -1,5 +1,5 @@
 {
-  "source": ["./build/bin/AlbyHub.app"],
+  "source": ["./build/bin/albyhub-macOS.dmg"],
   "bundle_id": "com.getalby.AlbyHub",
   "sign": {
     "application_identity": "Developer ID Application: Alby Inc.",
