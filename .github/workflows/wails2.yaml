@@ -8,11 +8,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build: [
-          {name: albyhub, platform: linux/amd64, os: ubuntu-20.04},
-          {name: albyhub, platform: windows/amd64, os: windows-2019},
-          {name: albyhub, platform: darwin/universal, os: macos-12}
-        ]
+        build:
+          [
+            { name: albyhub, platform: linux/amd64, os: ubuntu-20.04 },
+            { name: albyhub, platform: windows/amd64, os: windows-2019 },
+            { name: albyhub, platform: darwin/universal, os: macos-12 },
+          ]
     runs-on: ${{ matrix.build.os }}
     steps:
       - uses: actions/checkout@v2
@@ -47,7 +48,7 @@ jobs:
       - name: Setup NodeJS
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: "20.x"
 
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.7.1
@@ -60,7 +61,7 @@ jobs:
 
       - name: Install macOS Wails deps
         if: runner.os == 'macOS'
-        run: brew install mitchellh/gon/gon
+        run: brew install Bearer/tap/gon
         shell: bash
 
       - name: Wails Doctor
@@ -96,6 +97,20 @@ jobs:
         if: runner.os == 'Windows'
         run: wails build --platform windows/amd64 -webview2 download -o ${{ matrix.build.name }}.exe -tags "wails"
         shell: bash
+
+      - name: Import Code-Signing Certificates for macOS
+        if: matrix.platform == 'macos-latest'
+        uses: Apple-Actions/import-codesign-certs@v1
+        with:
+          # The certificates in a PKCS12 file encoded as a base64 string
+          p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
+          # The password used to import the PKCS12 file.
+          p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
+      - name: Sign our macOS binary
+        if: matrix.platform == 'macos-latest'
+        run: |
+          echo "Signing Package"
+          gon -log-level=info ./build/darwin/gon-sign.json
 
       - name: Copy DLLs to the output directory
         if: runner.os == 'Windows'

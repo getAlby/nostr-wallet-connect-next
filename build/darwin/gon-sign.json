@@ -1,0 +1,12 @@
+{
+  "source": ["./build/bin/AlbyHub.app"],
+  "bundle_id": "com.getalby.AlbyHub",
+  "apple_id": {
+    "username": "moritz@getalby.com",
+    "password": "@env:APPLE_PASSWORD",
+    "provider": "@env:APPLE_TEAM_ID"
+  },
+  "sign": {
+    "application_identity": "Developer ID Application: Alby Inc."
+  }
+}
