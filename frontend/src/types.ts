@@ -20,7 +20,13 @@ export const NIP_47_SIGN_MESSAGE_METHOD = "sign_message";
 
 export const NIP_47_NOTIFICATIONS_PERMISSION = "notifications";
 
-export type BackendType = "LND" | "BREEZ" | "GREENLIGHT" | "LDK" | "PHOENIX";
+export type BackendType =
+  | "LND"
+  | "BREEZ"
+  | "GREENLIGHT"
+  | "LDK"
+  | "PHOENIX"
+  | "CASHU";
 
 export type RequestMethodType =
   | "pay_invoice"
@@ -238,6 +244,9 @@ export type SetupNodeInfo = Partial<{
   lndAddress?: string;
   lndCertHex?: string;
   lndMacaroonHex?: string;
+
+  phoenixdAddress?: string;
+  phoenixdAuthorization?: string;
 }>;
 
 export type RecommendedChannelPeer = {
