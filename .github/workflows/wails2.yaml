@@ -165,12 +165,16 @@ jobs:
           rm -Rf ./build/bin/*
           mv ./build/out/albyhub-${{runner.os}}.tar.bz2 ./build/bin/
 
+      - name: Install codesign
+        if: runner.os == 'macOS'
+        run: |
+          brew install codesign
+
       - name: Sign the macOS binary
         if: runner.os == 'macOS'
         run: |
           echo "Signing Package"
-          gon -log-level=info ./build/darwin/gon-sign.json
-          gon -log-level=info ./build/darwin/gon-sign-1.json
+          /usr/bin/codesign --deep --force --verify --verbose --timestamp --sign "Developer ID Application: Alby Inc. (${{ secrets.APPLE_TEAM_ID }})" --entitlements ./build/darwin/entitlements.plist ./build/bin/AlbyHub.app
         env:
           AC_USERNAME: ${{ secrets.APPLE_USERNAME }}
           AC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
