@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "src/components/ui/select";
 import { useToast } from "src/components/ui/use-toast";
+import { backendTypeConfigs } from "src/lib/backendType";
 import useSetupStore from "src/state/SetupStore";
 import { BackendType } from "src/types";
 
@@ -30,9 +31,7 @@ export function SetupNode() {
       ...data,
     });
     navigate(
-      backendType === "BREEZ" ||
-        backendType === "GREENLIGHT" ||
-        backendType === "LDK"
+      backendTypeConfigs[backendType].hasMnemonic
         ? `/setup/import-mnemonic`
         : `/setup/finish`
     );

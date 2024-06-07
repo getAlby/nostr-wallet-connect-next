@@ -11,12 +11,11 @@ import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { useToast } from "src/components/ui/use-toast";
 import { useInfo } from "src/hooks/useInfo";
-import { backendTypeHasMnemonic } from "src/lib/utils";
 
 export function SetupPassword() {
   const { toast } = useToast();
   const store = useSetupStore();
-  const { data: info } = useInfo();
+  const { data: info, hasMnemonic } = useInfo();
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -36,22 +35,31 @@ export function SetupPassword() {
       return;
     }
 
-    if (!backendTypeHasMnemonic(info.backendType)) {
-      // NOTE: LND flow does not setup a mnemonic
-      navigate(`/setup/finish`);
-      return;
-    }
-
     // Import flow (All options)
     if (wallet === "import") {
       navigate(`/setup/node`);
       return;
     }
 
+    const mnemonic = bip39.generateMnemonic(wordlist, 128);
+
+    // NOTE: this is only true at this point in the setup if the
+    // user has already set their backend type in an env variable
+    // therefore, we assume they have set all the necessary env variables
+    if (info?.backendType) {
+      if (hasMnemonic) {
+        useSetupStore.getState().updateNodeInfo({
+          mnemonic,
+        });
+      }
+      navigate(`/setup/finish`);
+      return;
+    }
+
     // Default flow (LDK)
     useSetupStore.getState().updateNodeInfo({
       backendType: "LDK",
-      mnemonic: bip39.generateMnemonic(wordlist, 128),
+      mnemonic,
     });
     navigate(`/setup/finish`);
   }

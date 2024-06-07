@@ -14,13 +14,12 @@ import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useChannels } from "src/hooks/useChannels";
 import { useInfo } from "src/hooks/useInfo";
 import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo";
-import { backendTypeHasMnemonic } from "src/lib/utils";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 
 function SidebarHint() {
   const { data: channels } = useChannels();
   const { data: albyBalance } = useAlbyBalance();
-  const { data: info } = useInfo();
+  const { data: info, hasChannelManagement, hasMnemonic } = useInfo();
   const { data: albyMe } = useAlbyMe();
   const { order } = useChannelOrderStore();
   const location = useLocation();
@@ -49,7 +48,7 @@ function SidebarHint() {
 
   // User has funds to migrate
   if (
-    info?.backendType === "LDK" &&
+    hasChannelManagement &&
     albyBalance &&
     albyBalance.sats * (1 - ALBY_SERVICE_FEE) > ALBY_MIN_BALANCE
   ) {
@@ -65,10 +64,7 @@ function SidebarHint() {
   }
 
   // User has no channels yet
-  if (
-    (info?.backendType === "LDK" || info?.backendType === "GREENLIGHT") &&
-    channels?.length === 0
-  ) {
+  if (hasChannelManagement && channels?.length === 0) {
     return (
       <SidebarHintCard
         icon={Zap}
@@ -98,8 +94,8 @@ function SidebarHint() {
   }
 
   if (
+    hasMnemonic &&
     info &&
-    backendTypeHasMnemonic(info.backendType) &&
     (!info.nextBackupReminder ||
       new Date(info.nextBackupReminder).getTime() < new Date().getTime())
   ) {
