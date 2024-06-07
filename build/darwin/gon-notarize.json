@@ -1,0 +1,13 @@
+{
+  "notarize": [
+    {
+      "path": "./build/bin/albyhub-macOS.dmg",
+      "bundle_id": "com.getalby.AlbyHub"
+    }
+  ],
+  "apple_id": {
+    "username": "@env:APPLE_USERNAME",
+    "password": "@env:APPLE_PASSWORD",
+    "provider": "@env:APPLE_TEAM_ID"
+  }
+}
