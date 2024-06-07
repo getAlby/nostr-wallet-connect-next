@@ -99,15 +99,16 @@ jobs:
         shell: bash
 
       - name: Import Code-Signing Certificates for macOS
-        if: matrix.platform == 'macos-latest'
+        if: runner.os == 'macOS'
         uses: Apple-Actions/import-codesign-certs@v1
         with:
           # The certificates in a PKCS12 file encoded as a base64 string
           p12-file-base64: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_P12_BASE64 }}
           # The password used to import the PKCS12 file.
           p12-password: ${{ secrets.APPLE_DEVELOPER_CERTIFICATE_PASSWORD }}
-      - name: Sign our macOS binary
-        if: matrix.platform == 'macos-latest'
+
+      - name: Sign the macOS binary
+        if: runner.os == 'macOS'
         run: |
           echo "Signing Package"
           gon -log-level=info ./build/darwin/gon-sign.json
