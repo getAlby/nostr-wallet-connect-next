@@ -119,10 +119,10 @@ jobs:
         run: |
           echo "Signing Package"
           gon -log-level=info ./build/darwin/gon-sign.json
-      env:
-        AC_USERNAME: ${{ secrets.APPLE_USERNAME }}
-        AC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-        AC_PROVIDER: ${{ secrets.APPLE_TEAM_ID }}
+        env:
+          AC_USERNAME: ${{ secrets.APPLE_USERNAME }}
+          AC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          AC_PROVIDER: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Copy DLLs to the output directory
         if: runner.os == 'Windows'
