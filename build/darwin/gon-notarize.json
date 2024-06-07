@@ -6,6 +6,6 @@
     }
   ],
   "apple_id": {
-    "password": "@env:APPLE_PASSWORD"
+    "password": "@env:AC_PASSWORD"
   }
 }
