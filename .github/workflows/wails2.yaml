@@ -61,7 +61,7 @@ jobs:
 
       - name: Install macOS Wails deps
         if: runner.os == 'macOS'
-        run: brew install Bearer/tap/gon
+        run: brew install mitchellh/gon/gon
         shell: bash
 
       - name: Wails Doctor
