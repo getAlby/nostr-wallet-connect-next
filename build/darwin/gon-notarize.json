@@ -4,8 +4,5 @@
       "path": "./build/bin/albyhub-macOS.dmg",
       "bundle_id": "com.getalby.AlbyHub"
     }
-  ],
-  "apple_id": {
-    "password": "@env:AC_PASSWORD"
-  }
+  ]
 }

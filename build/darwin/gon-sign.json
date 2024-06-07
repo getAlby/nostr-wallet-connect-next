@@ -1,9 +1,6 @@
 {
   "source": ["./build/bin/AlbyHub.app"],
   "bundle_id": "com.getalby.AlbyHub",
-  "apple_id": {
-    "password": "@env:AC_PASSWORD"
-  },
   "sign": {
     "application_identity": "Developer ID Application: Alby Inc."
   }
