@@ -2,7 +2,7 @@
   "source": ["./build/bin/AlbyHub.app"],
   "bundle_id": "com.getalby.AlbyHub",
   "apple_id": {
-    "username": "moritz@getalby.com",
+    "username": "@env:APPLE_USERNAME",
     "password": "@env:APPLE_PASSWORD",
     "provider": "@env:APPLE_TEAM_ID"
   },
