@@ -180,6 +180,10 @@ jobs:
           mv ./build/out/albyhub-${{runner.os}}.dmg ./build/bin/
 
       - name: Notarize the DMG image
+        env:
+          APPLE_USERNAME: ${{ secrets.APPLE_USERNAME }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         if: runner.os == 'macOS'
         run: |
           echo "Notarizing Zip Files"
