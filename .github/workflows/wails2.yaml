@@ -170,6 +170,7 @@ jobs:
         run: |
           echo "Signing Package"
           gon -log-level=info ./build/darwin/gon-sign.json
+          gon -log-level=info ./build/darwin/gon-sign-1.json
         env:
           AC_USERNAME: ${{ secrets.APPLE_USERNAME }}
           AC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}

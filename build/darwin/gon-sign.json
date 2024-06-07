@@ -1,12 +1,8 @@
 {
-  "source": [
-    "./build/bin/AlbyHub.app",
-    "./build/bin/AlbyHub.app/Contents/Frameworks/libglalby_bindings.dylib",
-    "./build/bin/AlbyHub.app/Contents/Frameworks/libldk_node.dylib",
-    "./build/bin/AlbyHub.app/Contents/Frameworks/libbreez_sdk_bindings.dylib"
-  ],
+  "source": ["./build/bin/AlbyHub.app"],
   "bundle_id": "com.getalby.AlbyHub",
   "sign": {
-    "application_identity": "Developer ID Application: Alby Inc."
+    "application_identity": "Developer ID Application: Alby Inc.",
+    "entitlements_file": "./build/darwin/entitlements.plist"
   }
 }
