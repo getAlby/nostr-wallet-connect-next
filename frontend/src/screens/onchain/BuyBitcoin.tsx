@@ -1,4 +1,3 @@
-import { Check, ChevronsUpDown } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
@@ -10,39 +9,32 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "src/components/ui/breadcrumb";
-import { Button } from "src/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "src/components/ui/command";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "src/components/ui/popover";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "src/components/ui/select";
 import { Step, StepItem, Stepper, useStepper } from "src/components/ui/stepper";
 import { localStorageKeys, MOONPAY_SUPPORTED_CURRENCIES } from "src/constants";
 import { useCSRF } from "src/hooks/useCSRF";
-import { cn } from "src/lib/utils";
 import { AlbyTopupResponse, GetOnchainAddressResponse } from "src/types";
 import { request } from "src/utils/request";
 
 export default function BuyBitcoin() {
   const steps = [{ id: "specifyOrder" }] satisfies StepItem[];
 
-  const [open, setOpen] = React.useState(false);
+  const [providerUrl, setProviderUrl] = React.useState("");
   const [value, setValue] = React.useState("usd");
   const [amount, setAmount] = React.useState("250");
   const [loading, setLoading] = React.useState(false);
   const { data: csrf } = useCSRF();
   const [onchainAddress, setOnchainAddress] = React.useState<string>();
+  const isHttpsMode = window.location.protocol.startsWith("https");
 
   async function getMoonpayUrl() {
     if (!csrf) {
@@ -152,55 +144,22 @@ export default function BuyBitcoin() {
                 </p>
                 <div className="grid gap-2 p-2">
                   <Label>Currency</Label>
-                  <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        className="w-full justify-between"
-                      >
-                        {value
-                          ? MOONPAY_SUPPORTED_CURRENCIES.find(
-                              (currency) => currency.value === value
-                            )?.label
-                          : "Select Currency"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height]">
-                      <Command>
-                        <CommandInput placeholder="Search option..." />
-                        <CommandEmpty>NO Currency Found</CommandEmpty>
-                        <CommandGroup>
-                          <CommandList>
-                            {MOONPAY_SUPPORTED_CURRENCIES.map((currency) => (
-                              <CommandItem
-                                key={currency.value}
-                                value={currency.value}
-                                onSelect={(currentValue: string) => {
-                                  setValue(
-                                    currentValue === value ? "" : currentValue
-                                  );
-                                  setOpen(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    value === currency.value
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                {currency.label}
-                              </CommandItem>
-                            ))}
-                          </CommandList>
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <Select
+                    name="currency"
+                    value={value}
+                    onValueChange={(value) => setValue(value)}
+                  >
+                    <SelectTrigger className="mb-5">
+                      <SelectValue placeholder="Currency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MOONPAY_SUPPORTED_CURRENCIES.map((currency) => (
+                        <SelectItem key={currency.value} value={currency.value}>
+                          {currency.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid gap-1.5 p-2">
@@ -221,6 +180,19 @@ export default function BuyBitcoin() {
           </Stepper>
         </div>
       </div>
+
+      {providerUrl && isHttpsMode && (
+        <div className="mx-auto justify-center">
+          <iframe
+            allow="accelerometer; autoplay; camera; gyroscope; payment"
+            src={providerUrl}
+            height="720"
+            className="w-full sm:w-[500px] outline-0 rounded-md shadow mx-auto"
+          >
+            <p>Your browser does not support iframes.</p>
+          </iframe>
+        </div>
+      )}
     </div>
   );
   function StepButtons(props: StepButtonProps) {
@@ -235,7 +207,11 @@ export default function BuyBitcoin() {
               const response: string | undefined = await getMoonpayUrl();
 
               if (response) {
-                window.open(response);
+                setProviderUrl(response);
+
+                if (!isHttpsMode) {
+                  window.open(response);
+                }
                 nextStep();
               }
             }}
