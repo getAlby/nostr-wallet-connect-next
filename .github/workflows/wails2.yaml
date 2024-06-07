@@ -119,10 +119,6 @@ jobs:
         run: |
           echo "Signing Package"
           gon -log-level=info ./build/darwin/gon-sign.json
-        env:
-          APPLE_USERNAME: ${{ secrets.APPLE_USERNAME }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - name: Copy DLLs to the output directory
         if: runner.os == 'Windows'
@@ -195,10 +191,6 @@ jobs:
         run: |
           echo "Notarizing Zip Files"
           gon -log-level=info -log-json ./build/darwin/gon-notarize.json
-        env:
-          APPLE_USERNAME: ${{ secrets.APPLE_USERNAME }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Linux'
