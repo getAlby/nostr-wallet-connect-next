@@ -6,8 +6,6 @@
     }
   ],
   "apple_id": {
-    "username": "@env:APPLE_USERNAME",
-    "password": "@env:APPLE_PASSWORD",
-    "provider": "@env:APPLE_TEAM_ID"
+    "password": "@env:APPLE_PASSWORD"
   }
 }
