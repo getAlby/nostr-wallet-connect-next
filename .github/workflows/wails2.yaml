@@ -169,7 +169,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           echo "Signing Package"
-          gon -log-level=info ./build/darwin/gon-sign.json
+          /usr/bin/codesign -s "Developer ID Application: Alby Inc." -f -v --deep --timestamp --options runtime --entitlements ./build/darwin/entitlements.plist ./build/bin/AlbyHub.app
         env:
           AC_USERNAME: ${{ secrets.APPLE_USERNAME }}
           AC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
