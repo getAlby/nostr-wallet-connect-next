@@ -30,13 +30,6 @@ jobs:
       #    nsis: false
       #    node-version: '20.x'
 
-      - name: Set up environment variables
-        if: runner.os == 'macOS'
-        run: |
-          echo "APPLE_USERNAME=${{ secrets.APPLE_USERNAME }}" >> $GITHUB_ENV
-          echo "APPLE_PASSWORD=${{ secrets.APPLE_PASSWORD }}" >> $GITHUB_ENV
-          echo "APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}" >> $GITHUB_ENV
-
       - name: Install dependencies
         if: runner.os == 'Linux'
         run: |
