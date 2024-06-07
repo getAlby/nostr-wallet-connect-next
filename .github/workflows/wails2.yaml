@@ -165,14 +165,6 @@ jobs:
           rm -Rf ./build/bin/*
           mv ./build/out/albyhub-${{runner.os}}.tar.bz2 ./build/bin/
 
-      - name: Make DMG image for macOS
-        if: runner.os == 'macOS'
-        run: |
-          mkdir -p ./build/out
-          hdiutil create -volname "AlbyHub" -srcfolder ./build/bin/${{ matrix.build.name }}.app -ov -format UDZO ./build/out/albyhub-${{runner.os}}.dmg
-          rm -Rf ./build/bin/*
-          mv ./build/out/albyhub-${{runner.os}}.dmg ./build/bin/
-
       - name: Sign the macOS binary
         if: runner.os == 'macOS'
         run: |
@@ -182,6 +174,14 @@ jobs:
           AC_USERNAME: ${{ secrets.APPLE_USERNAME }}
           AC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           AC_PROVIDER: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Make DMG image for macOS
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p ./build/out
+          hdiutil create -volname "AlbyHub" -srcfolder ./build/bin/${{ matrix.build.name }}.app -ov -format UDZO ./build/out/albyhub-${{runner.os}}.dmg
+          rm -Rf ./build/bin/*
+          mv ./build/out/albyhub-${{runner.os}}.dmg ./build/bin/
 
       - name: Notarize the DMG image
         if: runner.os == 'macOS'
