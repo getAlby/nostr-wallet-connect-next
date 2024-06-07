@@ -554,23 +554,43 @@ func (svc *LNDService) SignMessage(ctx context.Context, message string) (string,
 }
 
 func (svc *LNDService) GetBalances(ctx context.Context) (*lnclient.BalancesResponse, error) {
-	balance, err := svc.GetBalance(ctx)
+	onchainBalance, err := svc.GetOnchainBalance(ctx)
 	if err != nil {
+		svc.Logger.WithError(err).Error("Failed to retrieve onchain balance")
 		return nil, err
 	}
 
+	var totalReceivable int64 = 0
+	var totalSpendable int64 = 0
+	var nextMaxReceivable int64 = 0
+	var nextMaxSpendable int64 = 0
+	var nextMaxReceivableMPP int64 = 0
+	var nextMaxSpendableMPP int64 = 0
+	resp, err := svc.client.ListChannels(ctx, &lnrpc.ListChannelsRequest{})
+
+	for _, channel := range resp.Channels {
+		if channel.Active {
+			channelMinSpendable := channel.LocalBalance * 1000
+			channelMinReceivable := channel.RemoteBalance * 1000
+
+			nextMaxSpendable = max(nextMaxSpendable, channelMinSpendable)
+			nextMaxReceivable = max(nextMaxReceivable, channelMinReceivable)
+
+			totalSpendable += channelMinSpendable
+			totalReceivable += channelMinReceivable
+		}
+	}
+
 	return &lnclient.BalancesResponse{
-		Onchain: lnclient.OnchainBalanceResponse{
-			Spendable: 0, // TODO: implement
-			Total:     0, // TODO: implement
-		},
+		Onchain: *onchainBalance,
 		Lightning: lnclient.LightningBalanceResponse{
-			TotalSpendable:       balance,
-			TotalReceivable:      0,       // TODO: implement
-			NextMaxSpendable:     balance, // TODO: implement
-			NextMaxReceivable:    0,       // TODO: implement
-			NextMaxSpendableMPP:  balance, // TODO: implement
-			NextMaxReceivableMPP: 0,       // TODO: implement
+			TotalSpendable:    totalSpendable,
+			TotalReceivable:   totalReceivable,
+			NextMaxSpendable:  nextMaxSpendable,
+			NextMaxReceivable: nextMaxReceivable,
+			// TODO: return actuall MPP instead of 0
+			NextMaxSpendableMPP:  nextMaxSpendableMPP,
+			NextMaxReceivableMPP: nextMaxReceivableMPP,
 		},
 	}, nil
 }
