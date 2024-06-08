@@ -33,7 +33,7 @@ export default function BuyBitcoin() {
   const [onchainAddress, setOnchainAddress] = React.useState<string>();
   const navigate = useNavigate();
 
-  async function getMoonpayUrl() {
+  async function launchMoonPay() {
     if (!csrf) {
       throw new Error("csrf not loaded");
     }
@@ -56,7 +56,14 @@ export default function BuyBitcoin() {
         throw new Error("No provider url in response");
       }
 
-      return response[0].url;
+      if (!response.length) {
+        throw new Error("No available provider urls");
+      }
+
+      const firstProvider = response[0];
+      console.info("Opening topup provider", firstProvider);
+      openLink(firstProvider.url);
+      navigate("/channels");
     } catch (error) {
       alert("Failed to request provider url: " + error);
     } finally {
@@ -170,14 +177,7 @@ export default function BuyBitcoin() {
             <LoadingButton
               size="sm"
               loading={loading}
-              onClick={async () => {
-                const response: string | undefined = await getMoonpayUrl();
-
-                if (response) {
-                  openLink(response);
-                  navigate("/channels");
-                }
-              }}
+              onClick={launchMoonPay}
               type="button"
             >
               Next
