@@ -45,7 +45,7 @@ jobs:
         run: go get -v -t -d ./...
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20.x'
 
@@ -167,7 +167,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           mkdir -p ./build/out
-          zip -r -j ./build/out/albyhub-${{runner.os}}.zip ./build/bin/*
+          7z a -tzip ./build/out/albyhub-${{runner.os}}.zip ./build/bin/*
           rm -Rf ./build/bin/*
           mv ./build/out/albyhub-${{runner.os}}.zip ./build/bin/
         shell: bash
