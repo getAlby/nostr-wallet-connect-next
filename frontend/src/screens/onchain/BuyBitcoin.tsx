@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "src/components/ui/select";
 import { Step, StepItem, Stepper, useStepper } from "src/components/ui/stepper";
-import { localStorageKeys, MOONPAY_SUPPORTED_CURRENCIES } from "src/constants";
+import { MOONPAY_SUPPORTED_CURRENCIES, localStorageKeys } from "src/constants";
 import { useCSRF } from "src/hooks/useCSRF";
 import { AlbyTopupResponse, GetOnchainAddressResponse } from "src/types";
 import { request } from "src/utils/request";
@@ -29,7 +29,7 @@ export default function BuyBitcoin() {
   const steps = [{ id: "specifyOrder" }] satisfies StepItem[];
 
   const [providerUrl, setProviderUrl] = React.useState("");
-  const [value, setValue] = React.useState("usd");
+  const [currency, setCurrency] = React.useState("usd");
   const [amount, setAmount] = React.useState("250");
   const [loading, setLoading] = React.useState(false);
   const { data: csrf } = useCSRF();
@@ -42,20 +42,18 @@ export default function BuyBitcoin() {
     }
     setLoading(true);
     try {
-      const response = await request<AlbyTopupResponse>(
-        `/api/alby/topup?&currency=${value}`,
-        {
-          method: "POST",
-          headers: {
-            "X-CSRF-Token": csrf,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            amount: parseInt(amount),
-            address: onchainAddress,
-          }),
-        }
-      );
+      const response = await request<AlbyTopupResponse>(`/api/alby/topup`, {
+        method: "POST",
+        headers: {
+          "X-CSRF-Token": csrf,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: parseInt(amount),
+          address: onchainAddress,
+          currency,
+        }),
+      });
 
       if (!response) {
         throw new Error("No provider url in response");
@@ -146,8 +144,8 @@ export default function BuyBitcoin() {
                   <Label>Currency</Label>
                   <Select
                     name="currency"
-                    value={value}
-                    onValueChange={(value) => setValue(value)}
+                    value={currency}
+                    onValueChange={(value) => setCurrency(value)}
                   >
                     <SelectTrigger className="mb-5">
                       <SelectValue placeholder="Currency" />

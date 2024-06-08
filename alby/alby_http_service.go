@@ -77,7 +77,7 @@ func (albyHttpSvc *AlbyHttpService) albyTopupHandler(c echo.Context) error {
 		})
 	}
 
-	topup, err := albyHttpSvc.albyOAuthSvc.GetTopupUrl(c.Request().Context(), topupParams.Amount, topupParams.Address)
+	topup, err := albyHttpSvc.albyOAuthSvc.GetTopupUrl(c.Request().Context(), topupParams.Amount, topupParams.Address, topupParams.Currency)
 	if err != nil {
 		albyHttpSvc.logger.WithError(err).Error("Failed to request alby /topups endpoint")
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{

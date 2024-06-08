@@ -17,7 +17,7 @@ type AlbyOAuthService interface {
 	GetBalance(ctx context.Context) (*AlbyBalance, error)
 	GetMe(ctx context.Context) (*AlbyMe, error)
 	SendPayment(ctx context.Context, invoice string) error
-	GetTopupUrl(ctx context.Context, amount int64, address string) ([]AlbyTopup, error)
+	GetTopupUrl(ctx context.Context, amount int64, address string, currency string) ([]AlbyTopup, error)
 }
 
 type AlbyBalanceResponse struct {
@@ -51,8 +51,9 @@ type AlbyBalance struct {
 }
 
 type AlbyTopupRequest struct {
-	Amount  int64  `json:"amount"`
-	Address string `json:"address"`
+	Amount   int64  `json:"amount"`
+	Address  string `json:"address"`
+	Currency string `json:"currency"`
 }
 
 type ChannelPeerSuggestion struct {

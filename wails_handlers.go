@@ -635,7 +635,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			}).WithError(err).Error("Failed to decode request to wails router")
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
-		topupResponse, err := app.svc.albyOAuthSvc.GetTopupUrl(ctx, topupRequest.Amount, topupRequest.Address)
+		topupResponse, err := app.svc.albyOAuthSvc.GetTopupUrl(ctx, topupRequest.Amount, topupRequest.Address, topupRequest.Currency)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}

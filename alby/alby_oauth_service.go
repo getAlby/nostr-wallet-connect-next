@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -209,7 +210,7 @@ func (svc *albyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 	return me, nil
 }
 
-func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, address string) ([]AlbyTopup, error) {
+func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, address string, currency string) ([]AlbyTopup, error) {
 
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
@@ -219,15 +220,17 @@ func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, addr
 
 	client := svc.oauthConf.Client(ctx, token)
 
-	type TopupParams struct {
+	type topupParams struct {
 		Address string `json:"address"`
 		Amount  int64  `json:"amount"`
+		// Currency string `json:"currency"` // TODO: enable when backend supports it
 	}
 
 	body := bytes.NewBuffer([]byte{})
-	payload := &TopupParams{
+	payload := &topupParams{
 		Address: address,
 		Amount:  amount,
+		// Currency: currency, // TODO: enable when backend supports it
 	}
 	err = json.NewEncoder(body).Encode(payload)
 
@@ -252,11 +255,19 @@ func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, addr
 	}
 
 	if res.StatusCode >= 300 {
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			svc.logger.WithFields(logrus.Fields{
+				"status_code": res.StatusCode,
+			}).WithError(err).Error("Failed to read response body")
+			return nil, fmt.Errorf("failed to read topup response body %s", string(body))
+		}
+
 		svc.logger.WithFields(logrus.Fields{
-			"body":       res.Body,
-			"statusCode": res.StatusCode,
+			"body":        body,
+			"status_code": res.StatusCode,
 		}).Error("Topups endpoint returned non-success code")
-		return nil, fmt.Errorf("failed to retrieve topup url %s", res.Body)
+		return nil, fmt.Errorf("failed to retrieve topup url %s", string(body))
 	}
 
 	var topup []AlbyTopup
