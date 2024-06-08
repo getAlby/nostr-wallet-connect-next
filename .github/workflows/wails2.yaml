@@ -15,7 +15,7 @@ jobs:
         ]
     runs-on: ${{ matrix.build.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -163,6 +163,15 @@ jobs:
           rm -Rf ./build/bin/*
           mv ./build/out/albyhub-${{runner.os}}.dmg ./build/bin/
 
+      - name: Make Windows ZIP archive
+        if: runner.os == 'Windows'
+        run: |
+          mkdir -p ./build/out
+          zip -r -j ./build/out/albyhub-${{runner.os}}.zip ./build/bin/*
+          rm -Rf ./build/bin/*
+          mv ./build/out/albyhub-${{runner.os}}.zip ./build/bin/
+        shell: bash
+
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Linux'
         with:
@@ -184,7 +193,7 @@ jobs:
         with:
           name: albyhub-${{runner.os}}
           path: |
-            *\bin\*
+            ./build/bin/albyhub-${{runner.os}}.zip
           if-no-files-found: error
 
   release_draft:
