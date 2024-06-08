@@ -12,7 +12,8 @@ export function LDKForm() {
 
   // No configuration needed, automatically proceed with the next step
   useEffect(() => {
-    if (searchParams.get("wallet") !== "import") {
+    // only generate a mnemonic if one is not already imported
+    if (!useSetupStore.getState().nodeInfo.mnemonic) {
       useSetupStore.getState().updateNodeInfo({
         mnemonic: bip39.generateMnemonic(wordlist, 128),
       });

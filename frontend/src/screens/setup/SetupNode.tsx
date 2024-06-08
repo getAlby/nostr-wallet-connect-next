@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Container from "src/components/Container";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
 import { BreezIcon } from "src/components/icons/Breez";
@@ -12,6 +12,7 @@ import { BackendType } from "src/types";
 
 import cashu from "src/assets/images/node/cashu.png";
 import lnd from "src/assets/images/node/lnd.png";
+import useSetupStore from "src/state/SetupStore";
 
 type BackendTypeDefinition = {
   id: BackendType;
@@ -54,17 +55,15 @@ const backendTypes: BackendTypeDefinition[] = [
 
 export function SetupNode() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const setupStore = useSetupStore();
   const [selectedBackendType, setSelectedBackupType] =
     React.useState<BackendTypeDefinition>();
 
   function next() {
-    navigate(
-      `/setup/node/${selectedBackendType?.id.toLowerCase()}?wallet=${searchParams.get("wallet")}`
-    );
+    navigate(`/setup/node/${selectedBackendType?.id.toLowerCase()}`);
   }
 
-  const importSelected = searchParams.get("wallet") === "import";
+  const hasImportedMnemonic = !!setupStore.nodeInfo.mnemonic;
 
   return (
     <>
@@ -77,7 +76,7 @@ export function SetupNode() {
           <div className="w-full grid grid-cols-2 gap-4">
             {backendTypes
               .filter((item) =>
-                importSelected ? backendTypeHasMnemonic(item.id) : true
+                hasImportedMnemonic ? backendTypeHasMnemonic(item.id) : true
               )
               .map((item) => (
                 <div

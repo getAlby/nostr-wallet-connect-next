@@ -1,7 +1,7 @@
 import * as bip39 from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
 import { LifeBuoy, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import MnemonicInputs from "src/components/MnemonicInputs";
@@ -16,6 +16,12 @@ export function ImportMnemonic() {
   const navigate = useNavigate();
   const setupStore = useSetupStore();
 
+  useEffect(() => {
+    // in case the user presses back, remove their last-saved mnemonic
+    useSetupStore.getState().updateNodeInfo({
+      mnemonic: undefined,
+    });
+  }, []);
   const [mnemonic, setMnemonic] = useState<string>("");
 
   async function onSubmit(e: React.FormEvent) {
@@ -41,7 +47,7 @@ export function ImportMnemonic() {
       nextBackupReminder: sixMonthsLater.toISOString(),
     });
 
-    navigate(`/setup/node?wallet=import`);
+    navigate(`/setup/node`);
   }
 
   return (

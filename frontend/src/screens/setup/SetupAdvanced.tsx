@@ -22,7 +22,7 @@ export function SetupAdvanced() {
                 Import Existing Mnemonic
               </Button>
             </Link>
-            <Link to="/setup/password?wallet=new" className="w-full">
+            <Link to="/setup/password" className="w-full">
               <Button className="w-full" variant="secondary">
                 Create Wallet with Custom Node
               </Button>

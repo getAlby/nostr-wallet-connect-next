@@ -40,7 +40,7 @@ export function SetupPassword() {
     } else if (node) {
       navigate(`/setup/node/${node}`);
     } else {
-      navigate(`/setup/node?wallet=new`);
+      navigate(`/setup/node`);
     }
   }
 
