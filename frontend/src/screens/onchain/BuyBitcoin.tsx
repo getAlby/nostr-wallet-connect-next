@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import {
   Breadcrumb,
@@ -19,22 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "src/components/ui/select";
-import { Step, StepItem, Stepper, useStepper } from "src/components/ui/stepper";
 import { MOONPAY_SUPPORTED_CURRENCIES, localStorageKeys } from "src/constants";
 import { useCSRF } from "src/hooks/useCSRF";
 import { AlbyTopupResponse, GetOnchainAddressResponse } from "src/types";
 import { request } from "src/utils/request";
 
 export default function BuyBitcoin() {
-  const steps = [{ id: "specifyOrder" }] satisfies StepItem[];
-
-  const [providerUrl, setProviderUrl] = React.useState("");
   const [currency, setCurrency] = React.useState("usd");
   const [amount, setAmount] = React.useState("250");
   const [loading, setLoading] = React.useState(false);
   const { data: csrf } = useCSRF();
   const [onchainAddress, setOnchainAddress] = React.useState<string>();
-  const isHttpsMode = window.location.protocol.startsWith("https");
+  const navigate = useNavigate();
 
   async function getMoonpayUrl() {
     if (!csrf) {
@@ -134,95 +130,60 @@ export default function BuyBitcoin() {
       />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-1 lg:gap-10">
         <div className="flex max-w-lg flex-col gap-4">
-          <Stepper initialStep={0} steps={steps} orientation="vertical">
-            <Step id="specifyOrder" key="specifyOrder" label="Specify Order">
-              <div className="grid gap-4">
-                <p className="text-muted-foreground">
-                  How much bitcoin you’d like add to your savings balance?
-                </p>
-                <div className="grid gap-2 p-2">
-                  <Label>Currency</Label>
-                  <Select
-                    name="currency"
-                    value={currency}
-                    onValueChange={(value) => setCurrency(value)}
-                  >
-                    <SelectTrigger className="mb-5">
-                      <SelectValue placeholder="Currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MOONPAY_SUPPORTED_CURRENCIES.map((currency) => (
-                        <SelectItem key={currency.value} value={currency.value}>
-                          {currency.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          <div className="grid gap-4">
+            <p className="text-muted-foreground">
+              How much bitcoin you’d like add to your savings balance?
+            </p>
+            <div className="grid gap-2">
+              <Label>Currency</Label>
+              <Select
+                name="currency"
+                value={currency}
+                onValueChange={(value) => setCurrency(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MOONPAY_SUPPORTED_CURRENCIES.map((currency) => (
+                    <SelectItem key={currency.value} value={currency.value}>
+                      {currency.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                <div className="grid gap-1.5 p-2">
-                  <Label htmlFor="amount">Enter Amount</Label>
-                  <Input
-                    name="amount"
-                    autoFocus
-                    onChange={(e) => setAmount(e.target.value)}
-                    value={amount}
-                    type="text"
-                    placeholder="amount"
-                  />
-                </div>
-              </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="amount">Enter Amount</Label>
+              <Input
+                name="amount"
+                autoFocus
+                onChange={(e) => setAmount(e.target.value)}
+                value={amount}
+                type="text"
+                placeholder="amount"
+              />
+            </div>
 
-              <StepButtons />
-            </Step>
-          </Stepper>
+            <LoadingButton
+              size="sm"
+              loading={loading}
+              onClick={async () => {
+                const response: string | undefined = await getMoonpayUrl();
+
+                if (response) {
+                  window.open(response);
+                  navigate("/channels");
+                }
+              }}
+              type="button"
+            >
+              Next
+            </LoadingButton>
+          </div>
         </div>
       </div>
-
-      {providerUrl && isHttpsMode && (
-        <div className="mx-auto justify-center">
-          <iframe
-            allow="accelerometer; autoplay; camera; gyroscope; payment"
-            src={providerUrl}
-            height="720"
-            className="w-full sm:w-[500px] outline-0 rounded-md shadow mx-auto"
-          >
-            <p>Your browser does not support iframes.</p>
-          </iframe>
-        </div>
-      )}
     </div>
   );
-  function StepButtons(props: StepButtonProps) {
-    const { nextStep } = useStepper();
-    return (
-      <div className="w-full flex mt-4 mb-4">
-        {!props.blockNext && (
-          <LoadingButton
-            size="sm"
-            loading={loading}
-            onClick={async () => {
-              const response: string | undefined = await getMoonpayUrl();
-
-              if (response) {
-                setProviderUrl(response);
-
-                if (!isHttpsMode) {
-                  window.open(response);
-                }
-                nextStep();
-              }
-            }}
-            type="button"
-          >
-            Next
-          </LoadingButton>
-        )}
-      </div>
-    );
-  }
 }
-
-type StepButtonProps = {
-  blockNext?: boolean;
-};
