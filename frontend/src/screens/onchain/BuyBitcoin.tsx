@@ -22,6 +22,7 @@ import {
 import { MOONPAY_SUPPORTED_CURRENCIES, localStorageKeys } from "src/constants";
 import { useCSRF } from "src/hooks/useCSRF";
 import { AlbyTopupResponse, GetOnchainAddressResponse } from "src/types";
+import { openLink } from "src/utils/openLink";
 import { request } from "src/utils/request";
 
 export default function BuyBitcoin() {
@@ -173,7 +174,7 @@ export default function BuyBitcoin() {
                 const response: string | undefined = await getMoonpayUrl();
 
                 if (response) {
-                  window.open(response);
+                  openLink(response);
                   navigate("/channels");
                 }
               }}
