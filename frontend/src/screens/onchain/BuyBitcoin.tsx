@@ -19,8 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "src/components/ui/select";
-import { MOONPAY_SUPPORTED_CURRENCIES, localStorageKeys } from "src/constants";
+import { localStorageKeys } from "src/constants";
 import { useCSRF } from "src/hooks/useCSRF";
+import { MOONPAY_SUPPORTED_CURRENCIES } from "src/moonpay";
 import { AlbyTopupResponse, GetOnchainAddressResponse } from "src/types";
 import { openLink } from "src/utils/openLink";
 import { request } from "src/utils/request";

@@ -210,7 +210,7 @@ func (svc *albyOAuthService) GetMe(ctx context.Context) (*AlbyMe, error) {
 	return me, nil
 }
 
-func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, address string, currency string) ([]AlbyTopup, error) {
+func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, address string, currency string) ([]AlbyTopupProvider, error) {
 
 	token, err := svc.fetchUserToken(ctx)
 	if err != nil {
@@ -270,7 +270,7 @@ func (svc *albyOAuthService) GetTopupUrl(ctx context.Context, amount int64, addr
 		return nil, fmt.Errorf("failed to retrieve topup url %s", string(body))
 	}
 
-	var topup []AlbyTopup
+	var topup []AlbyTopupProvider
 
 	err = json.NewDecoder(res.Body).Decode(&topup)
 	if err != nil {
