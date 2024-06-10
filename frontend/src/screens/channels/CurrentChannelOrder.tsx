@@ -1,9 +1,7 @@
 import React from "react";
-import { localStorageKeys } from "src/constants";
 import {
   Channel,
   ConnectPeerRequest,
-  GetOnchainAddressResponse,
   NewChannelOrder,
   Node,
   OpenChannelRequest,
@@ -48,6 +46,7 @@ import { useBalances } from "src/hooks/useBalances";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useChannels } from "src/hooks/useChannels";
 import { useMempoolApi } from "src/hooks/useMempoolApi";
+import { useOnchainAddress } from "src/hooks/useOnchainAddress";
 import { usePeers } from "src/hooks/usePeers";
 import { useSyncWallet } from "src/hooks/useSyncWallet";
 import { copyToClipboard } from "src/lib/clipboard";
@@ -206,55 +205,19 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
   }
 
   const { data: channels } = useChannels();
-  const { data: csrf } = useCSRF();
+
   const { data: balances } = useBalances();
-  const [onchainAddress, setOnchainAddress] = React.useState<string>();
-  const [isLoading, setLoading] = React.useState(false);
+  const {
+    data: onchainAddress,
+    getNewAddress,
+    loadingAddress,
+  } = useOnchainAddress();
+
   const { data: mempoolAddressUtxos } = useMempoolApi<{ value: number }[]>(
     onchainAddress ? `/address/${onchainAddress}/utxo` : undefined,
     true
   );
   const estimatedTransactionFee = useEstimatedTransactionFee();
-
-  const getNewAddress = React.useCallback(async () => {
-    if (!csrf) {
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await request<GetOnchainAddressResponse>(
-        "/api/wallet/new-address",
-        {
-          method: "POST",
-          headers: {
-            "X-CSRF-Token": csrf,
-            "Content-Type": "application/json",
-          },
-          //body: JSON.stringify({}),
-        }
-      );
-      if (!response?.address) {
-        throw new Error("No address in response");
-      }
-      localStorage.setItem(localStorageKeys.onchainAddress, response.address);
-      setOnchainAddress(response.address);
-    } catch (error) {
-      alert("Failed to request a new address: " + error);
-    } finally {
-      setLoading(false);
-    }
-  }, [csrf]);
-
-  React.useEffect(() => {
-    const existingAddress = localStorage.getItem(
-      localStorageKeys.onchainAddress
-    );
-    if (existingAddress) {
-      setOnchainAddress(existingAddress);
-      return;
-    }
-    getNewAddress();
-  }, [getNewAddress]);
 
   if (!onchainAddress || !balances || !estimatedTransactionFee) {
     return (
@@ -360,7 +323,7 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
                     variant="secondary"
                     size="icon"
                     onClick={getNewAddress}
-                    loading={isLoading}
+                    loading={loadingAddress}
                   >
                     <RefreshCw className="w-4 h-4" />
                   </LoadingButton>
