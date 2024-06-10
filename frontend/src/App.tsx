@@ -53,6 +53,7 @@ import { GreenlightForm } from "src/screens/setup/node/GreenlightForm";
 import { LDKForm } from "src/screens/setup/node/LDKForm";
 import { LNDForm } from "src/screens/setup/node/LNDForm";
 import { PhoenixdForm } from "src/screens/setup/node/PhoenixdForm";
+import { PresetNodeForm } from "src/screens/setup/node/PresetNodeForm";
 
 function App() {
   usePosthog();
@@ -132,6 +133,7 @@ function App() {
                   <Route path="breez" element={<BreezForm />} />
                   <Route path="greenlight" element={<GreenlightForm />} />
                   <Route path="ldk" element={<LDKForm />} />
+                  <Route path="preset" element={<PresetNodeForm />} />
                   <Route path="lnd" element={<LNDForm />} />
                   <Route path="cashu" element={<CashuForm />} />
                   <Route path="phoenix" element={<PhoenixdForm />} />
