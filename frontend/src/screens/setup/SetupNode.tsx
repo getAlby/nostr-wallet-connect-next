@@ -15,37 +15,38 @@ import lnd from "src/assets/images/node/lnd.png";
 import { backendTypeConfigs } from "src/lib/backendType";
 import useSetupStore from "src/state/SetupStore";
 
-type BackendTypeDefinition = {
+type BackendTypeDisplayConfig = {
   title: string;
   icon: ReactElement;
 };
 
-const backendTypeDisplayConfigs: Record<BackendType, BackendTypeDefinition> = {
-  LDK: {
-    title: "LDK",
-    icon: <LDKIcon />,
-  },
-  PHOENIX: {
-    title: "phoenixd",
-    icon: <PhoenixdIcon />,
-  },
-  BREEZ: {
-    title: "Breez SDK",
-    icon: <BreezIcon />,
-  },
-  GREENLIGHT: {
-    title: "Greenlight",
-    icon: <GreenlightIcon />,
-  },
-  LND: {
-    title: "LND",
-    icon: <img src={lnd} />,
-  },
-  CASHU: {
-    title: "Cashu Mint",
-    icon: <img src={cashu} />,
-  },
-};
+const backendTypeDisplayConfigs: Record<BackendType, BackendTypeDisplayConfig> =
+  {
+    LDK: {
+      title: "LDK",
+      icon: <LDKIcon />,
+    },
+    PHOENIX: {
+      title: "phoenixd",
+      icon: <PhoenixdIcon />,
+    },
+    BREEZ: {
+      title: "Breez SDK",
+      icon: <BreezIcon />,
+    },
+    GREENLIGHT: {
+      title: "Greenlight",
+      icon: <GreenlightIcon />,
+    },
+    LND: {
+      title: "LND",
+      icon: <img src={lnd} />,
+    },
+    CASHU: {
+      title: "Cashu Mint",
+      icon: <img src={cashu} />,
+    },
+  };
 
 const backendTypeDisplayConfigList = Object.entries(
   backendTypeDisplayConfigs
