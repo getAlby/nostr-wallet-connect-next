@@ -216,11 +216,6 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
   );
   const estimatedTransactionFee = useEstimatedTransactionFee();
 
-  const fiatTopup = React.useCallback(() => {
-    const url = `https://getalby.com/topup?address=${onchainAddress}&receive_amount=${recommendedAmount}`;
-    openLink(url);
-  }, [onchainAddress, recommendedAmount]);
-
   const getNewAddress = React.useCallback(async () => {
     if (!csrf) {
       return;
@@ -295,6 +290,11 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
     balances.onchain.total;
 
   const recommendedAmount = Math.ceil(missingAmount / 10000) * 10000;
+
+  const fiatTopup = () => {
+    const url = `https://getalby.com/topup?address=${onchainAddress}&receive_amount=${recommendedAmount}`;
+    openLink(url);
+  };
 
   return (
     <div className="grid gap-5">
