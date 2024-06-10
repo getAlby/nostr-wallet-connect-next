@@ -376,20 +376,18 @@ func (api *api) CloseChannel(ctx context.Context, peerId, channelId string, forc
 	})
 }
 
-func (api *api) GetNewOnchainAddress(ctx context.Context) (*OnchainAddressResponse, error) {
+func (api *api) GetNewOnchainAddress(ctx context.Context) (string, error) {
 	if api.svc.GetLNClient() == nil {
-		return nil, errors.New("LNClient not started")
+		return "", errors.New("LNClient not started")
 	}
 	address, err := api.svc.GetLNClient().GetNewOnchainAddress(ctx)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	api.svc.GetConfig().SetUpdate(config.OnchainAddressKey, address, "")
 
-	return &OnchainAddressResponse{
-		Address: address,
-	}, nil
+	return address, nil
 }
 
 func (api *api) GetLastUnusedOnchainAddress(ctx context.Context) (string, error) {
@@ -429,7 +427,7 @@ func (api *api) GetLastUnusedOnchainAddress(ctx context.Context) (string, error)
 		api.logger.WithError(err).Error("Failed to retrieve new onchain address")
 		return "", err
 	}
-	return newAddress.Address, nil
+	return newAddress, nil
 }
 
 func (api *api) SignMessage(ctx context.Context, message string) (*SignMessageResponse, error) {

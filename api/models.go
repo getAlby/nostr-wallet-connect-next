@@ -29,7 +29,7 @@ type API interface {
 	DisconnectPeer(ctx context.Context, peerId string) error
 	OpenChannel(ctx context.Context, openChannelRequest *OpenChannelRequest) (*OpenChannelResponse, error)
 	CloseChannel(ctx context.Context, peerId, channelId string, force bool) (*CloseChannelResponse, error)
-	GetNewOnchainAddress(ctx context.Context) (*OnchainAddressResponse, error)
+	GetNewOnchainAddress(ctx context.Context) (string, error)
 	GetLastUnusedOnchainAddress(ctx context.Context) (string, error)
 	SignMessage(ctx context.Context, message string) (*SignMessageResponse, error)
 	RedeemOnchainFunds(ctx context.Context, toAddress string) (*RedeemOnchainFundsResponse, error)
@@ -174,10 +174,6 @@ type RedeemOnchainFundsResponse struct {
 
 type OnchainBalanceResponse = lnclient.OnchainBalanceResponse
 type BalancesResponse = lnclient.BalancesResponse
-
-type OnchainAddressResponse struct {
-	Address string `json:"address"`
-}
 
 // debug api
 type SendPaymentProbesRequest struct {

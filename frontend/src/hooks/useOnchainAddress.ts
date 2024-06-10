@@ -2,7 +2,6 @@ import useSWR from "swr";
 
 import React from "react";
 import { useCSRF } from "src/hooks/useCSRF";
-import { GetOnchainAddressResponse } from "src/types";
 import { request } from "src/utils/request";
 import { swrFetcher } from "src/utils/swr";
 
@@ -17,20 +16,17 @@ export function useOnchainAddress() {
     }
     setLoading(true);
     try {
-      const response = await request<GetOnchainAddressResponse>(
-        "/api/wallet/new-address",
-        {
-          method: "POST",
-          headers: {
-            "X-CSRF-Token": csrf,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (!response?.address) {
+      const address = await request<string>("/api/wallet/new-address", {
+        method: "POST",
+        headers: {
+          "X-CSRF-Token": csrf,
+          "Content-Type": "application/json",
+        },
+      });
+      if (!address) {
         throw new Error("No address in response");
       }
-      swr.mutate(response.address, false);
+      swr.mutate(address, false);
     } catch (error) {
       alert("Failed to request a new address: " + error);
     } finally {

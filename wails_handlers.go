@@ -307,11 +307,11 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		return WailsRequestRouterResponse{Body: address, Error: ""}
 	case "/api/wallet/new-address":
-		newAddressResponse, err := app.api.GetNewOnchainAddress(ctx)
+		newAddress, err := app.api.GetNewOnchainAddress(ctx)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
-		return WailsRequestRouterResponse{Body: *newAddressResponse, Error: ""}
+		return WailsRequestRouterResponse{Body: newAddress, Error: ""}
 	case "/api/wallet/redeem-onchain-funds":
 
 		redeemOnchainFundsRequest := &api.RedeemOnchainFundsRequest{}
