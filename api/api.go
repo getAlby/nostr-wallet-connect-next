@@ -406,14 +406,13 @@ func (api *api) GetLastUnusedOnchainAddress(ctx context.Context) (string, error)
 		response, err := api.RequestEsploraApi("/address/" + currentAddress + "/txs")
 		if err != nil {
 			api.logger.WithError(err).Error("Failed to get current address transactions")
-			return "", err
+			return currentAddress, nil
 		}
 
-		api.logger.WithField("response", response).Info("Got address response")
 		transactions, ok := response.([]interface{})
 		if !ok {
-			err = fmt.Errorf("Failed to cast esplora address txs response: %v", response)
-			return "", err
+			api.logger.WithField("response", response).Error("Failed to cast esplora address txs response", response)
+			return currentAddress, nil
 		}
 
 		if len(transactions) == 0 {
