@@ -26,7 +26,6 @@ import { ImportMnemonic } from "src/screens/setup/ImportMnemonic";
 import { SetupFinish } from "src/screens/setup/SetupFinish";
 import { SetupNode } from "src/screens/setup/SetupNode";
 import { SetupPassword } from "src/screens/setup/SetupPassword";
-import { SetupWallet } from "src/screens/setup/SetupWallet";
 import Wallet from "src/screens/wallet";
 import SignMessage from "src/screens/wallet/SignMessage";
 import { usePosthog } from "./hooks/usePosthog";
@@ -39,14 +38,20 @@ import { BackupNode } from "src/screens/BackupNode";
 import { BackupNodeSuccess } from "src/screens/BackupNodeSuccess";
 import { Intro } from "src/screens/Intro";
 import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
-import AppConnect from "src/screens/appstore/AppConnect";
-import AppDetail from "src/screens/appstore/AppDetail";
 import { CurrentChannelOrder } from "src/screens/channels/CurrentChannelOrder";
 import { Success } from "src/screens/onboarding/Success";
 import Peers from "src/screens/peers/Peers";
 import { ChangeUnlockPassword } from "src/screens/settings/ChangeUnlockPassword";
 import DebugTools from "src/screens/settings/DebugTools";
 import { RestoreNode } from "src/screens/setup/RestoreNode";
+import { SetupAdvanced } from "src/screens/setup/SetupAdvanced";
+import { BreezForm } from "src/screens/setup/node/BreezForm";
+import { CashuForm } from "src/screens/setup/node/CashuForm";
+import { GreenlightForm } from "src/screens/setup/node/GreenlightForm";
+import { LDKForm } from "src/screens/setup/node/LDKForm";
+import { LNDForm } from "src/screens/setup/node/LNDForm";
+import { PhoenixdForm } from "src/screens/setup/node/PhoenixdForm";
+import { PresetNodeForm } from "src/screens/setup/node/PresetNodeForm";
 
 function App() {
   usePosthog();
@@ -79,8 +84,6 @@ function App() {
               </Route>
               <Route path="appstore" element={<DefaultRedirect />}>
                 <Route index element={<AppStore />} />
-                <Route path=":id" element={<AppDetail />} />
-                <Route path=":id/connect" element={<AppConnect />} />
               </Route>
               <Route path="apps" element={<DefaultRedirect />}>
                 <Route path="new" element={<NewApp />} />
@@ -121,8 +124,17 @@ function App() {
               <Route path="setup" element={<SetupRedirect />}>
                 <Route path="" element={<Navigate to="password" replace />} />
                 <Route path="password" element={<SetupPassword />} />
-                <Route path="node" element={<SetupNode />} />
-                <Route path="wallet" element={<SetupWallet />} />
+                <Route path="node">
+                  <Route index element={<SetupNode />} />
+                  <Route path="breez" element={<BreezForm />} />
+                  <Route path="greenlight" element={<GreenlightForm />} />
+                  <Route path="ldk" element={<LDKForm />} />
+                  <Route path="preset" element={<PresetNodeForm />} />
+                  <Route path="lnd" element={<LNDForm />} />
+                  <Route path="cashu" element={<CashuForm />} />
+                  <Route path="phoenix" element={<PhoenixdForm />} />
+                </Route>
+                <Route path="advanced" element={<SetupAdvanced />} />
                 <Route path="import-mnemonic" element={<ImportMnemonic />} />
                 <Route path="node-restore" element={<RestoreNode />} />
                 <Route path="finish" element={<SetupFinish />} />

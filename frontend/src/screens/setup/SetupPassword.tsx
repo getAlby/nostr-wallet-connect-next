@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import useSetupStore from "src/state/SetupStore";
 
-import * as bip39 from "@scure/bip39";
-import { wordlist } from "@scure/bip39/wordlists/english";
 import TwoColumnLayoutHeader from "src/components/TwoColumnLayoutHeader";
 import { Button } from "src/components/ui/button";
 import { Checkbox } from "src/components/ui/checkbox";
@@ -13,14 +11,16 @@ import { useToast } from "src/components/ui/use-toast";
 import { useInfo } from "src/hooks/useInfo";
 
 export function SetupPassword() {
-  const { toast } = useToast();
-  const store = useSetupStore();
-  const { data: info, hasMnemonic } = useInfo();
-  const [confirmPassword, setConfirmPassword] = React.useState("");
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const wallet = searchParams.get("wallet");
+  const store = useSetupStore();
+  const { toast } = useToast();
+  const { data: info } = useInfo();
+  const [confirmPassword, setConfirmPassword] = React.useState("");
   const [isPasswordSecured, setIsPasswordSecured] = useState<boolean>(false);
+
+  const [searchParams] = useSearchParams();
+  const wallet = searchParams.get("wallet") || "new";
+  const node = searchParams.get("node") || "";
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,33 +35,13 @@ export function SetupPassword() {
       return;
     }
 
-    // Import flow (All options)
     if (wallet === "import") {
+      navigate(`/setup/import-mnemonic`);
+    } else if (node) {
+      navigate(`/setup/node/${node}`);
+    } else {
       navigate(`/setup/node`);
-      return;
     }
-
-    const mnemonic = bip39.generateMnemonic(wordlist, 128);
-
-    // NOTE: this is only true at this point in the setup if the
-    // user has already set their backend type in an env variable
-    // therefore, we assume they have set all the necessary env variables
-    if (info?.backendType) {
-      if (hasMnemonic) {
-        useSetupStore.getState().updateNodeInfo({
-          mnemonic,
-        });
-      }
-      navigate(`/setup/finish`);
-      return;
-    }
-
-    // Default flow (LDK)
-    useSetupStore.getState().updateNodeInfo({
-      backendType: "LDK",
-      mnemonic,
-    });
-    navigate(`/setup/finish`);
   }
 
   return (
@@ -74,7 +54,7 @@ export function SetupPassword() {
               description="Your password is used to access your wallet, and it can't be reset or recovered if you lose it."
             />
             <div className="grid gap-4 w-full">
-              <div className="grid gap-2">
+              <div className="grid gap-1.5">
                 <Label htmlFor="unlock-password">Password</Label>
                 <Input
                   type="password"
@@ -87,7 +67,7 @@ export function SetupPassword() {
                   required={true}
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-1.5">
                 <Label htmlFor="confirm-password">Repeat Password</Label>
                 <Input
                   type="password"
@@ -120,17 +100,6 @@ export function SetupPassword() {
                 Create Password
               </Button>
             </div>
-
-            {wallet === "import" && (
-              <div className="flex flex-col justify-center items-center gap-4">
-                <p className="text-muted-foreground">or</p>
-                <Link to="/setup/node-restore" className="w-full">
-                  <Button variant="secondary" className="w-full">
-                    Import Backup File
-                  </Button>
-                </Link>
-              </div>
-            )}
           </div>
         </form>
       </div>
