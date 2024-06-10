@@ -51,7 +51,7 @@ export default function NewChannel() {
 }
 
 function NewChannelInternal({ network }: { network: Network }) {
-  const { data: channelPeerSuggestions } = useChannelPeerSuggestions();
+  const { data: channelPeerSuggestionsAPI } = useChannelPeerSuggestions();
   const navigate = useNavigate();
 
   const [order, setOrder] = React.useState<Partial<NewChannelOrder>>({
@@ -62,6 +62,21 @@ function NewChannelInternal({ network }: { network: Network }) {
   const [selectedPeer, setSelectedPeer] = React.useState<
     RecommendedChannelPeer | undefined
   >();
+
+  const channelPeerSuggestions = React.useMemo(() => {
+    const customOption: RecommendedChannelPeer = {
+      name: "Custom",
+      network,
+      paymentMethod: "onchain",
+      minimumChannelSize: 0,
+      pubkey: "",
+      host: "",
+      image: "",
+    };
+    return channelPeerSuggestionsAPI
+      ? [...channelPeerSuggestionsAPI, customOption]
+      : [customOption];
+  }, [channelPeerSuggestionsAPI, network]);
 
   function setPaymentMethod(paymentMethod: "onchain" | "lightning") {
     setOrder({
