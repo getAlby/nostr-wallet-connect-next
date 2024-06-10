@@ -11,7 +11,7 @@ jobs:
         build:
           [
             { name: albyhub, platform: linux/amd64, os: ubuntu-20.04 },
-            { name: albyhub, platform: windows/amd64, os: windows-2019 },
+            { name: albyhub, platform: windows/amd64, os: windows-2022 },
             { name: albyhub, platform: darwin/universal, os: macos-12 },
           ]
     runs-on: ${{ matrix.build.os }}
@@ -51,7 +51,7 @@ jobs:
           node-version: "20.x"
 
       - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.7.1
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.8.2
         shell: bash
 
       - name: Install Linux Wails deps
@@ -97,7 +97,7 @@ jobs:
 
       - name: Build Windows App
         if: runner.os == 'Windows'
-        run: wails build --platform windows/amd64 -webview2 download -o ${{ matrix.build.name }}.exe -tags "wails" -ldflags '-extldflags "-static -L. -lbreez_sdk_bindings -lglalby_bindings -lldk_node"'
+        run: wails build --platform windows/amd64 -webview2 download -o ${{ matrix.build.name }}.exe -tags "wails"
         shell: bash
 
       - name: Import Code-Signing Certificates for macOS
