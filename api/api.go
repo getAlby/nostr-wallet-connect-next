@@ -16,6 +16,7 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/backup"
+	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/lsp"
@@ -375,7 +376,7 @@ func (api *api) CloseChannel(ctx context.Context, peerId, channelId string, forc
 	})
 }
 
-func (api *api) GetNewOnchainAddress(ctx context.Context) (*NewOnchainAddressResponse, error) {
+func (api *api) GetNewOnchainAddress(ctx context.Context) (*OnchainAddressResponse, error) {
 	if api.svc.GetLNClient() == nil {
 		return nil, errors.New("LNClient not started")
 	}
@@ -383,9 +384,52 @@ func (api *api) GetNewOnchainAddress(ctx context.Context) (*NewOnchainAddressRes
 	if err != nil {
 		return nil, err
 	}
-	return &NewOnchainAddressResponse{
+
+	api.svc.GetConfig().SetUpdate(config.OnchainAddressKey, address, "")
+
+	return &OnchainAddressResponse{
 		Address: address,
 	}, nil
+}
+
+func (api *api) GetLastUnusedOnchainAddress(ctx context.Context) (string, error) {
+	if api.svc.GetLNClient() == nil {
+		return "", errors.New("LNClient not started")
+	}
+
+	currentAddress, err := api.svc.GetConfig().Get(config.OnchainAddressKey, "")
+	if err != nil {
+		api.logger.WithError(err).Error("Failed to get current address from config")
+		return "", err
+	}
+
+	if currentAddress != "" {
+		// check if address has any transactions
+		response, err := api.RequestEsploraApi("/address/" + currentAddress + "/txs")
+		if err != nil {
+			api.logger.WithError(err).Error("Failed to get current address transactions")
+			return "", err
+		}
+
+		api.logger.WithField("response", response).Info("Got address response")
+		transactions, ok := response.([]interface{})
+		if !ok {
+			err = fmt.Errorf("Failed to cast esplora address txs response: %v", response)
+			return "", err
+		}
+
+		if len(transactions) == 0 {
+			// address has not been used yet
+			return currentAddress, nil
+		}
+	}
+
+	newAddress, err := api.GetNewOnchainAddress(ctx)
+	if err != nil {
+		api.logger.WithError(err).Error("Failed to retrieve new onchain address")
+		return "", err
+	}
+	return newAddress.Address, nil
 }
 
 func (api *api) SignMessage(ctx context.Context, message string) (*SignMessageResponse, error) {
@@ -426,6 +470,7 @@ func (api *api) GetBalances(ctx context.Context) (*BalancesResponse, error) {
 	return balances, nil
 }
 
+// TODO: remove dependency on this endpoint
 func (api *api) RequestMempoolApi(endpoint string) (interface{}, error) {
 	url := api.svc.GetConfig().GetEnv().MempoolApi + endpoint
 

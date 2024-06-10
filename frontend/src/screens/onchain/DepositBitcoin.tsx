@@ -1,5 +1,4 @@
 import { Copy, CreditCard, RefreshCw } from "lucide-react";
-import React from "react";
 import QRCode from "react-qr-code";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
@@ -14,54 +13,17 @@ import {
 } from "src/components/ui/breadcrumb";
 import { Button } from "src/components/ui/button";
 import { Card, CardContent } from "src/components/ui/card";
+import { LoadingButton } from "src/components/ui/loading-button";
 import { toast } from "src/components/ui/use-toast";
-import { localStorageKeys } from "src/constants";
-import { useCSRF } from "src/hooks/useCSRF";
+import { useOnchainAddress } from "src/hooks/useOnchainAddress";
 import { copyToClipboard } from "src/lib/clipboard";
-import { GetOnchainAddressResponse } from "src/types";
-import { request } from "src/utils/request";
 
 export default function DepositBitcoin() {
-  const { data: csrf } = useCSRF();
-  const [onchainAddress, setOnchainAddress] = React.useState<string>();
-
-  const getNewAddress = React.useCallback(async () => {
-    if (!csrf) {
-      return;
-    }
-
-    try {
-      const response = await request<GetOnchainAddressResponse>(
-        "/api/wallet/new-address",
-        {
-          method: "POST",
-          headers: {
-            "X-CSRF-Token": csrf,
-            "Content-Type": "application/json",
-          },
-          //body: JSON.stringify({}),
-        }
-      );
-      if (!response?.address) {
-        throw new Error("No address in response");
-      }
-      localStorage.setItem(localStorageKeys.onchainAddress, response.address);
-      setOnchainAddress(response.address);
-    } catch (error) {
-      alert("Failed to request a new address: " + error);
-    }
-  }, [csrf]);
-
-  React.useEffect(() => {
-    const existingAddress = localStorage.getItem(
-      localStorageKeys.onchainAddress
-    );
-    if (existingAddress) {
-      setOnchainAddress(existingAddress);
-      return;
-    }
-    getNewAddress();
-  }, [getNewAddress]);
+  const {
+    data: onchainAddress,
+    getNewAddress,
+    loadingAddress,
+  } = useOnchainAddress();
 
   if (!onchainAddress) {
     return (
@@ -120,14 +82,15 @@ export default function DepositBitcoin() {
             </div>
 
             <div className="flex flex-row gap-4 justify-center">
-              <Button
+              <LoadingButton
                 variant="outline"
                 onClick={getNewAddress}
                 className="w-28"
+                loading={loadingAddress}
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
+                {!loadingAddress && <RefreshCw className="w-4 h-4 mr-2" />}
                 Change
-              </Button>
+              </LoadingButton>
               <Button
                 variant="secondary"
                 className="w-28"
