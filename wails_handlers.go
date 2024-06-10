@@ -301,7 +301,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		app.api.SyncWallet()
 		return WailsRequestRouterResponse{Body: nil, Error: ""}
 	case "/api/wallet/address":
-		address, err := app.api.GetLastUnusedOnchainAddress(ctx)
+		address, err := app.api.GetUnusedOnchainAddress(ctx)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}

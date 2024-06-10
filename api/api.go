@@ -390,7 +390,7 @@ func (api *api) GetNewOnchainAddress(ctx context.Context) (string, error) {
 	return address, nil
 }
 
-func (api *api) GetLastUnusedOnchainAddress(ctx context.Context) (string, error) {
+func (api *api) GetUnusedOnchainAddress(ctx context.Context) (string, error) {
 	if api.svc.GetLNClient() == nil {
 		return "", errors.New("LNClient not started")
 	}

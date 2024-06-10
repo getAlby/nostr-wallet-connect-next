@@ -525,7 +525,7 @@ func (httpSvc *HttpService) newInstantChannelInvoiceHandler(c echo.Context) erro
 func (httpSvc *HttpService) onchainAddressHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	lastUnusedAddressResponse, err := httpSvc.api.GetLastUnusedOnchainAddress(ctx)
+	lastUnusedAddressResponse, err := httpSvc.api.GetUnusedOnchainAddress(ctx)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
