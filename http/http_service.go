@@ -525,7 +525,7 @@ func (httpSvc *HttpService) newInstantChannelInvoiceHandler(c echo.Context) erro
 func (httpSvc *HttpService) onchainAddressHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	lastUnusedAddressResponse, err := httpSvc.api.GetUnusedOnchainAddress(ctx)
+	address, err := httpSvc.api.GetUnusedOnchainAddress(ctx)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -533,13 +533,13 @@ func (httpSvc *HttpService) onchainAddressHandler(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, lastUnusedAddressResponse)
+	return c.JSON(http.StatusOK, address)
 }
 
 func (httpSvc *HttpService) newOnchainAddressHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	newAddressResponse, err := httpSvc.api.GetNewOnchainAddress(ctx)
+	address, err := httpSvc.api.GetNewOnchainAddress(ctx)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -547,7 +547,7 @@ func (httpSvc *HttpService) newOnchainAddressHandler(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, newAddressResponse)
+	return c.JSON(http.StatusOK, address)
 }
 
 func (httpSvc *HttpService) redeemOnchainFundsHandler(c echo.Context) error {
