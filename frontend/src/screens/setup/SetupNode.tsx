@@ -16,52 +16,55 @@ import { backendTypeConfigs } from "src/lib/backendType";
 import useSetupStore from "src/state/SetupStore";
 
 type BackendTypeDefinition = {
-  id: BackendType;
   title: string;
   icon: ReactElement;
 };
 
-const backendTypes: BackendTypeDefinition[] = [
-  {
-    id: "LDK",
+const backendTypeDisplayConfigs: Record<BackendType, BackendTypeDefinition> = {
+  LDK: {
     title: "LDK",
     icon: <LDKIcon />,
   },
-  {
-    id: "PHOENIX",
+  PHOENIX: {
     title: "phoenixd",
     icon: <PhoenixdIcon />,
   },
-  {
-    id: "BREEZ",
+  BREEZ: {
     title: "Breez SDK",
     icon: <BreezIcon />,
   },
-  {
-    id: "GREENLIGHT",
+  GREENLIGHT: {
     title: "Greenlight",
     icon: <GreenlightIcon />,
   },
-  {
-    id: "LND",
+  LND: {
     title: "LND",
     icon: <img src={lnd} />,
   },
-  {
-    id: "CASHU",
+  CASHU: {
     title: "Cashu Mint",
     icon: <img src={cashu} />,
   },
-];
+};
+
+const backendTypeDisplayConfigList = Object.entries(
+  backendTypeDisplayConfigs
+).map((entry) => ({
+  ...entry[1],
+  backendType: entry[0] as BackendType,
+}));
 
 export function SetupNode() {
   const navigate = useNavigate();
   const setupStore = useSetupStore();
   const [selectedBackendType, setSelectedBackupType] =
-    React.useState<BackendTypeDefinition>();
+    React.useState<BackendType>();
 
   function next() {
-    navigate(`/setup/node/${selectedBackendType?.id.toLowerCase()}`);
+    if (!selectedBackendType) {
+      return;
+    }
+    navigate(`/setup/node/${selectedBackendType.toLowerCase()}`);
   }
 
   const hasImportedMnemonic = !!setupStore.nodeInfo.mnemonic;
@@ -75,20 +78,20 @@ export function SetupNode() {
         />
         <div className="flex flex-col gap-5 w-full mt-6">
           <div className="w-full grid grid-cols-2 gap-4">
-            {backendTypes
+            {backendTypeDisplayConfigList
               .filter((item) =>
                 hasImportedMnemonic
-                  ? backendTypeConfigs[item.id].hasMnemonic
+                  ? backendTypeConfigs[item.backendType].hasMnemonic
                   : true
               )
               .map((item) => (
                 <div
-                  key={item.id}
+                  key={item.backendType}
                   className={cn(
                     "border-foreground-muted border px-4 py-6 flex flex-col gap-3 items-center rounded cursor-pointer",
-                    selectedBackendType === item && "border-primary"
+                    selectedBackendType === item.backendType && "border-primary"
                   )}
-                  onClick={() => setSelectedBackupType(item)}
+                  onClick={() => setSelectedBackupType(item.backendType)}
                 >
                   <div className="h-6 w-6">{item.icon}</div>
                   {item.title}
