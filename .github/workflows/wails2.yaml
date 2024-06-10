@@ -97,7 +97,7 @@ jobs:
 
       - name: Build Windows App
         if: runner.os == 'Windows'
-        run: wails build --platform windows/amd64 -webview2 download -o ${{ matrix.build.name }}.exe -tags "wails" -ldflags '-extldflags "-lstdc++"'
+        run: wails build --platform windows/amd64 -webview2 download -o ${{ matrix.build.name }}.exe -tags "wails" -ldflags "-extldflags='-static -L. -lbreez_sdk_bindings -lglalby_bindings -lldk_node'"
         shell: bash
 
       - name: Import Code-Signing Certificates for macOS
