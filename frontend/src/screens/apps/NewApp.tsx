@@ -20,6 +20,7 @@ import { useToast } from "src/components/ui/use-toast";
 import { handleRequestError } from "src/utils/handleRequestError";
 import { request } from "src/utils/request"; // build the project for this to appear
 import Permissions from "../../components/Permissions";
+import { suggestedApps } from "../../components/SuggestedAppData";
 
 const NewApp = () => {
   const location = useLocation();
@@ -28,11 +29,17 @@ const NewApp = () => {
   const navigate = useNavigate();
 
   const queryParams = new URLSearchParams(location.search);
-  const nameParam = (queryParams.get("name") || queryParams.get("c")) ?? "";
+
+  const appId = queryParams.get("app") ?? "";
+  const app = suggestedApps.find((app) => app.id === appId);
+
+  const nameParam = app
+    ? app.title
+    : (queryParams.get("name") || queryParams.get("c")) ?? "";
   const pubkey = queryParams.get("pubkey") ?? "";
   const returnTo = queryParams.get("return_to") ?? "";
 
-  const [appName, setAppName] = useState(() => nameParam);
+  const [appName, setAppName] = useState(nameParam);
 
   const budgetRenewalParam = queryParams.get(
     "budget_renewal"
@@ -102,7 +109,7 @@ const NewApp = () => {
         window.location.href = createAppResponse.returnTo;
         return;
       }
-      navigate("/apps/created", {
+      navigate(`/apps/created${app ? `?app=${app.id}` : ""}`, {
         state: createAppResponse,
       });
       toast({ title: "App created" });
@@ -117,21 +124,30 @@ const NewApp = () => {
         title={nameParam ? `Connect to ${appName}` : "Connect a new app"}
         description="Configure wallet permissions for the app and follow instructions to finalise the connection"
       />
-      <form onSubmit={handleSubmit} acceptCharset="UTF-8" className="flex flex-col items-start gap-5 max-w-lg">
+      <form
+        onSubmit={handleSubmit}
+        acceptCharset="UTF-8"
+        className="flex flex-col items-start gap-5 max-w-lg"
+      >
+        {app && (
+          <div className="flex flex-row items-center gap-3">
+            <img src={app.logo} className="h-12 w-12" />
+            <h2 className="font-semibold text-lg">{app.title}</h2>
+          </div>
+        )}
         {!nameParam && (
           <div className="w-full grid gap-1.5">
-            <Label htmlFor="name">
-              Name
-            </Label>
+            <Label htmlFor="name">Name</Label>
             <Input
-              readOnly={!!nameParam}
+              autoFocus
               type="text"
               name="name"
               value={appName}
               id="name"
               onChange={(e) => setAppName(e.target.value)}
               required
-              autoComplete="off" />
+              autoComplete="off"
+            />
             <p className="text-xs text-muted-foreground">
               Name of the app or purpose of the connection
             </p>
@@ -142,15 +158,19 @@ const NewApp = () => {
           <Permissions
             initialPermissions={permissions}
             onPermissionsChange={setPermissions}
-            isEditing={!reqMethodsParam}
-            isNew />
+            canEditPermissions={!reqMethodsParam}
+            isNewConnection
+          />
         </div>
 
         <Separator />
+        {returnTo && (
+          <p className="text-xs text-muted-foreground">
+            You will automatically return to {returnTo}
+          </p>
+        )}
 
-        <Button type="submit">
-          {pubkey ? "Connect" : "Next"}
-        </Button>
+        <Button type="submit">{pubkey ? "Connect" : "Next"}</Button>
       </form>
     </>
   );

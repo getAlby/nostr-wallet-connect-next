@@ -69,9 +69,10 @@ export function Intro() {
                 Welcome to Alby Hub
               </div>
               <div className="text-2xl text-muted-foreground font-semibold">
-                A powerful, all-in-one bitcoin lightning wallet with the superpower of connecting to applications.
+                A powerful, all-in-one bitcoin lightning wallet with the
+                superpower of connecting to applications.
               </div>
-              <div className="mt-5">
+              <div className="mt-20">
                 <Button onClick={() => api?.scrollNext()} size="lg">
                   Get Started
                 </Button>
@@ -104,6 +105,9 @@ export function Intro() {
           />
         </CarouselItem>
       </CarouselContent>
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2">
+        <CarouselDots />
+      </div>
     </Carousel>
   );
 }
@@ -141,8 +145,7 @@ function Slide({
           {description}
         </div>
       </div>
-      <CarouselDots />
-      <Button size="icon" onClick={slideNext} className="mt-5">
+      <Button size="icon" onClick={slideNext} className="">
         <ArrowRight className="w-4 h-4" />
       </Button>
     </div>
