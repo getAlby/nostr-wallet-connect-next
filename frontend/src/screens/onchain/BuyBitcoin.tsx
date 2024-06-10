@@ -22,8 +22,8 @@ import {
 import { localStorageKeys } from "src/constants";
 import { useCSRF } from "src/hooks/useCSRF";
 import { GetOnchainAddressResponse } from "src/types";
-import { request } from "src/utils/request";
 import { openLink } from "src/utils/openLink";
+import { request } from "src/utils/request";
 
 const SUPPORTED_CURRENCIES = [
   {
@@ -175,7 +175,7 @@ export default function BuyBitcoin() {
   const [onchainAddress, setOnchainAddress] = React.useState<string>();
 
   async function launch() {
-    const url = `https://getalby.com/topup?address=${onchainAddress}&amount=${amount}`;
+    const url = `https://getalby.com/topup?address=${onchainAddress}&amount=${amount}&currency=${currency}`;
     openLink(url);
   }
 
