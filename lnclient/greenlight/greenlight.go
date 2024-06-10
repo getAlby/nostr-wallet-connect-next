@@ -1,3 +1,5 @@
+//go:build !skip_greenlight
+
 package greenlight
 
 import (
