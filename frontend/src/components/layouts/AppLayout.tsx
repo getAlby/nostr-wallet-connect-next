@@ -139,6 +139,7 @@ export default function AppLayout() {
         <MenuItem
           to="/"
           onClick={(e) => {
+            // eslint-disable-next-line
             const chatwoot = (window as any).$chatwoot;
             if (chatwoot) {
               chatwoot.toggle("open");
