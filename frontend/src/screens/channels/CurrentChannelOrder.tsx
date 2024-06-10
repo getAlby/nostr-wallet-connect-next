@@ -52,6 +52,7 @@ import { usePeers } from "src/hooks/usePeers";
 import { useSyncWallet } from "src/hooks/useSyncWallet";
 import { copyToClipboard } from "src/lib/clipboard";
 import { splitSocketAddress } from "src/lib/utils";
+import { openLink } from "src/utils/openLink";
 import { Success } from "src/screens/onboarding/Success";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 import {
@@ -215,6 +216,11 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
   );
   const estimatedTransactionFee = useEstimatedTransactionFee();
 
+  const fiatTopup = React.useCallback(() => {
+    const url = `https://getalby.com/topup?address=${onchainAddress}&receive_amount=${recommendedAmount}`;
+    openLink(url);
+  }, [onchainAddress, recommendedAmount]);
+
   const getNewAddress = React.useCallback(async () => {
     if (!csrf) {
       return;
@@ -282,6 +288,14 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
     0
   );
 
+  const missingAmount =
+    +order.amount +
+    estimatedTransactionFee +
+    estimatedAnchorReserve -
+    balances.onchain.total;
+
+  const recommendedAmount = Math.ceil(missingAmount / 10000) * 10000;
+
   return (
     <div className="grid gap-5">
       <AppHeader
@@ -291,15 +305,17 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
       <div className="grid gap-5 max-w-lg">
         <div className="grid gap-1.5">
           <Label htmlFor="text">On-Chain Address</Label>
+          <p className="text-xs">
+            You currently have{" "}
+            {new Intl.NumberFormat().format(balances.onchain.total)} sats. We
+            recommend to deposit another{" "}
+            {new Intl.NumberFormat().format(recommendedAmount)} sats to open a
+            channel.{" "}
+          </p>
           <p className="text-xs text-muted-foreground">
-            You currently have {balances.onchain.total} sats. You need to
-            deposit at least another{" "}
-            {+order.amount +
-              estimatedTransactionFee +
-              estimatedAnchorReserve -
-              balances.onchain.total}{" "}
-            sats to cover the cost of opening the channel, including onchain
-            fees and potential onchain channel reserves.
+            ~{new Intl.NumberFormat().format(+missingAmount)} sats are missing
+            to cover the cost of opening the channel, including onchain fees and
+            potential onchain channel reserves.
           </p>
           <div className="flex flex-row gap-2 items-center">
             <Input
@@ -352,6 +368,9 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
                 <TooltipContent>Generate a new address</TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            <Button variant="secondary" onClick={fiatTopup}>
+              Buy Bitcoin
+            </Button>
           </div>
         </div>
 
@@ -363,6 +382,9 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
             <CardDescription>
               Send a bitcoin transaction to the address provided above. You'll
               be redirected as soon as the transaction is seen in the mempool.
+              <Button variant="secondary" onClick={fiatTopup}>
+                Topup with your credit card or bank account.
+              </Button>
             </CardDescription>
           </CardHeader>
           {unspentAmount > 0 && (
