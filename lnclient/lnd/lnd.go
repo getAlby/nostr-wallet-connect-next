@@ -143,13 +143,18 @@ func (svc *LNDService) GetInfo(ctx context.Context) (info *lnclient.NodeInfo, er
 }
 
 func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, error) {
-	resp, err := svc.client.ListChannels(ctx, &lnrpc.ListChannelsRequest{})
+	activeResp, err := svc.client.ListChannels(ctx, &lnrpc.ListChannelsRequest{})
+	if err != nil {
+		return nil, err
+	}
+	pendingResp, err := svc.client.PendingChannels(ctx, &lnrpc.PendingChannelsRequest{})
 	if err != nil {
 		return nil, err
 	}
 
-	channels := make([]lnclient.Channel, len(resp.Channels))
-	for i, lndChannel := range resp.Channels {
+	channels := make([]lnclient.Channel, len(activeResp.Channels)+len(pendingResp.PendingOpenChannels))
+
+	for i, lndChannel := range activeResp.Channels {
 		channelPointParts := strings.Split(lndChannel.ChannelPoint, ":")
 		fundingTxId := ""
 		if len(channelPointParts) == 2 {
@@ -165,6 +170,26 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 			Active:                lndChannel.Active,
 			Public:                !lndChannel.Private,
 			FundingTxId:           fundingTxId,
+			Confirmations:         nil,
+			ConfirmationsRequired: nil,
+		}
+	}
+
+	for j, lndChannel := range pendingResp.PendingOpenChannels {
+		channelPointParts := strings.Split(lndChannel.Channel.ChannelPoint, ":")
+		fundingTxId := ""
+		if len(channelPointParts) == 2 {
+			fundingTxId = channelPointParts[0]
+		}
+
+		channels[j+len(activeResp.Channels)] = lnclient.Channel{
+			InternalChannel:       lndChannel,
+			LocalBalance:          lndChannel.Channel.LocalBalance * 1000,
+			RemoteBalance:         lndChannel.Channel.RemoteBalance * 1000,
+			RemotePubkey:          lndChannel.Channel.RemoteNodePub,
+			Public:                !lndChannel.Channel.Private,
+			FundingTxId:           fundingTxId,
+			Active:                false,
 			Confirmations:         nil,
 			ConfirmationsRequired: nil,
 		}
@@ -416,8 +441,15 @@ func (svc *LNDService) OpenChannel(ctx context.Context, openChannelRequest *lncl
 		return nil, fmt.Errorf("failed to open channel with %s: %s", foundPeer.NodeId, err)
 	}
 
+	fundingTxidBytes := channel.GetFundingTxidBytes()
+
+	// we get the funding transaction id bytes in reverse
+	for i, j := 0, len(fundingTxidBytes)-1; i < j; i, j = i+1, j-1 {
+		fundingTxidBytes[i], fundingTxidBytes[j] = fundingTxidBytes[j], fundingTxidBytes[i]
+	}
+
 	return &lnclient.OpenChannelResponse{
-		FundingTxId: hex.EncodeToString(channel.GetFundingTxidBytes()),
+		FundingTxId: hex.EncodeToString(fundingTxidBytes),
 	}, err
 }
 
@@ -569,6 +601,7 @@ func (svc *LNDService) GetBalances(ctx context.Context) (*lnclient.BalancesRespo
 	resp, err := svc.client.ListChannels(ctx, &lnrpc.ListChannelsRequest{})
 
 	for _, channel := range resp.Channels {
+		// Unnecessary since ListChannels only returns active channels
 		if channel.Active {
 			channelMinSpendable := channel.LocalBalance * 1000
 			channelMinReceivable := channel.RemoteBalance * 1000
