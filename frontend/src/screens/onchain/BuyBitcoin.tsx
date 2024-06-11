@@ -1,14 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "src/components/ui/breadcrumb";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
@@ -177,27 +168,6 @@ export default function BuyBitcoin() {
 
   return (
     <div className="grid gap-5">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/channels">Liquidity</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/channels/onchain/deposit-bitcoin">
-                Deposit Bitcoin
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Buy Bitcoin</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
       <AppHeader
         title="Buy Bitcoin"
         description="Use one of our partner providers to buy bitcoin and deposit it to your savings balance."

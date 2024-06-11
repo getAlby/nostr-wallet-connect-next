@@ -1,0 +1,55 @@
+
+import { Link, useMatches } from "react-router-dom";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "src/components/ui/breadcrumb";
+
+
+function Breadcrumbs() {
+    const matches = useMatches();
+    const crumbs = matches
+        // Skip the root item
+        //.slice(1)
+        // first get rid of any matches that don't have handle and crumb
+        .filter((match) => Boolean(match.handle?.crumb))
+    // now map them into an array of elements, passing the loader
+    // data to each one
+    //.map((match) => match.handle.crumb(match.data));
+
+    //console.log(matches, crumbs);
+
+    if (crumbs.length <= 1) {
+        return <>no breadcrumb</>;
+    }
+
+    const isIndexRoute = crumbs.length >= 2 && crumbs[crumbs.length - 1].pathname ? crumbs[crumbs.length - 1].pathname.slice(0, -1) == crumbs[crumbs.length - 2].pathname : false;
+
+    // Remove the last item if it's an index route to prevent e.g. Wallet > Wallet
+    const filteredCrumbs = isIndexRoute ? crumbs.slice(0, -1) : crumbs;
+
+    //console.log("filtered", filteredCrumbs);
+
+    return (
+        <>
+            <Breadcrumb>
+                <BreadcrumbList>
+                    {filteredCrumbs.map((crumb, index) => (
+                        <>
+                            <BreadcrumbItem key={index}>
+                                {index + 1 < filteredCrumbs.length ?
+                                    <BreadcrumbLink asChild>
+                                        <Link to={crumb.pathname}>{crumb.handle.crumb()}</Link>
+                                    </BreadcrumbLink>
+                                    :
+                                    <>{crumb.handle.crumb()}</>
+                                }
+                            </BreadcrumbItem>
+                            {index + 1 < filteredCrumbs.length && <BreadcrumbSeparator />}
+                        </>
+                    ))}
+                </BreadcrumbList>
+            </Breadcrumb>
+
+        </>
+    );
+}
+
+export default Breadcrumbs;
