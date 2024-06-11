@@ -300,20 +300,8 @@ function App() {
           element: <AlbyAuthRedirect />,
         },
       ],
-
-      /*
-           
-          <Route path="onboarding" element={<OnboardingRedirect />}>
-              <Route path="lightning">
-                <Route path="migrate-alby" element={<MigrateAlbyFunds />} />
-              </Route>
-              <Route path="success" element={<Success />} />
-            </Route>
-          </Route>
-      */
     },
     {
-      // TODO: Check if this is right here
       path: "node-backup-success",
       element: <BackupNodeSuccess />,
     },
