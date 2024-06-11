@@ -64,16 +64,6 @@ function AppList() {
         }
       />
 
-      {!otherApps.length && (
-        <EmptyState
-          icon={Cable}
-          title="Connect Your First App"
-          description="Connect your app of choice, fine-tune permissions and enjoy a seamless and secure wallet experience."
-          buttonText="See Recommended Apps"
-          buttonLink="/appstore"
-        />
-      )}
-
       <Card>
         <CardHeader>
           <CardTitle>Alby Account</CardTitle>
@@ -200,6 +190,16 @@ function AppList() {
           </div>
         </CardContent>
       </Card>
+
+      {!otherApps.length && (
+        <EmptyState
+          icon={Cable}
+          title="Connect Your First App"
+          description="Connect your app of choice, fine-tune permissions and enjoy a seamless and secure wallet experience."
+          buttonText="See Recommended Apps"
+          buttonLink="/appstore"
+        />
+      )}
 
       {otherApps.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
