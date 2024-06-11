@@ -12,6 +12,7 @@ import { Payment, init } from "@getalby/bitcoin-connect-react";
 import { Copy, QrCode, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
+import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
 import QRCode from "src/components/QRCode";
 import { Button } from "src/components/ui/button";
@@ -51,7 +52,6 @@ import { usePeers } from "src/hooks/usePeers";
 import { useSyncWallet } from "src/hooks/useSyncWallet";
 import { copyToClipboard } from "src/lib/clipboard";
 import { splitSocketAddress } from "src/lib/utils";
-import { openLink } from "src/utils/openLink";
 import { Success } from "src/screens/onboarding/Success";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 import {
@@ -253,11 +253,7 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
     balances.onchain.total;
 
   const recommendedAmount = Math.ceil(missingAmount / 10000) * 10000;
-
-  const fiatTopup = () => {
-    const url = `https://getalby.com/topup?address=${onchainAddress}&receive_amount=${recommendedAmount}`;
-    openLink(url);
-  };
+  const topupLink = `https://getalby.com/topup?address=${onchainAddress}&receive_amount=${recommendedAmount}`;
 
   return (
     <div className="grid gap-5">
@@ -324,16 +320,14 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
                     size="icon"
                     onClick={getNewAddress}
                     loading={loadingAddress}
+                    className="w-9 h-9"
                   >
-                    <RefreshCw className="w-4 h-4" />
+                    {!loadingAddress && <RefreshCw className="w-4 h-4" />}
                   </LoadingButton>
                 </TooltipTrigger>
                 <TooltipContent>Generate a new address</TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <Button variant="secondary" onClick={fiatTopup}>
-              Buy Bitcoin
-            </Button>
           </div>
         </div>
 
@@ -345,15 +339,18 @@ function PayBitcoinChannelOrderTopup({ order }: { order: NewChannelOrder }) {
             <CardDescription>
               Send a bitcoin transaction to the address provided above. You'll
               be redirected as soon as the transaction is seen in the mempool.
-              <Button variant="secondary" onClick={fiatTopup}>
-                Topup with your credit card or bank account.
-              </Button>
             </CardDescription>
           </CardHeader>
           {unspentAmount > 0 && (
             <CardContent>{unspentAmount} sats deposited</CardContent>
           )}
         </Card>
+
+        <ExternalLink to={topupLink} className="w-full">
+          <Button className="w-full">
+            Topup with your credit card or bank account
+          </Button>
+        </ExternalLink>
       </div>
     </div>
   );
