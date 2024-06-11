@@ -513,8 +513,7 @@ func (svc *LNDService) CloseChannel(ctx context.Context, closeChannelRequest *ln
 			svc.Logger.WithFields(logrus.Fields{
 				"closingTxid": txid.String(),
 			}).Info("Channel close pending")
-		case *lnrpc.CloseStatusUpdate_ChanClose:
-			svc.Logger.Info("Channel close successful")
+			// TODO: return the closing tx id or fire an event
 			return &lnclient.CloseChannelResponse{}, nil
 		}
 	}
@@ -522,7 +521,7 @@ func (svc *LNDService) CloseChannel(ctx context.Context, closeChannelRequest *ln
 
 func (svc *LNDService) GetNewOnchainAddress(ctx context.Context) (string, error) {
 	resp, err := svc.client.NewAddress(ctx, &lnrpc.NewAddressRequest{
-		Type: lnrpc.AddressType_TAPROOT_PUBKEY,
+		Type: lnrpc.AddressType_WITNESS_PUBKEY_HASH,
 	})
 	if err != nil {
 		svc.Logger.WithError(err).Error("NewOnchainAddress failed")
