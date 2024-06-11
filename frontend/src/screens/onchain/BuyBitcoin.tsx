@@ -176,7 +176,7 @@ export default function BuyBitcoin() {
         <div className="flex max-w-lg flex-col gap-4">
           <div className="grid gap-4">
             <p className="text-muted-foreground">
-              How much bitcoin you’d like buy?
+              How much bitcoin would you like to buy?
             </p>
             <div className="grid gap-1.5">
               <Label htmlFor="amount">Enter Amount</Label>

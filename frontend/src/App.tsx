@@ -1,17 +1,27 @@
-import { RouterProvider, createHashRouter } from "react-router-dom";
+import { Navigate, RouterProvider, createHashRouter } from "react-router-dom";
 
 import { ThemeProvider } from "src/components/ui/theme-provider";
 import { usePosthog } from "./hooks/usePosthog";
 
 import AppLayout from "src/components/layouts/AppLayout";
 import SettingsLayout from "src/components/layouts/SettingsLayout";
+import TwoColumnFullScreenLayout from "src/components/layouts/TwoColumnFullScreenLayout";
 import { DefaultRedirect } from "src/components/redirects/DefaultRedirect";
 import { HomeRedirect } from "src/components/redirects/HomeRedirect";
+import { OnboardingRedirect } from "src/components/redirects/OnboardingRedirect";
+import { SetupRedirect } from "src/components/redirects/SetupRedirect";
+import { StartRedirect } from "src/components/redirects/StartRedirect";
 import { Toaster } from "src/components/ui/toaster";
 import { BackupMnemonic } from "src/screens/BackupMnemonic";
 import { BackupNode } from "src/screens/BackupNode";
+import { BackupNodeSuccess } from "src/screens/BackupNodeSuccess";
 import { Intro } from "src/screens/Intro";
 import NotFound from "src/screens/NotFound";
+import Start from "src/screens/Start";
+import Unlock from "src/screens/Unlock";
+import { Welcome } from "src/screens/Welcome";
+import AlbyAuthRedirect from "src/screens/alby/AlbyAuthRedirect";
+import AppCreated from "src/screens/apps/AppCreated";
 import AppList from "src/screens/apps/AppList";
 import NewApp from "src/screens/apps/NewApp";
 import ShowApp from "src/screens/apps/ShowApp";
@@ -19,6 +29,8 @@ import AppStore from "src/screens/appstore/AppStore";
 import Channels from "src/screens/channels/Channels";
 import { CurrentChannelOrder } from "src/screens/channels/CurrentChannelOrder";
 import NewChannel from "src/screens/channels/NewChannel";
+import MigrateAlbyFunds from "src/screens/onboarding/MigrateAlbyFunds";
+import { Success } from "src/screens/onboarding/Success";
 import BuyBitcoin from "src/screens/onchain/BuyBitcoin";
 import DepositBitcoin from "src/screens/onchain/DepositBitcoin";
 import ConnectPeer from "src/screens/peers/ConnectPeer";
@@ -41,7 +53,7 @@ function App() {
       children: [
         {
           index: true,
-          element: <HomeRedirect />
+          element: <HomeRedirect />,
         },
         {
           path: "wallet",
@@ -54,32 +66,35 @@ function App() {
             },
             {
               path: "sign-message",
-              element: <SignMessage />
-
-            }
-          ]
+              element: <SignMessage />,
+              handle: { crumb: () => "Sign Message" },
+            },
+          ],
         },
         {
           path: "settings",
           element: <SettingsLayout />,
+          handle: { crumb: () => "Settings" },
           children: [
             {
               index: true,
-              element: <Settings />
+              element: <Settings />,
             },
             {
               path: "change-unlock-password",
               element: <ChangeUnlockPassword />,
+              handle: { crumb: () => "Unlock Password" },
             },
             {
               path: "key-backup",
               element: <BackupMnemonic />,
+              handle: { crumb: () => "Key Backup" },
             },
             {
               path: "node-backup",
               element: <BackupNode />,
-            }
-          ]
+            },
+          ],
         },
         {
           path: "apps",
@@ -88,19 +103,23 @@ function App() {
           children: [
             {
               index: true,
-              element: <AppList />
+              element: <AppList />,
             },
 
             {
               path: ":pubkey",
-              element: <ShowApp />
+              element: <ShowApp />,
             },
             {
               path: "new",
               element: <NewApp />,
-              handle: { crumb: () => "New App" }
+              handle: { crumb: () => "New App" },
             },
-          ]
+            {
+              path: "created",
+              element: <AppCreated />,
+            },
+          ],
         },
         {
           path: "appstore",
@@ -110,60 +129,193 @@ function App() {
             {
               index: true,
               element: <AppStore />,
-              handle: { crumb: () => "App Store" },
-            }
-          ]
+            },
+          ],
         },
         {
           path: "channels",
           element: <DefaultRedirect />,
+          handle: { crumb: () => "Liquidity" },
           children: [
             {
               index: true,
-              element: <Channels />
+              element: <Channels />,
             },
             {
               path: "new",
-              element: <NewChannel />
+              element: <NewChannel />,
+              handle: { crumb: () => "New Channel" },
             },
             {
               path: "order",
-              element: <CurrentChannelOrder />
+              element: <CurrentChannelOrder />,
+              handle: { crumb: () => "Current Order" },
             },
             {
               path: "onchain/buy-bitcoin",
-              element: <BuyBitcoin />
+              element: <BuyBitcoin />,
+              handle: { crumb: () => "Buy Bitcoin" },
             },
             {
               path: "onchain/deposit-bitcoin",
-              element: <DepositBitcoin />
-            }
-          ]
-        }, {
+              element: <DepositBitcoin />,
+              handle: { crumb: () => "Deposit Bitcoin" },
+            },
+          ],
+        },
+        {
           path: "peers",
           element: <DefaultRedirect />,
+          handle: { crumb: () => "Peers" },
           children: [
             {
               index: true,
-              element: <Peers />
+              element: <Peers />,
             },
             {
               path: "new",
-              element: <ConnectPeer />
-            }
-          ]
+              element: <ConnectPeer />,
+              handle: { crumb: () => "Connect Peer" },
+            },
+          ],
         },
         {
           path: "debug-tools",
           element: <DefaultRedirect />,
+          handle: { crumb: () => "Debug" },
           children: [
             {
               index: true,
-              element: <DebugTools />
-            }
-          ]
+              element: <DebugTools />,
+            },
+          ],
         },
-      ]
+      ],
+    },
+    {
+      element: <TwoColumnFullScreenLayout />,
+      children: [
+        {
+          path: "start",
+          element: (
+            <StartRedirect>
+              <Start />
+            </StartRedirect>
+          ),
+        },
+        {
+          path: "alby/auth",
+          element: <AlbyAuthRedirect />,
+        },
+        {
+          path: "unlock",
+          element: <Unlock />,
+        },
+        {
+          path: "welcome",
+          element: <Welcome />,
+        },
+        {
+          path: "setup",
+          element: <SetupRedirect />,
+          children: [
+            {
+              element: <Navigate to="password" replace />,
+            },
+            {
+              path: "password",
+              element: <SetupPassword />,
+            },
+            {
+              path: "node",
+              children: [
+                {
+                  index: true,
+                  element: <SetupNode />,
+                },
+                {
+                  path: "breez",
+                  element: <BreezForm />,
+                },
+                {
+                  path: "greenlight",
+                  element: <GreenlightForm />,
+                },
+                {
+                  path: "cashu",
+                  element: <CashuForm />,
+                },
+                {
+                  path: "phoenix",
+                  element: <PhoenixdForm />,
+                },
+                {
+                  path: "lnd",
+                  element: <LNDForm />,
+                },
+                {
+                  path: "ldk",
+                  element: <LDKForm />,
+                },
+                {
+                  path: "preset",
+                  element: <PresetNodeForm />,
+                },
+              ],
+            },
+            {
+              path: "advanced",
+              element: <SetupAdvanced />,
+            },
+            {
+              path: "import-mnemonic",
+              element: <ImportMnemonic />,
+            },
+            {
+              path: "node-restore",
+              element: <RestoreNode />,
+            },
+            {
+              path: "finish",
+              element: <SetupFinish />,
+            },
+          ],
+        },
+        {
+          path: "onboarding",
+          element: <OnboardingRedirect />,
+          children: [
+            {
+              path: "lightning/migrate-alby",
+              element: <MigrateAlbyFunds />,
+            },
+            {
+              path: "success",
+              element: <Success />,
+            },
+          ],
+        },
+        {
+          path: "alby/auth",
+          element: <AlbyAuthRedirect />,
+        },
+      ],
+
+      /*
+           
+          <Route path="onboarding" element={<OnboardingRedirect />}>
+              <Route path="lightning">
+                <Route path="migrate-alby" element={<MigrateAlbyFunds />} />
+              </Route>
+              <Route path="success" element={<Success />} />
+            </Route>
+          </Route>
+      */
+    },
+    {
+      // TODO: Check if this is right here
+      path: "node-backup-success",
+      element: <BackupNodeSuccess />,
     },
     {
       path: "intro",
@@ -171,8 +323,8 @@ function App() {
     },
     {
       path: "/*",
-      element: <NotFound />
-    }
+      element: <NotFound />,
+    },
   ]);
 
   return (
@@ -180,51 +332,7 @@ function App() {
       <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
         <Toaster />
         <RouterProvider router={router} />
-        {/* <Routes>
-          <Route
-            path="/node-backup-success"
-            element={<BackupNodeSuccess />}
-          />
-          <Route element={<TwoColumnFullScreenLayout />}>
-            <Route
-              path="start"
-              element={
-                <StartRedirect>
-                  <Start />
-                </StartRedirect>
-              }
-            />
-            <Route path="/alby/auth" element={<AlbyAuthRedirect />} />
-            <Route path="unlock" element={<Unlock />} />
-            <Route path="welcome" element={<Welcome />} />
-            <Route path="setup" element={<SetupRedirect />}>
-              <Route path="" element={<Navigate to="password" replace />} />
-              <Route path="password" element={<SetupPassword />} />
-              <Route path="node">
-                <Route index element={<SetupNode />} />
-                <Route path="breez" element={<BreezForm />} />
-                <Route path="greenlight" element={<GreenlightForm />} />
-                <Route path="ldk" element={<LDKForm />} />
-                <Route path="preset" element={<PresetNodeForm />} />
-                <Route path="lnd" element={<LNDForm />} />
-                <Route path="cashu" element={<CashuForm />} />
-                <Route path="phoenix" element={<PhoenixdForm />} />
-              </Route>
-              <Route path="advanced" element={<SetupAdvanced />} />
-              <Route path="import-mnemonic" element={<ImportMnemonic />} />
-              <Route path="node-restore" element={<RestoreNode />} />
-              <Route path="finish" element={<SetupFinish />} />
-            </Route>
-            <Route path="onboarding" element={<OnboardingRedirect />}>
-              <Route path="lightning">
-                <Route path="migrate-alby" element={<MigrateAlbyFunds />} />
-              </Route>
-              <Route path="success" element={<Success />} />
-            </Route>
-          </Route>
-        </Routes> 
-      </HashRouter>*/}
-      </ThemeProvider >
+      </ThemeProvider>
     </>
   );
 }
