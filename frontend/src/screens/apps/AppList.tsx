@@ -78,7 +78,7 @@ function AppList() {
         </CardHeader>
         <Separator />
         <CardContent>
-          <div className="grid grid-cols-1 xl:grid-cols-2 mt-5 gap-3">
+          <div className="grid grid-cols-1 xl:grid-cols-2 mt-5 gap-3 items-center">
             <div className="flex flex-col gap-4">
               <div className="flex flex-row gap-4 ">
                 <Avatar className="h-14 w-14">
