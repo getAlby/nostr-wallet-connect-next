@@ -40,8 +40,10 @@ function AppList() {
     return <Loading />;
   }
 
-  const otherApps = apps.filter((x) => x.name !== "getalby.com");
   const albyConnection = apps.find((x) => x.name === "getalby.com");
+  const otherApps = apps.filter(
+    (x) => x.nostrPubkey !== albyConnection?.nostrPubkey
+  );
 
   return (
     <>
@@ -93,7 +95,7 @@ function AppList() {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-row gap-3 items-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                 {linkStatus === LinkStatus.SharedNode ? (
                   <LoadingButton onClick={linkAccount} loading={loading}>
                     <Link2Icon className="w-4 h-4 mr-2" />
@@ -114,8 +116,11 @@ function AppList() {
                     Linked to another wallet
                   </Button>
                 )}
-                <ExternalLink to="https://www.getalby.com/node">
-                  <Button variant="outline">
+                <ExternalLink
+                  to="https://www.getalby.com/node"
+                  className="w-full md:w-auto"
+                >
+                  <Button variant="outline" className="w-full md:w-auto">
                     <ExternalLinkIcon className="w-4 h-4 mr-2" />
                     Alby Account Settings
                   </Button>
@@ -180,7 +185,7 @@ function AppList() {
       </Card>
 
       {otherApps.length > 0 && (
-        <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {otherApps.map((app, index) => (
             <AppCard key={index} app={app} />
           ))}
