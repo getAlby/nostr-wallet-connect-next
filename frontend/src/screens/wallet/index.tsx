@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "src/components/ui/card";
+import { Checkbox } from "src/components/ui/checkbox";
 import { useBalances } from "src/hooks/useBalances";
 import { useInfo } from "src/hooks/useInfo";
 
@@ -101,8 +102,69 @@ function Wallet() {
         )}
       </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Get started with your Alby Hub</CardTitle>
+          <CardDescription>Some first steps to get you started</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          <CheckboxItem
+            id="open-channel"
+            text="Open your first channel"
+            checked={true}
+          />
+          <CheckboxItem
+            id="link-alby"
+            text="Link your Alby Account"
+            checked={true}
+          />
+          <CheckboxItem
+            id="create-app"
+            text="Create your first app connection"
+            checked={false}
+          />
+          <CheckboxItem
+            id="backup-keys"
+            text="Backup your keys"
+            checked={false}
+          />
+          <CheckboxItem
+            id="make-payment"
+            text="Make first payment"
+            checked={false}
+          />
+          <CheckboxItem
+            id="help-friend"
+            text="Help a friend to get on lightning"
+            checked={false}
+          />
+        </CardContent>
+      </Card>
+
       <BreezRedeem />
     </>
+  );
+}
+
+function CheckboxItem({
+  id,
+  text,
+  checked,
+}: {
+  id: string;
+  text: string;
+  checked: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Checkbox id={id} checked={checked} />
+      <label
+        htmlFor={id}
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      >
+        {text}
+      </label>
+    </div>
   );
 }
 
