@@ -1,4 +1,12 @@
-import { Cable, CheckCircle2, CirclePlus, CircleX, ExternalLinkIcon, Link2Icon, ZapIcon } from "lucide-react";
+import {
+  Cable,
+  CheckCircle2,
+  CirclePlus,
+  CircleX,
+  ExternalLinkIcon,
+  Link2Icon,
+  ZapIcon,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import AppCard from "src/components/AppCard";
 import AppHeader from "src/components/AppHeader";
@@ -7,7 +15,13 @@ import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
 import { Avatar, AvatarFallback, AvatarImage } from "src/components/ui/avatar";
 import { Button } from "src/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "src/components/ui/card";
 import { LoadingButton } from "src/components/ui/loading-button";
 import { Progress } from "src/components/ui/progress";
 import { Separator } from "src/components/ui/separator";
@@ -26,8 +40,8 @@ function AppList() {
     return <Loading />;
   }
 
-  const otherApps = apps.filter(x => x.name !== "getalby.com");
-  const albyConnection = apps.find(x => x.name === "getalby.com");
+  const otherApps = apps.filter((x) => x.name !== "getalby.com");
+  const albyConnection = apps.find((x) => x.name === "getalby.com");
 
   return (
     <>
@@ -56,11 +70,10 @@ function AppList() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            Alby Account
-          </CardTitle>
+          <CardTitle>Alby Account</CardTitle>
           <CardDescription>
-            Link Your Alby Account to use your lightning address with Alby Hub and use apps that you connected to your Alby Account.
+            Link Your Alby Account to use your lightning address with Alby Hub
+            and use apps that you connected to your Alby Account.
           </CardDescription>
         </CardHeader>
         <Separator />
@@ -73,9 +86,7 @@ function AppList() {
                   <AvatarFallback>SN</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <div className="text-xl font-semibold">
-                    {albyMe?.name}
-                  </div>
+                  <div className="text-xl font-semibold">{albyMe?.name}</div>
                   <div className="flex flex-row items-center gap-1">
                     <ZapIcon className="w-4 h-4" />
                     {albyMe?.lightning_address}
@@ -83,21 +94,26 @@ function AppList() {
                 </div>
               </div>
               <div className="flex flex-row gap-3 items-center">
-                {linkStatus === LinkStatus.SharedNode ?
+                {linkStatus === LinkStatus.SharedNode ? (
                   <LoadingButton onClick={linkAccount} loading={loading}>
                     <Link2Icon className="w-4 h-4 mr-2" />
                     Link your Alby Account
                   </LoadingButton>
-                  : linkStatus === LinkStatus.ThisNode ?
-                    <Button variant="positive" disabled className="disabled:opacity-100">
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Alby Account Linked
-                    </Button> :
-                    <Button variant="destructive" disabled>
-                      <CircleX className="w-4 h-4 mr-2" />
-                      Linked to another wallet
-                    </Button>
-                }
+                ) : linkStatus === LinkStatus.ThisNode ? (
+                  <Button
+                    variant="positive"
+                    disabled
+                    className="disabled:opacity-100"
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Alby Account Linked
+                  </Button>
+                ) : (
+                  <Button variant="destructive" disabled>
+                    <CircleX className="w-4 h-4 mr-2" />
+                    Linked to another wallet
+                  </Button>
+                )}
                 <ExternalLink to="https://www.getalby.com/node">
                   <Button variant="outline">
                     <ExternalLinkIcon className="w-4 h-4 mr-2" />
@@ -107,60 +123,69 @@ function AppList() {
               </div>
             </div>
             <div>
-              {albyConnection && <>
-                {albyConnection.maxAmount > 0 &&
-                  <>
-                    <div className="flex flex-row justify-between">
-                      <div className="mb-2">
-                        <p className="text-xs text-secondary-foreground font-medium">
-                          You've spent
-                        </p>
-                        <p className="text-xl font-medium">
-                          {new Intl.NumberFormat().format(albyConnection.budgetUsage)} sats
-                        </p>
+              {albyConnection && (
+                <>
+                  {albyConnection.maxAmount > 0 && (
+                    <>
+                      <div className="flex flex-row justify-between">
+                        <div className="mb-2">
+                          <p className="text-xs text-secondary-foreground font-medium">
+                            You've spent
+                          </p>
+                          <p className="text-xl font-medium">
+                            {new Intl.NumberFormat().format(
+                              albyConnection.budgetUsage
+                            )}{" "}
+                            sats
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          {" "}
+                          <p className="text-xs text-secondary-foreground font-medium">
+                            Left in budget
+                          </p>
+                          <p className="text-xl font-medium text-muted-foreground">
+                            {new Intl.NumberFormat().format(
+                              albyConnection.maxAmount -
+                                albyConnection.budgetUsage
+                            )}{" "}
+                            sats
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        {" "}
-                        <p className="text-xs text-secondary-foreground font-medium">
-                          Left in budget
-                        </p>
-                        <p className="text-xl font-medium text-muted-foreground">
+                      <Progress
+                        className="h-4"
+                        value={
+                          (albyConnection.budgetUsage * 100) /
+                          albyConnection.maxAmount
+                        }
+                      />
+                      {albyConnection.maxAmount > 0 ? (
+                        <div className="text-xs mt-2">
                           {new Intl.NumberFormat().format(
-                            albyConnection.maxAmount - albyConnection.budgetUsage
+                            albyConnection.maxAmount
                           )}{" "}
-                          sats
-                        </p>
-                      </div>
-                    </div>
-                    <Progress
-                      className="h-4"
-                      value={(albyConnection.budgetUsage * 100) / albyConnection.maxAmount}
-                    />
-                    {albyConnection.maxAmount > 0 ? (
-                      <div className="text-xs mt-2">
-                        {new Intl.NumberFormat().format(albyConnection.maxAmount)} sats /{" "}
-                        {albyConnection.budgetRenewal}
-                      </div>
-                    ) : (
-                      "Not set"
-                    )}
-                  </>
-                }
-              </>}
+                          sats / {albyConnection.budgetRenewal}
+                        </div>
+                      ) : (
+                        "Not set"
+                      )}
+                    </>
+                  )}
+                </>
+              )}
             </div>
           </div>
-
         </CardContent>
       </Card>
 
       {otherApps.length > 0 && (
         <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4">
-          {apps.map((app, index) => (
+          {otherApps.map((app, index) => (
             <AppCard key={index} app={app} />
           ))}
         </div>
-      )
-      }
+      )}
     </>
   );
 }
