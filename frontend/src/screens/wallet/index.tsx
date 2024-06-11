@@ -110,32 +110,38 @@ function Wallet() {
         <CardContent className="flex flex-col gap-3">
           <CheckboxItem
             id="open-channel"
-            text="Open your first channel"
+            title="Open your first channel"
+            description="alkdsfjla ksdjflaksjdfljaksdf "
             checked={true}
           />
           <CheckboxItem
             id="link-alby"
-            text="Link your Alby Account"
+            title="Link your Alby Account"
+            description="description"
             checked={true}
           />
           <CheckboxItem
             id="create-app"
-            text="Create your first app connection"
+            title="Create your first app connection"
+            description="description"
             checked={false}
           />
           <CheckboxItem
             id="backup-keys"
-            text="Backup your keys"
+            title="Backup your keys"
+            description="description"
             checked={false}
           />
           <CheckboxItem
             id="make-payment"
-            text="Make first payment"
+            title="Make first payment"
+            description="description"
             checked={false}
           />
           <CheckboxItem
             id="help-friend"
-            text="Help a friend to get on lightning"
+            title="Help a friend to get on lightning"
+            description="description"
             checked={false}
           />
         </CardContent>
@@ -148,22 +154,29 @@ function Wallet() {
 
 function CheckboxItem({
   id,
-  text,
+  title,
   checked,
+  description,
 }: {
   id: string;
-  text: string;
+  title: string;
   checked: boolean;
+  description: string;
 }) {
   return (
-    <div className="flex items-center gap-2">
-      <Checkbox id={id} checked={checked} />
-      <label
-        htmlFor={id}
-        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-      >
-        {text}
-      </label>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <Checkbox id={id} checked={checked} />
+        <label
+          htmlFor={id}
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          {title}
+        </label>
+      </div>
+      {!checked && (
+        <div className="text-muted-foreground text-sm ml-6">{description}</div>
+      )}
     </div>
   );
 }
