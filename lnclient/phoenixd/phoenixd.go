@@ -65,16 +65,25 @@ type BalanceResponse struct {
 }
 
 type PhoenixService struct {
-	Address       string
-	Authorization string
-	Logger        *logrus.Logger
+	Address         string
+	Authorization   string
+	Logger          *logrus.Logger
+	NWCCapabilities string
 }
 
 func NewPhoenixService(logger *logrus.Logger, address string, authorization string) (result lnclient.LNClient, err error) {
 	authorizationBase64 := b64.StdEncoding.EncodeToString([]byte(":" + authorization))
-	phoenixService := &PhoenixService{Logger: logger, Address: address, Authorization: authorizationBase64}
+	phoenixService := &PhoenixService{
+		Logger:          logger,
+		Address:         address,
+		Authorization:   authorizationBase64,
+		NWCCapabilities: "pay_invoice get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice multi_pay_keysend",
+	}
 
 	return phoenixService, nil
+}
+
+func (svc *PhoenixService) GetSupportedMethods() {
 }
 
 func (svc *PhoenixService) GetBalance(ctx context.Context) (balance int64, err error) {

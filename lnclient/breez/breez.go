@@ -24,6 +24,7 @@ type BreezService struct {
 	listener *BreezListener
 	svc      *breez_sdk.BlockingBreezServices
 	logger   *logrus.Logger
+	NWCCapabilities string
 }
 type BreezListener struct {
 	logger *logrus.Logger
@@ -96,6 +97,7 @@ func NewBreezService(logger *logrus.Logger, mnemonic, apiKey, inviteCode, workDi
 		listener: &listener,
 		svc:      svc,
 		logger:   logger,
+		NWCCapabilities: "pay_invoice pay_keysend get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice multi_pay_keysend sign_message",
 	}, nil
 }
 

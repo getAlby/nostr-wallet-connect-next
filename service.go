@@ -777,7 +777,7 @@ func (svc *Service) GetBudgetUsage(appPermission *db.AppPermission) int64 {
 func (svc *Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay) error {
 	ev := &nostr.Event{}
 	ev.Kind = nip47.INFO_EVENT_KIND
-	ev.Content = nip47.CAPABILITIES
+	ev.Content = svc.lnClient.NWCCapabilities
 	ev.CreatedAt = nostr.Now()
 	ev.PubKey = svc.cfg.GetNostrPublicKey()
 	ev.Tags = nostr.Tags{[]string{"notifications", nip47.NOTIFICATION_TYPES}}

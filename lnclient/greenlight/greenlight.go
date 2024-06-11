@@ -25,9 +25,10 @@ import (
 )
 
 type GreenlightService struct {
-	workdir string
-	client  *glalby.BlockingGreenlightAlbyClient
-	logger  *logrus.Logger
+	workdir         string
+	client          *glalby.BlockingGreenlightAlbyClient
+	logger          *logrus.Logger
+	NWCCapabilities string
 }
 
 const DEVICE_CREDENTIALS_KEY = "GreenlightCreds"
@@ -88,9 +89,10 @@ func NewGreenlightService(cfg config.Config, logger *logrus.Logger, mnemonic, in
 	}
 
 	gs := GreenlightService{
-		workdir: newpath,
-		client:  client,
-		logger:  logger,
+		workdir:         newpath,
+		client:          client,
+		logger:          logger,
+		NWCCapabilities: "pay_invoice pay_keysend get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice multi_pay_keysend sign_message",
 	}
 
 	nodeInfo, err := client.GetInfo()

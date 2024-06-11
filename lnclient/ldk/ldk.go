@@ -40,6 +40,7 @@ type LDKService struct {
 	logger                *logrus.Logger
 	cfg                   config.Config
 	lastWalletSyncRequest time.Time
+	NWCCapabilities       string
 }
 
 const resetRouterKey = "ResetRouter"
@@ -124,6 +125,7 @@ func NewLDKService(ctx context.Context, logger *logrus.Logger, cfg config.Config
 		eventPublisher:      eventPublisher,
 		logger:              logger,
 		cfg:                 cfg,
+		NWCCapabilities:     "pay_invoice pay_keysend get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice multi_pay_keysend sign_message notifications",
 	}
 
 	// TODO: remove when LDK supports this

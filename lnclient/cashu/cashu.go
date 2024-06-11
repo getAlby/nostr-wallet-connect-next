@@ -20,6 +20,7 @@ import (
 type CashuService struct {
 	logger *logrus.Logger
 	wallet *wallet.Wallet
+	NWCCapabilities string
 }
 
 func NewCashuService(logger *logrus.Logger, workDir string, mintUrl string) (result lnclient.LNClient, err error) {
@@ -50,6 +51,7 @@ func NewCashuService(logger *logrus.Logger, workDir string, mintUrl string) (res
 	cs := CashuService{
 		logger: logger,
 		wallet: wallet,
+		NWCCapabilities: "pay_invoice get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice",
 	}
 
 	return &cs, nil
