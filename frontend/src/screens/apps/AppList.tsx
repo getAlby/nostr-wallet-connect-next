@@ -31,6 +31,8 @@ import { useApps } from "src/hooks/useApps";
 import { useInfo } from "src/hooks/useInfo";
 import { LinkStatus, useLinkAccount } from "src/hooks/useLinkAccount";
 
+const albyConnectionName = "getalby.com";
+
 function AppList() {
   const { data: apps } = useApps();
   const { data: info } = useInfo();
@@ -42,7 +44,7 @@ function AppList() {
     return <Loading />;
   }
 
-  const albyConnection = apps.find((x) => x.name === "getalby.com");
+  const albyConnection = apps.find((x) => x.name === albyConnectionName);
   const otherApps = apps.filter(
     (x) => x.nostrPubkey !== albyConnection?.nostrPubkey
   );
@@ -99,7 +101,7 @@ function AppList() {
               </div>
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                 {loadingLinkStatus && <Loading />}
-                {linkStatus === LinkStatus.SharedNode ? (
+                {!albyConnection || linkStatus === LinkStatus.SharedNode ? (
                   <LoadingButton onClick={linkAccount} loading={loading}>
                     <Link2Icon className="w-4 h-4 mr-2" />
                     Link your Alby Account
