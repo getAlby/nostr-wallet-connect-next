@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   CirclePlus,
   CircleX,
+  Edit,
   ExternalLinkIcon,
   Link2Icon,
   ZapIcon,
@@ -34,7 +35,8 @@ function AppList() {
   const { data: apps } = useApps();
   const { data: info } = useInfo();
   const { data: albyMe } = useAlbyMe();
-  const { loading, linkStatus, linkAccount } = useLinkAccount();
+  const { loading, linkStatus, loadingLinkStatus, linkAccount } =
+    useLinkAccount();
 
   if (!apps || !info) {
     return <Loading />;
@@ -96,6 +98,7 @@ function AppList() {
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                {loadingLinkStatus && <Loading />}
                 {linkStatus === LinkStatus.SharedNode ? (
                   <LoadingButton onClick={linkAccount} loading={loading}>
                     <Link2Icon className="w-4 h-4 mr-2" />
@@ -111,10 +114,12 @@ function AppList() {
                     Alby Account Linked
                   </Button>
                 ) : (
-                  <Button variant="destructive" disabled>
-                    <CircleX className="w-4 h-4 mr-2" />
-                    Linked to another wallet
-                  </Button>
+                  linkStatus === LinkStatus.OtherNode && (
+                    <Button variant="destructive" disabled>
+                      <CircleX className="w-4 h-4 mr-2" />
+                      Linked to another wallet
+                    </Button>
+                  )
                 )}
                 <ExternalLink
                   to="https://www.getalby.com/node"
@@ -165,16 +170,26 @@ function AppList() {
                           albyConnection.maxAmount
                         }
                       />
-                      {albyConnection.maxAmount > 0 ? (
-                        <div className="text-xs mt-2">
-                          {new Intl.NumberFormat().format(
-                            albyConnection.maxAmount
-                          )}{" "}
-                          sats / {albyConnection.budgetRenewal}
+                      <div className="flex flex-row justify-between text-xs items-center mt-2">
+                        {albyConnection.maxAmount > 0 ? (
+                          <>
+                            {new Intl.NumberFormat().format(
+                              albyConnection.maxAmount
+                            )}{" "}
+                            sats / {albyConnection.budgetRenewal}
+                          </>
+                        ) : (
+                          "Not set"
+                        )}
+                        <div>
+                          <Link to={`/apps/${albyConnection.nostrPubkey}`}>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </Button>
+                          </Link>
                         </div>
-                      ) : (
-                        "Not set"
-                      )}
+                      </div>
                     </>
                   )}
                 </>

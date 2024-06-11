@@ -16,7 +16,7 @@ export function useLinkAccount() {
   const { data: me } = useAlbyMe();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
   const [loading, setLoading] = useState(false);
-  const [loadingInfo, setLoadingInfo] = useState(true);
+  const [loadingLinkStatus, setLoadingLinkStatus] = useState(true);
   const [linkStatus, setLinkStatus] = useState<LinkStatus | undefined>();
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function useLinkAccount() {
       } else {
         setLinkStatus(LinkStatus.OtherNode);
       }
-      setLoadingInfo(false);
+      setLoadingLinkStatus(false);
     }
   }, [me, nodeConnectionInfo]);
 
@@ -60,5 +60,5 @@ export function useLinkAccount() {
     }
   }
 
-  return { loading, loadingInfo, linkStatus, linkAccount };
+  return { loading, loadingLinkStatus, linkStatus, linkAccount };
 }
