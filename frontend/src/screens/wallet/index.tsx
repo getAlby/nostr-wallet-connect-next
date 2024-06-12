@@ -12,9 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from "src/components/ui/card";
-import { Checkbox } from "src/components/ui/checkbox";
 import { useBalances } from "src/hooks/useBalances";
 import { useInfo } from "src/hooks/useInfo";
+import OnboardingChecklist from "src/screens/wallet/OnboardingChecklist";
 
 function Wallet() {
   const { data: info } = useInfo();
@@ -102,82 +102,10 @@ function Wallet() {
         )}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Get started with your Alby Hub</CardTitle>
-          <CardDescription>Some first steps to get you started</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <CheckboxItem
-            id="open-channel"
-            title="Open your first channel"
-            description="alkdsfjla ksdjflaksjdfljaksdf "
-            checked={true}
-          />
-          <CheckboxItem
-            id="link-alby"
-            title="Link your Alby Account"
-            description="description"
-            checked={true}
-          />
-          <CheckboxItem
-            id="create-app"
-            title="Create your first app connection"
-            description="description"
-            checked={false}
-          />
-          <CheckboxItem
-            id="backup-keys"
-            title="Backup your keys"
-            description="description"
-            checked={false}
-          />
-          <CheckboxItem
-            id="make-payment"
-            title="Make first payment"
-            description="description"
-            checked={false}
-          />
-          <CheckboxItem
-            id="help-friend"
-            title="Help a friend to get on lightning"
-            description="description"
-            checked={false}
-          />
-        </CardContent>
-      </Card>
+      <OnboardingChecklist />
 
       <BreezRedeem />
     </>
-  );
-}
-
-function CheckboxItem({
-  id,
-  title,
-  checked,
-  description,
-}: {
-  id: string;
-  title: string;
-  checked: boolean;
-  description: string;
-}) {
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        <Checkbox id={id} checked={checked} />
-        <label
-          htmlFor={id}
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          {title}
-        </label>
-      </div>
-      {!checked && (
-        <div className="text-muted-foreground text-sm ml-6">{description}</div>
-      )}
-    </div>
   );
 }
 
