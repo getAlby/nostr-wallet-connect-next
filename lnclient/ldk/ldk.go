@@ -68,17 +68,24 @@ func NewLDKService(ctx context.Context, logger *logrus.Logger, cfg config.Config
 		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
+		lsp.MegalithLSP().Pubkey,
+
+		// Mutinynet
 		lsp.AlbyMutinynetPlebsLSP().Pubkey,
 		lsp.OlympusMutinynetFlowLSP().Pubkey,
+		lsp.MegalithMutinynetLSP().Pubkey,
 	}
 	config.AnchorChannelsConfig.TrustedPeersNoReserve = []string{
 		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
-		lsp.OlympusMutinynetLSPS1LSP().Pubkey,
-		lsp.OlympusMutinynetFlowLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
-		lsp.AlbyMutinynetPlebsLSP().Pubkey,
+		lsp.MegalithLSP().Pubkey,
 		"0296b2db342fcf87ea94d981757fdf4d3e545bd5cef4919f58b5d38dfdd73bf5c9", // blocktank
+
+		// Mutinynet
+		lsp.AlbyMutinynetPlebsLSP().Pubkey,
+		lsp.OlympusMutinynetFlowLSP().Pubkey,
+		lsp.MegalithMutinynetLSP().Pubkey,
 	}
 
 	config.ListeningAddresses = &listeningAddresses
@@ -1177,17 +1184,20 @@ func (ls *LDKService) publishChannelsBackupEvent() {
 	ldkChannels := ls.node.ListChannels()
 	channels := make([]events.ChannelBackupInfo, 0, len(ldkChannels))
 	for _, ldkChannel := range ldkChannels {
-		var fundingTx string
+		var fundingTxId string
+		var fundingTxVout uint32
 		if ldkChannel.FundingTxo != nil {
-			fundingTx = ldkChannel.FundingTxo.Txid
+			fundingTxId = ldkChannel.FundingTxo.Txid
+			fundingTxVout = ldkChannel.FundingTxo.Vout
 		}
 
 		channels = append(channels, events.ChannelBackupInfo{
-			ChannelID:   ldkChannel.ChannelId,
-			NodeID:      ls.node.NodeId(),
-			PeerID:      ldkChannel.CounterpartyNodeId,
-			ChannelSize: ldkChannel.ChannelValueSats,
-			FundingTxID: fundingTx,
+			ChannelID:     ldkChannel.ChannelId,
+			NodeID:        ls.node.NodeId(),
+			PeerID:        ldkChannel.CounterpartyNodeId,
+			ChannelSize:   ldkChannel.ChannelValueSats,
+			FundingTxID:   fundingTxId,
+			FundingTxVout: fundingTxVout,
 		})
 	}
 
