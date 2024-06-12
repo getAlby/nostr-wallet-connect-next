@@ -28,7 +28,7 @@ function OnboardingChecklist() {
     hasChannelManagement &&
     albyBalance &&
     albyBalance.sats * (1 - ALBY_SERVICE_FEE) >
-      ALBY_MIN_BALANCE + 50000; /* accomodate for onchain fees */
+    ALBY_MIN_BALANCE + 50000; /* accommodate for on-chain fees */
   const isLinked =
     albyMe &&
     nodeConnectionInfo &&
@@ -42,6 +42,46 @@ function OnboardingChecklist() {
   const hasCustomApp =
     apps && apps.find((x) => x.name !== "getalby.com") !== undefined;
 
+  const checklistItems = [
+    {
+      title: "Open your first channel",
+      description:
+        "Establish a new Lightning channel to enable fast and low-fee Bitcoin transactions.",
+      checked: hasChannel,
+      to: "/channels/new",
+    },
+    {
+      title: "Link your Alby Account",
+      description: "Link your lightning address & other apps to this hub.",
+      checked: isLinked,
+      to: "/settings",
+    },
+    {
+      title: "Migrate your balance to your Alby Hub",
+      description: "Move your existing funds into self-custody.",
+      checked: !hasAlbyBalance,
+      to: "/onboarding/lightning/migrate-alby",
+    },
+    {
+      title: "Connect your first app",
+      description:
+        "Seamlessly connect apps and integrate your wallet with other apps from your hub.",
+      checked: hasCustomApp,
+      to: "/appstore",
+    },
+    {
+      title: "Backup your keys",
+      description:
+        "Secure your keys by creating a backup to ensure you don't lose access.",
+      checked: hasBackedUp,
+      to: "/settings/key-backup",
+    },
+  ];
+
+  const sortedChecklistItems = checklistItems.sort(
+    (a, b) => (b && b.checked ? 1 : 0) - (a && a.checked ? 1 : 0)
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -52,48 +92,25 @@ function OnboardingChecklist() {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        <ChecklistItem
-          title="Open your first channel"
-          description="Establish a new Lightning channel to enable fast and low-fee Bitcoin transactions."
-          checked={hasChannel}
-          to="/channels/new"
-        />
-        <ChecklistItem
-          title="Link your Alby Account"
-          description="Link your lightning address & other apps to this hub."
-          checked={isLinked}
-          to="/settings"
-        />
-        <ChecklistItem
-          title="Migrate your balance to your Alby Hub"
-          description="Move your existing funds into self-custody."
-          checked={!hasAlbyBalance}
-          to="/onboarding/lightning/migrate-alby"
-        />
-        <ChecklistItem
-          title="Connect yor first app"
-          description="Seamlessly connect apps and integrate your wallet with other apps from your hub."
-          checked={hasCustomApp}
-          to="/appstore"
-        />
-        <ChecklistItem
-          title="Backup your keys"
-          description="Secure your keys by creating a backup to ensure you don't lose access."
-          checked={hasBackedUp}
-          to="/settings/key-backup"
-        />
-        {/* <ChecklistItem
-                    title="Make first payment"
-                    description="description"
-                    checked={false}
-                /> */}
-        {/* <ChecklistItem
-                    title="Help a friend to get on lightning"
-                    description="Invite friends and earn fee credits"
-                    checked={false} to={""} /> */}
+        {sortedChecklistItems.map((item) => (
+          <ChecklistItem
+            key={item.title}
+            title={item.title}
+            description={item.description}
+            checked={item.checked}
+            to={item.to}
+          />
+        ))}
       </CardContent>
     </Card>
   );
+}
+
+type ChecklistItemProps = {
+  title: string;
+  checked: boolean;
+  description: string;
+  to: string;
 }
 
 function ChecklistItem({
@@ -101,12 +118,7 @@ function ChecklistItem({
   checked = false,
   description,
   to,
-}: {
-  title: string;
-  checked?: boolean;
-  description: string;
-  to: string;
-}) {
+}: ChecklistItemProps) {
   const content = (
     <div className="flex flex-col">
       <div className="flex items-center gap-2">
