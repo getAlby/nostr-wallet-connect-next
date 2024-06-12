@@ -31,7 +31,7 @@ func NewNip47Notifier(svc *Service, relay Relay) *Nip47Notifier {
 }
 
 func (notifier *Nip47Notifier) ConsumeEvent(ctx context.Context, event *events.Event) error {
-	if event.Event != "nwc_payment_received" {
+	if event.Event != "nwc_payment_received" && event.Event != "nwc_payment_sent" {
 		return nil
 	}
 
@@ -39,24 +39,50 @@ func (notifier *Nip47Notifier) ConsumeEvent(ctx context.Context, event *events.E
 		return nil
 	}
 
-	paymentReceivedEventProperties, ok := event.Properties.(*events.PaymentReceivedEventProperties)
-	if !ok {
-		notifier.svc.logger.WithField("event", event).Error("Failed to cast event")
-		return errors.New("failed to cast event")
-	}
+	var transaction interface{}
+	var notificationType string
+	switch event.Event {
+	case "nwc_payment_received":
+		paymentReceivedEventProperties, ok := event.Properties.(*events.PaymentReceivedEventProperties)
+		if !ok {
+			notifier.svc.logger.WithField("event", event).Error("Failed to cast event")
+			return errors.New("failed to cast event")
+		}
 
-	transaction, err := notifier.svc.lnClient.LookupInvoice(ctx, paymentReceivedEventProperties.PaymentHash)
-	if err != nil {
-		notifier.svc.logger.
-			WithField("paymentHash", paymentReceivedEventProperties.PaymentHash).
-			WithError(err).
-			Error("Failed to lookup invoice by payment hash")
-		return err
+		var err error
+		transaction, err = notifier.svc.lnClient.LookupInvoice(ctx, paymentReceivedEventProperties.PaymentHash)
+		if err != nil {
+			notifier.svc.logger.
+				WithField("paymentHash", paymentReceivedEventProperties.PaymentHash).
+				WithError(err).
+				Error("Failed to lookup invoice by payment hash")
+			return err
+		}
+		notificationType = nip47.PAYMENT_RECEIVED_NOTIFICATION
+	case "nwc_payment_sent":
+		paymentSentEventProperties, ok := event.Properties.(*events.PaymentSentEventProperties)
+		if !ok {
+			notifier.svc.logger.WithField("event", event).Error("Failed to cast event")
+			return errors.New("failed to cast event")
+		}
+
+		var err error
+		transaction, err = notifier.svc.lnClient.LookupInvoice(ctx, paymentSentEventProperties.PaymentHash)
+		if err != nil {
+			notifier.svc.logger.
+				WithField("paymentHash", paymentSentEventProperties.PaymentHash).
+				WithError(err).
+				Error("Failed to lookup invoice by payment hash")
+			return err
+		}
+		notificationType = nip47.PAYMENT_SENT_NOTIFICATION
+	default:
+		notifier.svc.logger.Fatalf("Unsupported notification type: %v", event.Event)
 	}
 
 	notifier.notifySubscribers(ctx, &nip47.Notification{
 		Notification:     transaction,
-		NotificationType: nip47.PAYMENT_RECEIVED_NOTIFICATION,
+		NotificationType: notificationType,
 	}, nostr.Tags{})
 	return nil
 }

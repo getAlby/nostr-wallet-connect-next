@@ -31,7 +31,7 @@ const (
 	ERROR_BAD_REQUEST          = "BAD_REQUEST"
 	OTHER                      = "OTHER"
 	CAPABILITIES               = "pay_invoice pay_keysend get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice multi_pay_keysend sign_message notifications"
-	NOTIFICATION_TYPES         = "payment_received" // same format as above e.g. "payment_received balance_updated payment_sent channel_opened channel_closed ..."
+	NOTIFICATION_TYPES         = "payment_received payment_sent" // same format as above e.g. "payment_received balance_updated payment_sent channel_opened channel_closed ..."
 )
 
 // TODO: move other permissions here (e.g. all payment methods use pay_invoice)
@@ -41,6 +41,7 @@ const (
 
 const (
 	PAYMENT_RECEIVED_NOTIFICATION = "payment_received"
+	PAYMENT_SENT_NOTIFICATION     = "payment_sent"
 )
 
 const (

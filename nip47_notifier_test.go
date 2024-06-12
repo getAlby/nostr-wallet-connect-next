@@ -78,6 +78,27 @@ func TestSendNotification(t *testing.T) {
 	assert.Equal(t, mockTransaction.Amount, transaction.Amount)
 	assert.Equal(t, mockTransaction.FeesPaid, transaction.FeesPaid)
 	assert.Equal(t, mockTransaction.SettledAt, transaction.SettledAt)
+
+	testEvent = &events.Event{
+		Event: "nwc_payment_sent",
+		Properties: &events.PaymentSentEventProperties{
+			PaymentId:   mockPaymentId,
+			PaymentHash: mockPaymentHash,
+			Amount:      uint64(mockTransaction.Amount),
+			NodeType:    "LDK",
+		},
+	}
+
+	svc.eventPublisher.Publish(testEvent)
+
+	receivedEvent = <-svc.nip47NotificationQueue.Channel()
+	assert.Equal(t, testEvent, receivedEvent)
+
+	n = NewNip47Notifier(svc, relay)
+	n.ConsumeEvent(ctx, receivedEvent)
+
+	assert.NotNil(t, relay.publishedEvent)
+	assert.NotEmpty(t, relay.publishedEvent.Content)
 }
 
 func TestSendNotificationNoPermission(t *testing.T) {

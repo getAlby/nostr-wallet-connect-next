@@ -24,6 +24,13 @@ type PaymentReceivedEventProperties struct {
 	NodeType    string `json:"node_type"`
 }
 
+type PaymentSentEventProperties struct {
+	PaymentId   string `json:"payment_id"`
+	PaymentHash string `json:"payment_hash"`
+	Amount      uint64 `json:"amount"`
+	NodeType    string `json:"node_type"`
+}
+
 type ChannelBackupEvent struct {
 	Channels []ChannelBackupInfo `json:"channels"`
 }
