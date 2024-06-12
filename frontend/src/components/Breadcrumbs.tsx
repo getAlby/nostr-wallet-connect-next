@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Link, useMatches } from "react-router-dom";
 import {
   Breadcrumb,
@@ -7,18 +8,32 @@ import {
   BreadcrumbSeparator,
 } from "src/components/ui/breadcrumb";
 
+type MatchWithCrumb = {
+  pathname: string;
+  handle?: {
+    crumb?: () => React.ReactNode;
+  };
+};
+
 function Breadcrumbs() {
-  const matches = useMatches();
+  const matches = useMatches() as MatchWithCrumb[]; // Type-cast useMatches result to MatchWithCrumb array
+
   const crumbs = matches
     // Skip the root item
     .slice(1)
-    // first get rid of any matches that don't have handle and crumb
-    .filter((match) => Boolean(match.handle?.crumb));
+    // First, get rid of any matches that don't have a handle or crumb
+    .filter(
+      (
+        match
+      ): match is MatchWithCrumb & {
+        handle: { crumb: () => React.ReactNode };
+      } => Boolean(match.handle?.crumb)
+    );
 
   // Compare pathnames of index routes to remove duplicates
   const isIndexRoute =
     crumbs.length >= 2 && crumbs[crumbs.length - 1].pathname
-      ? crumbs[crumbs.length - 1].pathname.slice(0, -1) ==
+      ? crumbs[crumbs.length - 1].pathname.slice(0, -1) ===
         crumbs[crumbs.length - 2].pathname
       : false;
 
@@ -27,7 +42,7 @@ function Breadcrumbs() {
 
   // Don't render anything if there is only one item
   if (filteredCrumbs.length < 2) {
-    return;
+    return null;
   }
 
   return (
@@ -35,8 +50,8 @@ function Breadcrumbs() {
       <Breadcrumb>
         <BreadcrumbList>
           {filteredCrumbs.map((crumb, index) => (
-            <>
-              <BreadcrumbItem key={index}>
+            <Fragment key={index}>
+              <BreadcrumbItem>
                 {index + 1 < filteredCrumbs.length ? (
                   <BreadcrumbLink asChild>
                     <Link to={crumb.pathname}>{crumb.handle.crumb()}</Link>
@@ -46,7 +61,7 @@ function Breadcrumbs() {
                 )}
               </BreadcrumbItem>
               {index + 1 < filteredCrumbs.length && <BreadcrumbSeparator />}
-            </>
+            </Fragment>
           ))}
         </BreadcrumbList>
       </Breadcrumb>
