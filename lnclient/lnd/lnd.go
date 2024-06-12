@@ -142,6 +142,27 @@ func (svc *LNDService) GetInfo(ctx context.Context) (info *lnclient.NodeInfo, er
 	}, nil
 }
 
+func (svc *LNDService) parseChannelPoint(channelPointStr string) (*lnrpc.ChannelPoint, error) {
+	channelPointParts := strings.Split(channelPointStr, ":")
+
+	if len(channelPointParts) == 2 {
+		channelPoint := &lnrpc.ChannelPoint{}
+		channelPoint.FundingTxid = &lnrpc.ChannelPoint_FundingTxidStr{
+			FundingTxidStr: channelPointParts[0],
+		}
+
+		outputIndex, err := strconv.ParseUint(channelPointParts[1], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		channelPoint.OutputIndex = uint32(outputIndex)
+
+		return channelPoint, nil
+	}
+
+	return nil, errors.New("invalid channel point")
+}
+
 func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, error) {
 	activeResp, err := svc.client.ListChannels(ctx, &lnrpc.ListChannelsRequest{})
 	if err != nil {
@@ -170,10 +191,9 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 	channels := make([]lnclient.Channel, len(activeResp.Channels)+len(pendingResp.PendingOpenChannels))
 
 	for i, lndChannel := range activeResp.Channels {
-		channelPointParts := strings.Split(lndChannel.ChannelPoint, ":")
-		fundingTxId := ""
-		if len(channelPointParts) == 2 {
-			fundingTxId = channelPointParts[0]
+		channelPoint, err := svc.parseChannelPoint(lndChannel.ChannelPoint)
+		if err != nil {
+			return nil, err
 		}
 
 		// first 3 bytes of the channel ID are the block height
@@ -188,18 +208,18 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 			Id:                    strconv.FormatUint(lndChannel.ChanId, 10),
 			Active:                lndChannel.Active,
 			Public:                !lndChannel.Private,
-			FundingTxId:           fundingTxId,
+			FundingTxId:           channelPoint.GetFundingTxidStr(),
 			Confirmations:         &confirmations,
 			ConfirmationsRequired: &confirmationsRequired,
 		}
 	}
 
 	for j, lndChannel := range pendingResp.PendingOpenChannels {
-		channelPointParts := strings.Split(lndChannel.Channel.ChannelPoint, ":")
-		fundingTxId := ""
-		if len(channelPointParts) == 2 {
-			fundingTxId = channelPointParts[0]
+		channelPoint, err := svc.parseChannelPoint(lndChannel.Channel.ChannelPoint)
+		if err != nil {
+			return nil, err
 		}
+		fundingTxId := channelPoint.GetFundingTxidStr()
 
 		var confirmations *uint32
 		for _, t := range recentOnchainTransactions.Transactions {
@@ -518,18 +538,10 @@ func (svc *LNDService) CloseChannel(ctx context.Context, closeChannelRequest *ln
 		return nil, errors.New("no channel exists with the given id")
 	}
 
-	channelPointParts := strings.Split(foundChannel.ChannelPoint, ":")
-
-	channelPoint := &lnrpc.ChannelPoint{}
-	channelPoint.FundingTxid = &lnrpc.ChannelPoint_FundingTxidStr{
-		FundingTxidStr: channelPointParts[0],
-	}
-
-	outputIndex, err := strconv.ParseUint(channelPointParts[1], 10, 32)
+	channelPoint, err := svc.parseChannelPoint(foundChannel.ChannelPoint)
 	if err != nil {
 		return nil, err
 	}
-	channelPoint.OutputIndex = uint32(outputIndex)
 
 	stream, err := svc.client.CloseChannel(ctx, &lnrpc.CloseChannelRequest{
 		ChannelPoint: channelPoint,
