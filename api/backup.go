@@ -1,4 +1,4 @@
-package backup
+package api
 
 import (
 	"errors"
@@ -12,9 +12,6 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/getAlby/nostr-wallet-connect/service"
-	"github.com/sirupsen/logrus"
-
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -23,19 +20,7 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-type backupService struct {
-	svc    service.Service
-	logger *logrus.Logger
-}
-
-func NewBackupService(svc service.Service, logger *logrus.Logger) *backupService {
-	return &backupService{
-		svc:    svc,
-		logger: logger,
-	}
-}
-
-func (bs *backupService) CreateBackup(unlockPassword string, w io.Writer) error {
+func (bs *api) CreateBackup(unlockPassword string, w io.Writer) error {
 	var err error
 
 	if !bs.svc.GetConfig().CheckUnlockPassword(unlockPassword) {
@@ -146,7 +131,7 @@ func (bs *backupService) CreateBackup(unlockPassword string, w io.Writer) error 
 	return nil
 }
 
-func (bs *backupService) RestoreBackup(unlockPassword string, r io.Reader) error {
+func (bs *api) RestoreBackup(unlockPassword string, r io.Reader) error {
 	workDir, err := filepath.Abs(bs.svc.GetConfig().GetEnv().Workdir)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute workdir: %w", err)

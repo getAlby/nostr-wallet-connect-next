@@ -1,4 +1,3 @@
-// TODO: move to lnclient/models.go
 package lnclient
 
 import (

@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"context"
@@ -10,9 +10,13 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 
-func (svc *Service) StartNostr(ctx context.Context, encryptionKey string) error {
+func (svc *service) StartNostr(ctx context.Context, encryptionKey string) error {
+
+	svc.nip47Service = nip47.NewNip47Service(svc.db, svc.logger, svc.eventPublisher, svc.cfg, svc.lnClient)
+
 	relayUrl := svc.cfg.GetRelayUrl()
 
 	err := svc.cfg.Start(encryptionKey)
@@ -68,7 +72,7 @@ func (svc *Service) StartNostr(ctx context.Context, encryptionKey string) error 
 			}
 
 			//publish event with NIP-47 info
-			err = svc.PublishNip47Info(ctx, relay)
+			err = svc.nip47Service.PublishNip47Info(ctx, relay)
 			if err != nil {
 				svc.logger.WithError(err).Error("Could not publish NIP47 info")
 			}
@@ -102,7 +106,7 @@ func (svc *Service) StartNostr(ctx context.Context, encryptionKey string) error 
 	return nil
 }
 
-func (svc *Service) StartApp(encryptionKey string) error {
+func (svc *service) StartApp(encryptionKey string) error {
 	if !svc.cfg.CheckUnlockPassword(encryptionKey) {
 		svc.logger.Errorf("Invalid password")
 		return errors.New("invalid password")
@@ -126,14 +130,14 @@ func (svc *Service) StartApp(encryptionKey string) error {
 }
 
 // TODO: remove and call StopLNClient() instead
-func (svc *Service) StopApp() {
+func (svc *service) StopApp() {
 	if svc.appCancelFn != nil {
 		svc.appCancelFn()
 		svc.wg.Wait()
 	}
 }
 
-func (svc *Service) Shutdown() {
+func (svc *service) Shutdown() {
 	svc.StopLNClient()
 	svc.eventPublisher.Publish(&events.Event{
 		Event: "nwc_stopped",

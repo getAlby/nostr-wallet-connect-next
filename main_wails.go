@@ -5,25 +5,33 @@ package main
 
 import (
 	"context"
+	"embed"
 
+	"github.com/getAlby/nostr-wallet-connect/service"
+	"github.com/getAlby/nostr-wallet-connect/wails"
 	log "github.com/sirupsen/logrus"
 )
+
+//go:embed all:frontend/dist
+var assets embed.FS
+
+//go:embed appicon.png
+var appIcon []byte
 
 // ignore this warning: we use build tags
 // this function will only be executed if the wails tag is set
 func main() {
 	log.Info("NWC Starting in WAILS mode")
 	ctx, cancel := context.WithCancel(context.Background())
-	svc, _ := NewService(ctx)
+	svc, _ := service.NewService(ctx)
 
-	app := NewApp(svc)
-	LaunchWailsApp(app)
-	svc.logger.Info("Wails app exited")
+	app := wails.NewApp(svc)
+	wails.LaunchWailsApp(app, assets, appIcon)
+	svc.GetLogger().Info("Wails app exited")
 
-	svc.logger.Info("Cancelling service context...")
+	svc.GetLogger().Info("Cancelling service context...")
 	// cancel the service context
 	cancel()
-	svc.logger.Info("Waiting for service to exit...")
-	svc.wg.Wait()
-	svc.logger.Info("Service exited")
+	svc.WaitShutdown()
+	svc.GetLogger().Info("Service exited")
 }

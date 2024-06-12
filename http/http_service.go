@@ -19,7 +19,6 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
-	"github.com/getAlby/nostr-wallet-connect/lsp"
 	"github.com/getAlby/nostr-wallet-connect/service"
 
 	"github.com/getAlby/nostr-wallet-connect/api"
@@ -42,7 +41,7 @@ const (
 
 func NewHttpService(svc service.Service, logger *logrus.Logger, db *gorm.DB, eventPublisher events.EventPublisher) *HttpService {
 	return &HttpService{
-		api:            api.NewAPI(svc, logger, db),
+		api:            api.NewAPI(svc, logger, db, svc.GetConfig()),
 		albyHttpSvc:    alby.NewAlbyHttpService(svc.GetAlbyOAuthSvc(), logger, svc.GetConfig().GetEnv()),
 		cfg:            svc.GetConfig(),
 		db:             db,
@@ -504,14 +503,14 @@ func (httpSvc *HttpService) closeChannelHandler(c echo.Context) error {
 func (httpSvc *HttpService) newInstantChannelInvoiceHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	var newWrappedInvoiceRequest lsp.NewInstantChannelInvoiceRequest
+	var newWrappedInvoiceRequest api.NewInstantChannelInvoiceRequest
 	if err := c.Bind(&newWrappedInvoiceRequest); err != nil {
 		return c.JSON(http.StatusBadRequest, ErrorResponse{
 			Message: fmt.Sprintf("Bad request: %s", err.Error()),
 		})
 	}
 
-	newWrappedInvoiceResponse, err := httpSvc.api.GetLSPService().NewInstantChannelInvoice(ctx, &newWrappedInvoiceRequest)
+	newWrappedInvoiceResponse, err := httpSvc.api.NewInstantChannelInvoice(ctx, &newWrappedInvoiceRequest)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -789,7 +788,7 @@ func (httpSvc *HttpService) createBackupHandler(c echo.Context) error {
 	}
 
 	var buffer bytes.Buffer
-	err := httpSvc.api.GetBackupService().CreateBackup(backupRequest.UnlockPassword, &buffer)
+	err := httpSvc.api.CreateBackup(backupRequest.UnlockPassword, &buffer)
 	if err != nil {
 		return c.String(500, fmt.Sprintf("Failed to create backup: %v", err))
 	}
@@ -827,7 +826,7 @@ func (httpSvc *HttpService) restoreBackupHandler(c echo.Context) error {
 	}
 	defer file.Close()
 
-	err = httpSvc.api.GetBackupService().RestoreBackup(password, file)
+	err = httpSvc.api.RestoreBackup(password, file)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Message: fmt.Sprintf("Failed to restore backup: %v", err),

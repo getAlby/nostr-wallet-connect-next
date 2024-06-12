@@ -7,12 +7,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-
-	dbModels "github.com/getAlby/nostr-wallet-connect/db"
 )
 
 type config struct {
@@ -107,11 +106,11 @@ func (cfg *config) Get(key string, encryptionKey string) (string, error) {
 	return cfg.get(key, encryptionKey, cfg.db)
 }
 
-func (cfg *config) get(key string, encryptionKey string, db *gorm.DB) (string, error) {
-	var userConfig dbModels.UserConfig
-	err := db.Where(&dbModels.UserConfig{Key: key}).Limit(1).Find(&userConfig).Error
+func (cfg *config) get(key string, encryptionKey string, gormDB *gorm.DB) (string, error) {
+	var userConfig db.UserConfig
+	err := gormDB.Where(&db.UserConfig{Key: key}).Limit(1).Find(&userConfig).Error
 	if err != nil {
-		return "", fmt.Errorf("failed to get configuration value: %w", db.Error)
+		return "", fmt.Errorf("failed to get configuration value: %w", gormDB.Error)
 	}
 
 	value := userConfig.Value
@@ -125,7 +124,7 @@ func (cfg *config) get(key string, encryptionKey string, db *gorm.DB) (string, e
 	return value, nil
 }
 
-func (cfg *config) set(key string, value string, clauses clause.OnConflict, encryptionKey string, db *gorm.DB) error {
+func (cfg *config) set(key string, value string, clauses clause.OnConflict, encryptionKey string, gormDB *gorm.DB) error {
 	if encryptionKey != "" {
 		encrypted, err := AesGcmEncrypt(value, encryptionKey)
 		if err != nil {
@@ -133,8 +132,8 @@ func (cfg *config) set(key string, value string, clauses clause.OnConflict, encr
 		}
 		value = encrypted
 	}
-	userConfig := dbModels.UserConfig{Key: key, Value: value, Encrypted: encryptionKey != ""}
-	result := db.Clauses(clauses).Create(&userConfig)
+	userConfig := db.UserConfig{Key: key, Value: value, Encrypted: encryptionKey != ""}
+	result := gormDB.Clauses(clauses).Create(&userConfig)
 
 	if result.Error != nil {
 		return fmt.Errorf("failed to save key to config: %v", result.Error)
@@ -170,8 +169,8 @@ func (cfg *config) ChangeUnlockPassword(currentUnlockPassword string, newUnlockP
 	}
 	err := cfg.db.Transaction(func(tx *gorm.DB) error {
 
-		var encryptedUserConfigs []dbModels.UserConfig
-		err := tx.Where(&dbModels.UserConfig{Encrypted: true}).Find(&encryptedUserConfigs).Error
+		var encryptedUserConfigs []db.UserConfig
+		err := tx.Where(&db.UserConfig{Encrypted: true}).Find(&encryptedUserConfigs).Error
 		if err != nil {
 			return err
 		}

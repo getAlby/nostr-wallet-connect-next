@@ -1,4 +1,4 @@
-package main
+package nip47
 
 import (
 	"context"
@@ -7,15 +7,14 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/nbd-wtf/go-nostr"
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
 )
 
-func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip47.Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Response, nostr.Tags)) {
+func (svc *nip47Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags)) {
 
-	payParams := &nip47.PayParams{}
+	payParams := &PayParams{}
 	resp := svc.decodeNip47Request(nip47Request, requestEvent, app, payParams)
 	if resp != nil {
 		publishResponse(resp, nostr.Tags{})
@@ -33,10 +32,10 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 			"bolt11":              bolt11,
 		}).Errorf("Failed to decode bolt11 invoice: %v", err)
 
-		publishResponse(&nip47.Response{
+		publishResponse(&Response{
 			ResultType: nip47Request.Method,
-			Error: &nip47.Error{
-				Code:    nip47.ERROR_INTERNAL,
+			Error: &Error{
+				Code:    ERROR_INTERNAL,
 				Message: fmt.Sprintf("Failed to decode bolt11 invoice: %s", err.Error()),
 			},
 		}, nostr.Tags{})
@@ -52,10 +51,10 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 	payment := db.Payment{App: *app, RequestEvent: *requestEvent, PaymentRequest: bolt11, Amount: uint(paymentRequest.MSatoshi / 1000)}
 	err = svc.db.Create(&payment).Error
 	if err != nil {
-		publishResponse(&nip47.Response{
+		publishResponse(&Response{
 			ResultType: nip47Request.Method,
-			Error: &nip47.Error{
-				Code:    nip47.ERROR_INTERNAL,
+			Error: &Error{
+				Code:    ERROR_INTERNAL,
 				Message: err.Error(),
 			},
 		}, nostr.Tags{})
@@ -83,10 +82,10 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 				"amount":  paymentRequest.MSatoshi / 1000,
 			},
 		})
-		publishResponse(&nip47.Response{
+		publishResponse(&Response{
 			ResultType: nip47Request.Method,
-			Error: &nip47.Error{
-				Code:    nip47.ERROR_INTERNAL,
+			Error: &Error{
+				Code:    ERROR_INTERNAL,
 				Message: err.Error(),
 			},
 		}, nostr.Tags{})
@@ -104,9 +103,9 @@ func (svc *Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request *nip
 		},
 	})
 
-	publishResponse(&nip47.Response{
+	publishResponse(&Response{
 		ResultType: nip47Request.Method,
-		Result: nip47.PayResponse{
+		Result: PayResponse{
 			Preimage: response.Preimage,
 			FeesPaid: response.Fee,
 		},

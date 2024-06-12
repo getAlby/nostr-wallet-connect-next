@@ -1,4 +1,4 @@
-package main
+package wails
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/getAlby/nostr-wallet-connect/api"
+	"github.com/getAlby/nostr-wallet-connect/service"
 	"github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -14,22 +15,16 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 )
 
-//go:embed all:frontend/dist
-var assets embed.FS
-
-//go:embed appicon.png
-var appIcon []byte
-
 type WailsApp struct {
 	ctx context.Context
-	svc *Service
+	svc service.Service
 	api api.API
 }
 
-func NewApp(svc *Service) *WailsApp {
+func NewApp(svc service.Service) *WailsApp {
 	return &WailsApp{
 		svc: svc,
-		api: api.NewAPI(svc, svc.logger, svc.db),
+		api: api.NewAPI(svc, svc.GetLogger(), svc.GetDB(), svc.GetConfig()),
 	}
 }
 
@@ -39,8 +34,8 @@ func (app *WailsApp) startup(ctx context.Context) {
 	app.ctx = ctx
 }
 
-func LaunchWailsApp(app *WailsApp) {
-	logger := NewWailsLogger(app.svc.logger)
+func LaunchWailsApp(app *WailsApp, assets embed.FS, appIcon []byte) {
+	logger := NewWailsLogger(app.svc.GetLogger())
 
 	err := wails.Run(&options.App{
 		Title:  "AlbyHub",

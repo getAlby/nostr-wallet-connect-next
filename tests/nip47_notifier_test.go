@@ -1,10 +1,9 @@
-package main
+package tests
 
 import (
 	"context"
 	"encoding/json"
 	"log"
-	"os"
 	"testing"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
@@ -17,11 +16,15 @@ import (
 
 func TestSendNotification(t *testing.T) {
 	ctx := context.TODO()
-	defer os.Remove(testDB)
-	mockLn, err := NewMockLn()
+	defer removeTestService()
+	svc, err := createTestService()
+	assert.NoError(t, err)
+
+	/*mockLn, err := NewMockLn()
 	assert.NoError(t, err)
 	svc, err := createTestService(mockLn)
-	assert.NoError(t, err)
+	assert.NoError(t, err)*/
+
 	app, ss, err := createApp(svc)
 	assert.NoError(t, err)
 
@@ -33,8 +36,8 @@ func TestSendNotification(t *testing.T) {
 	err = svc.db.Create(appPermission).Error
 	assert.NoError(t, err)
 
-	svc.nip47NotificationQueue = nip47.NewNip47NotificationQueue(svc.logger)
-	svc.eventPublisher.RegisterSubscriber(svc.nip47NotificationQueue)
+	nip47NotificationQueue := nip47.NewNip47NotificationQueue(svc.logger)
+	svc.eventPublisher.RegisterSubscriber(nip47NotificationQueue)
 
 	testEvent := &events.Event{
 		Event: "nwc_payment_received",
@@ -47,13 +50,15 @@ func TestSendNotification(t *testing.T) {
 
 	svc.eventPublisher.Publish(testEvent)
 
-	receivedEvent := <-svc.nip47NotificationQueue.Channel()
+	receivedEvent := <-nip47NotificationQueue.Channel()
 	assert.Equal(t, testEvent, receivedEvent)
 
 	relay := NewMockRelay()
 
-	n := NewNip47Notifier(svc, relay)
-	n.ConsumeEvent(ctx, receivedEvent)
+	nip47Svc := nip47.NewNip47Service(svc.db, svc.logger, svc.eventPublisher, svc.cfg, svc.lnClient)
+
+	notifier := nip47.NewNip47Notifier(nip47Svc, relay, svc.logger, svc.cfg, svc.db, svc.lnClient)
+	notifier.ConsumeEvent(ctx, receivedEvent)
 
 	assert.NotNil(t, relay.publishedEvent)
 	assert.NotEmpty(t, relay.publishedEvent.Content)
@@ -82,16 +87,14 @@ func TestSendNotification(t *testing.T) {
 
 func TestSendNotificationNoPermission(t *testing.T) {
 	ctx := context.TODO()
-	defer os.Remove(testDB)
-	mockLn, err := NewMockLn()
-	assert.NoError(t, err)
-	svc, err := createTestService(mockLn)
+	defer removeTestService()
+	svc, err := createTestService()
 	assert.NoError(t, err)
 	_, _, err = createApp(svc)
 	assert.NoError(t, err)
 
-	svc.nip47NotificationQueue = nip47.NewNip47NotificationQueue(svc.logger)
-	svc.eventPublisher.RegisterSubscriber(svc.nip47NotificationQueue)
+	nip47NotificationQueue := nip47.NewNip47NotificationQueue(svc.logger)
+	svc.eventPublisher.RegisterSubscriber(nip47NotificationQueue)
 
 	testEvent := &events.Event{
 		Event: "nwc_payment_received",
@@ -104,13 +107,15 @@ func TestSendNotificationNoPermission(t *testing.T) {
 
 	svc.eventPublisher.Publish(testEvent)
 
-	receivedEvent := <-svc.nip47NotificationQueue.Channel()
+	receivedEvent := <-nip47NotificationQueue.Channel()
 	assert.Equal(t, testEvent, receivedEvent)
 
 	relay := NewMockRelay()
 
-	n := NewNip47Notifier(svc, relay)
-	n.ConsumeEvent(ctx, receivedEvent)
+	nip47Svc := nip47.NewNip47Service(svc.db, svc.logger, svc.eventPublisher, svc.cfg, svc.lnClient)
+
+	notifier := nip47.NewNip47Notifier(nip47Svc, relay, svc.logger, svc.cfg, svc.db, svc.lnClient)
+	notifier.ConsumeEvent(ctx, receivedEvent)
 
 	assert.Nil(t, relay.publishedEvent)
 }

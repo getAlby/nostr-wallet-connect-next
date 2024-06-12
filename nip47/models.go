@@ -1,9 +1,12 @@
 package nip47
 
 import (
+	"context"
 	"encoding/json"
 
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
+	"github.com/nbd-wtf/go-nostr"
 )
 
 const (
@@ -170,4 +173,26 @@ type SignMessageParams struct {
 type SignMessageResponse struct {
 	Message   string `json:"message"`
 	Signature string `json:"signature"`
+}
+
+type Nip47Service interface {
+	HasPermission(app *db.App, requestMethod string, amount int64) (result bool, code string, message string)
+	GetBudgetUsage(appPermission *db.AppPermission) int64
+	StartNotifier(ctx context.Context, relay *nostr.Relay, lnClient lnclient.LNClient)
+	HandleEvent(ctx context.Context, sub *nostr.Subscription, event *nostr.Event)
+	PublishNip47Info(ctx context.Context, relay *nostr.Relay) error
+	Stop() // TODO: remove and replace with context
+
+	CreateResponse(initialEvent *nostr.Event, content interface{}, tags nostr.Tags, ss []byte) (result *nostr.Event, err error)
+	HandleUnknownMethod(ctx context.Context, nip47Request *Request, publishResponse func(*Response, nostr.Tags))
+	HandleGetBalanceEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags))
+	HandleGetInfoEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags))
+	HandleListTransactionsEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags))
+	HandleLookupInvoiceEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags))
+	HandleMakeInvoiceEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags))
+	HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags))
+	HandleMultiPayKeysendEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags))
+	HandlePayKeysendEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags))
+	HandlePayInvoiceEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags))
+	HandleSignMessageEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags))
 }

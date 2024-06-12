@@ -1,4 +1,4 @@
-package main
+package nip47
 
 import (
 	"context"
@@ -6,14 +6,13 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
 
-func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request *nip47.Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Response, nostr.Tags)) {
+func (svc *nip47Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request *Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*Response, nostr.Tags)) {
 
-	multiPayParams := &nip47.MultiPayKeysendParams{}
+	multiPayParams := &MultiPayKeysendParams{}
 	resp := svc.decodeNip47Request(nip47Request, requestEvent, app, multiPayParams)
 	if resp != nil {
 		publishResponse(resp, nostr.Tags{})
@@ -24,7 +23,7 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 	var mu sync.Mutex
 	for _, keysendInfo := range multiPayParams.Keysends {
 		wg.Add(1)
-		go func(keysendInfo nip47.MultiPayKeysendElement) {
+		go func(keysendInfo MultiPayKeysendElement) {
 			defer wg.Done()
 
 			keysendDTagValue := keysendInfo.Id
@@ -75,10 +74,10 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 					},
 				})
 
-				publishResponse(&nip47.Response{
+				publishResponse(&Response{
 					ResultType: nip47Request.Method,
-					Error: &nip47.Error{
-						Code:    nip47.ERROR_INTERNAL,
+					Error: &Error{
+						Code:    ERROR_INTERNAL,
 						Message: err.Error(),
 					},
 				}, nostr.Tags{dTag})
@@ -96,9 +95,9 @@ func (svc *Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request
 					"amount":  keysendInfo.Amount / 1000,
 				},
 			})
-			publishResponse(&nip47.Response{
+			publishResponse(&Response{
 				ResultType: nip47Request.Method,
-				Result: nip47.PayResponse{
+				Result: PayResponse{
 					Preimage: preimage,
 				},
 			}, nostr.Tags{dTag})

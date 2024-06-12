@@ -1,4 +1,4 @@
-package lsp
+package api
 
 import (
 	"bytes"
@@ -14,14 +14,9 @@ import (
 	"time"
 
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
-	"github.com/getAlby/nostr-wallet-connect/service"
+	"github.com/getAlby/nostr-wallet-connect/lsp"
 	"github.com/sirupsen/logrus"
 )
-
-type lspService struct {
-	svc    service.Service
-	logger *logrus.Logger
-}
 
 type lspConnectionInfo struct {
 	Pubkey  string
@@ -29,32 +24,25 @@ type lspConnectionInfo struct {
 	Port    uint16
 }
 
-func NewLSPService(svc service.Service, logger *logrus.Logger) *lspService {
-	return &lspService{
-		svc:    svc,
-		logger: logger,
-	}
-}
-
-func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *NewInstantChannelInvoiceRequest) (*NewInstantChannelInvoiceResponse, error) {
-	var selectedLsp LSP
+func (ls *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstantChannelInvoiceRequest) (*NewInstantChannelInvoiceResponse, error) {
+	var selectedLsp lsp.LSP
 	switch request.LSP {
 	case "VOLTAGE":
-		selectedLsp = VoltageLSP()
+		selectedLsp = lsp.VoltageLSP()
 	case "OLYMPUS_FLOW_2_0":
-		selectedLsp = OlympusLSP()
+		selectedLsp = lsp.OlympusLSP()
 	case "OLYMPUS_MUTINYNET_FLOW_2_0":
-		selectedLsp = OlympusMutinynetFlowLSP()
+		selectedLsp = lsp.OlympusMutinynetFlowLSP()
 	case "OLYMPUS_MUTINYNET_LSPS1":
-		selectedLsp = OlympusMutinynetLSPS1LSP()
+		selectedLsp = lsp.OlympusMutinynetLSPS1LSP()
 	case "ALBY":
-		selectedLsp = AlbyPlebsLSP()
+		selectedLsp = lsp.AlbyPlebsLSP()
 	case "ALBY_MUTINYNET":
-		selectedLsp = AlbyMutinynetPlebsLSP()
+		selectedLsp = lsp.AlbyMutinynetPlebsLSP()
 	case "MEGALITH":
-		selectedLsp = MegalithLSP()
+		selectedLsp = lsp.MegalithLSP()
 	case "MEGALITH_MUTINYNET":
-		selectedLsp = MegalithMutinynetLSP()
+		selectedLsp = lsp.MegalithMutinynetLSP()
 	default:
 		return nil, errors.New("unknown LSP")
 	}
@@ -63,7 +51,7 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *New
 		return nil, errors.New("LNClient not started")
 	}
 
-	if selectedLsp.LspType != LSP_TYPE_LSPS1 && request.Public {
+	if selectedLsp.LspType != lsp.LSP_TYPE_LSPS1 && request.Public {
 		return nil, errors.New("This LSP option does not support public channels")
 	}
 
@@ -72,12 +60,12 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *New
 	var lspInfo *lspConnectionInfo
 	var err error
 	switch selectedLsp.LspType {
-	case LSP_TYPE_FLOW_2_0:
+	case lsp.LSP_TYPE_FLOW_2_0:
 		fallthrough
-	case LSP_TYPE_PMLSP:
+	case lsp.LSP_TYPE_PMLSP:
 		lspInfo, err = ls.getFlowLSPInfo(selectedLsp.Url + "/info")
 
-	case LSP_TYPE_LSPS1:
+	case lsp.LSP_TYPE_LSPS1:
 		lspInfo, err = ls.getLSPS1LSPInfo(selectedLsp.Url + "/get_info")
 
 	default:
@@ -115,11 +103,11 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *New
 	var fee uint64 = 0
 
 	switch selectedLsp.LspType {
-	case LSP_TYPE_FLOW_2_0:
+	case lsp.LSP_TYPE_FLOW_2_0:
 		invoice, fee, err = ls.requestFlow20WrappedInvoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey)
-	case LSP_TYPE_PMLSP:
+	case lsp.LSP_TYPE_PMLSP:
 		invoice, fee, err = ls.requestPMLSPInvoice(&selectedLsp, request.Amount, nodeInfo.Pubkey)
-	case LSP_TYPE_LSPS1:
+	case lsp.LSP_TYPE_LSPS1:
 		invoice, fee, err = ls.requestLSPS1Invoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey, request.Public)
 
 	default:
@@ -142,7 +130,7 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *New
 	return newChannelResponse, nil
 }
 
-func (ls *lspService) getLSPS1LSPInfo(url string) (*lspConnectionInfo, error) {
+func (ls *api) getLSPS1LSPInfo(url string) (*lspConnectionInfo, error) {
 	type LSPS1LSPInfo struct {
 		// TODO: implement options
 		Options interface{} `json:"options"`
@@ -210,7 +198,7 @@ func (ls *lspService) getLSPS1LSPInfo(url string) (*lspConnectionInfo, error) {
 		Port:    uint16(port),
 	}, nil
 }
-func (ls *lspService) getFlowLSPInfo(url string) (*lspConnectionInfo, error) {
+func (ls *api) getFlowLSPInfo(url string) (*lspConnectionInfo, error) {
 	type FlowLSPConnectionMethod struct {
 		Address string `json:"address"`
 		Port    uint16 `json:"port"`
@@ -278,7 +266,7 @@ func (ls *lspService) getFlowLSPInfo(url string) (*lspConnectionInfo, error) {
 	}, nil
 }
 
-func (ls *lspService) requestFlow20WrappedInvoice(ctx context.Context, selectedLsp *LSP, amount uint64, pubkey string) (invoice string, fee uint64, err error) {
+func (ls *api) requestFlow20WrappedInvoice(ctx context.Context, selectedLsp *lsp.LSP, amount uint64, pubkey string) (invoice string, fee uint64, err error) {
 	ls.logger.Infoln("Requesting fee information")
 
 	type FeeRequest struct {
@@ -450,7 +438,7 @@ func (ls *lspService) requestFlow20WrappedInvoice(ctx context.Context, selectedL
 	return invoice, fee, nil
 }
 
-func (ls *lspService) requestPMLSPInvoice(selectedLsp *LSP, amount uint64, pubkey string) (invoice string, fee uint64, err error) {
+func (ls *api) requestPMLSPInvoice(selectedLsp *lsp.LSP, amount uint64, pubkey string) (invoice string, fee uint64, err error) {
 	type NewInstantChannelRequest struct {
 		Amount uint64 `json:"amount"`
 		Pubkey string `json:"pubkey"`
@@ -504,7 +492,12 @@ func (ls *lspService) requestPMLSPInvoice(selectedLsp *LSP, amount uint64, pubke
 		return "", 0, fmt.Errorf("new-channel endpoint returned non-success code: %s", string(body))
 	}
 
-	var newChannelResponse NewInstantChannelResponse
+	type newInstantChannelResponse struct {
+		FeeAmountMsat uint64 `json:"fee_amount_msat"`
+		Invoice       string `json:"invoice"`
+	}
+
+	var newChannelResponse newInstantChannelResponse
 
 	err = json.Unmarshal(body, &newChannelResponse)
 	if err != nil {
@@ -520,7 +513,7 @@ func (ls *lspService) requestPMLSPInvoice(selectedLsp *LSP, amount uint64, pubke
 	return invoice, fee, nil
 }
 
-func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP, amount uint64, pubkey string, public bool) (invoice string, fee uint64, err error) {
+func (ls *api) requestLSPS1Invoice(ctx context.Context, selectedLsp *lsp.LSP, amount uint64, pubkey string, public bool) (invoice string, fee uint64, err error) {
 	client := http.Client{
 		Timeout: time.Second * 10,
 	}

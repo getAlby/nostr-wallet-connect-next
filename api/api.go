@@ -15,34 +15,29 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/getAlby/nostr-wallet-connect/alby"
-	"github.com/getAlby/nostr-wallet-connect/backup"
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
-	"github.com/getAlby/nostr-wallet-connect/lsp"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/getAlby/nostr-wallet-connect/service"
 	"github.com/getAlby/nostr-wallet-connect/utils"
 )
 
 type api struct {
-	logger    *logrus.Logger
-	svc       service.Service
-	lspSvc    lsp.LSPService
-	backupSvc backup.BackupService
-	db        *gorm.DB
-	dbSvc     db.DBService
+	logger *logrus.Logger
+	db     *gorm.DB
+	dbSvc  db.DBService
+	cfg    config.Config
+	svc    service.Service
 }
 
-func NewAPI(svc service.Service, logger *logrus.Logger, gormDb *gorm.DB) *api {
-
+func NewAPI(svc service.Service, logger *logrus.Logger, gormDb *gorm.DB, config config.Config) *api {
 	return &api{
-		svc:       svc,
-		logger:    logger,
-		db:        gormDb,
-		dbSvc:     db.NewDBService(gormDb, logger),
-		lspSvc:    lsp.NewLSPService(svc, logger),
-		backupSvc: backup.NewBackupService(svc, logger),
+		logger: logger,
+		db:     gormDb,
+		dbSvc:  db.NewDBService(gormDb, logger),
+		cfg:    config,
+		svc:    svc,
 	}
 }
 
@@ -58,13 +53,21 @@ func (api *api) CreateApp(createAppRequest *CreateAppRequest) (*CreateAppRespons
 		return nil, fmt.Errorf("won't create an app without request methods")
 	}
 
+	for _, m := range requestMethods {
+		// TODO: this should be backend-specific
+		//if we don't know this method, we return an error
+		if !strings.Contains(nip47.CAPABILITIES, m) {
+			return nil, fmt.Errorf("did not recognize request method: %s", m)
+		}
+	}
+
 	app, pairingSecretKey, err := api.dbSvc.CreateApp(createAppRequest.Name, createAppRequest.Pubkey, createAppRequest.MaxAmount, createAppRequest.BudgetRenewal, expiresAt, requestMethods)
 
 	if err != nil {
 		return nil, err
 	}
 
-	relayUrl := api.svc.GetConfig().GetRelayUrl()
+	relayUrl := api.cfg.GetRelayUrl()
 
 	responseBody := &CreateAppResponse{}
 	responseBody.Name = createAppRequest.Name
@@ -76,7 +79,7 @@ func (api *api) CreateApp(createAppRequest *CreateAppRequest) (*CreateAppRespons
 		if err == nil {
 			query := returnToUrl.Query()
 			query.Add("relay", relayUrl)
-			query.Add("pubkey", api.svc.GetConfig().GetNostrPublicKey())
+			query.Add("pubkey", api.cfg.GetNostrPublicKey())
 			// if user.LightningAddress != "" {
 			// 	query.Add("lud16", user.LightningAddress)
 			// }
@@ -89,7 +92,7 @@ func (api *api) CreateApp(createAppRequest *CreateAppRequest) (*CreateAppRespons
 	// if user.LightningAddress != "" {
 	// 	lud16 = fmt.Sprintf("&lud16=%s", user.LightningAddress)
 	// }
-	responseBody.PairingUri = fmt.Sprintf("nostr+walletconnect://%s?relay=%s&secret=%s%s", api.svc.GetConfig().GetNostrPublicKey(), relayUrl, pairingSecretKey, lud16)
+	responseBody.PairingUri = fmt.Sprintf("nostr+walletconnect://%s?relay=%s&secret=%s%s", api.cfg.GetNostrPublicKey(), relayUrl, pairingSecretKey, lud16)
 	return responseBody, nil
 }
 
@@ -188,7 +191,7 @@ func (api *api) GetApp(userApp *db.App) *App {
 	budgetUsage := int64(0)
 	maxAmount := paySpecificPermission.MaxAmount
 	if maxAmount > 0 {
-		budgetUsage = api.svc.GetBudgetUsage(&paySpecificPermission)
+		budgetUsage = api.svc.GetNip47Service().GetBudgetUsage(&paySpecificPermission)
 	}
 
 	response := App{
@@ -243,7 +246,7 @@ func (api *api) ListApps() ([]App, error) {
 				apiApp.BudgetRenewal = permission.BudgetRenewal
 				apiApp.MaxAmount = permission.MaxAmount
 				if apiApp.MaxAmount > 0 {
-					apiApp.BudgetUsage = api.svc.GetBudgetUsage(&permission)
+					apiApp.BudgetUsage = api.svc.GetNip47Service().GetBudgetUsage(&permission)
 				}
 			}
 		}
@@ -289,7 +292,7 @@ func (api *api) ChangeUnlockPassword(changeUnlockPasswordRequest *ChangeUnlockPa
 		return errors.New("LNClient not started")
 	}
 
-	err := api.svc.GetConfig().ChangeUnlockPassword(changeUnlockPasswordRequest.CurrentUnlockPassword, changeUnlockPasswordRequest.NewUnlockPassword)
+	err := api.cfg.ChangeUnlockPassword(changeUnlockPasswordRequest.CurrentUnlockPassword, changeUnlockPasswordRequest.NewUnlockPassword)
 
 	if err != nil {
 		api.logger.WithError(err).Error("failed to change unlock password")
@@ -306,12 +309,15 @@ func (api *api) Stop() error {
 	if api.svc.GetLNClient() == nil {
 		return errors.New("LNClient not started")
 	}
+
+	// TODO: this should stop everything related to the lnclient
 	// stop the lnclient
 	// The user will be forced to re-enter their unlock password to restart the node
 	err := api.svc.StopLNClient()
 	if err != nil {
 		api.logger.WithError(err).Error("Failed to stop LNClient")
 	}
+
 	return err
 }
 
@@ -385,7 +391,7 @@ func (api *api) GetNewOnchainAddress(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	api.svc.GetConfig().SetUpdate(config.OnchainAddressKey, address, "")
+	api.cfg.SetUpdate(config.OnchainAddressKey, address, "")
 
 	return address, nil
 }
@@ -395,7 +401,7 @@ func (api *api) GetUnusedOnchainAddress(ctx context.Context) (string, error) {
 		return "", errors.New("LNClient not started")
 	}
 
-	currentAddress, err := api.svc.GetConfig().Get(config.OnchainAddressKey, "")
+	currentAddress, err := api.cfg.Get(config.OnchainAddressKey, "")
 	if err != nil {
 		api.logger.WithError(err).Error("Failed to get current address from config")
 		return "", err
@@ -469,7 +475,7 @@ func (api *api) GetBalances(ctx context.Context) (*BalancesResponse, error) {
 
 // TODO: remove dependency on this endpoint
 func (api *api) RequestMempoolApi(endpoint string) (interface{}, error) {
-	url := api.svc.GetConfig().GetEnv().MempoolApi + endpoint
+	url := api.cfg.GetEnv().MempoolApi + endpoint
 
 	client := http.Client{
 		Timeout: time.Second * 10,
@@ -514,13 +520,13 @@ func (api *api) RequestMempoolApi(endpoint string) (interface{}, error) {
 
 func (api *api) GetInfo(ctx context.Context) (*InfoResponse, error) {
 	info := InfoResponse{}
-	backendType, _ := api.svc.GetConfig().Get("LNBackendType", "")
-	unlockPasswordCheck, _ := api.svc.GetConfig().Get("UnlockPasswordCheck", "")
+	backendType, _ := api.cfg.Get("LNBackendType", "")
+	unlockPasswordCheck, _ := api.cfg.Get("UnlockPasswordCheck", "")
 	info.SetupCompleted = unlockPasswordCheck != ""
 	info.Running = api.svc.GetLNClient() != nil
 	info.BackendType = backendType
 	info.AlbyAuthUrl = api.svc.GetAlbyOAuthSvc().GetAuthUrl()
-	info.OAuthRedirect = !api.svc.GetConfig().GetEnv().IsDefaultClientId()
+	info.OAuthRedirect = !api.cfg.GetEnv().IsDefaultClientId()
 	albyUserIdentifier, err := api.svc.GetAlbyOAuthSvc().GetUserIdentifier()
 	if err != nil {
 		api.logger.WithError(err).Error("Failed to get alby user identifier")
@@ -538,20 +544,20 @@ func (api *api) GetInfo(ctx context.Context) (*InfoResponse, error) {
 		info.Network = nodeInfo.Network
 	}
 
-	info.NextBackupReminder, _ = api.svc.GetConfig().Get("NextBackupReminder", "")
+	info.NextBackupReminder, _ = api.cfg.Get("NextBackupReminder", "")
 
 	return &info, nil
 }
 
 func (api *api) GetEncryptedMnemonic() *EncryptedMnemonicResponse {
 	resp := EncryptedMnemonicResponse{}
-	mnemonic, _ := api.svc.GetConfig().Get("Mnemonic", "")
+	mnemonic, _ := api.cfg.Get("Mnemonic", "")
 	resp.Mnemonic = mnemonic
 	return &resp
 }
 
 func (api *api) SetNextBackupReminder(backupReminderRequest *BackupReminderRequest) error {
-	api.svc.GetConfig().SetUpdate("NextBackupReminder", backupReminderRequest.NextBackupReminder, "")
+	api.cfg.SetUpdate("NextBackupReminder", backupReminderRequest.NextBackupReminder, "")
 	return nil
 }
 
@@ -570,40 +576,40 @@ func (api *api) Setup(ctx context.Context, setupRequest *SetupRequest) error {
 		return errors.New("setup already completed")
 	}
 
-	api.svc.GetConfig().Setup(setupRequest.UnlockPassword)
+	api.cfg.Setup(setupRequest.UnlockPassword)
 
 	// TODO: move all below code to cfg.Setup()
 
 	// update next backup reminder
-	api.svc.GetConfig().SetUpdate("NextBackupReminder", setupRequest.NextBackupReminder, "")
+	api.cfg.SetUpdate("NextBackupReminder", setupRequest.NextBackupReminder, "")
 	// only update non-empty values
 	if setupRequest.LNBackendType != "" {
-		api.svc.GetConfig().SetUpdate("LNBackendType", setupRequest.LNBackendType, "")
+		api.cfg.SetUpdate("LNBackendType", setupRequest.LNBackendType, "")
 	}
 	if setupRequest.BreezAPIKey != "" {
-		api.svc.GetConfig().SetUpdate("BreezAPIKey", setupRequest.BreezAPIKey, setupRequest.UnlockPassword)
+		api.cfg.SetUpdate("BreezAPIKey", setupRequest.BreezAPIKey, setupRequest.UnlockPassword)
 	}
 	if setupRequest.Mnemonic != "" {
-		api.svc.GetConfig().SetUpdate("Mnemonic", setupRequest.Mnemonic, setupRequest.UnlockPassword)
+		api.cfg.SetUpdate("Mnemonic", setupRequest.Mnemonic, setupRequest.UnlockPassword)
 	}
 	if setupRequest.GreenlightInviteCode != "" {
-		api.svc.GetConfig().SetUpdate("GreenlightInviteCode", setupRequest.GreenlightInviteCode, setupRequest.UnlockPassword)
+		api.cfg.SetUpdate("GreenlightInviteCode", setupRequest.GreenlightInviteCode, setupRequest.UnlockPassword)
 	}
 	if setupRequest.LNDAddress != "" {
-		api.svc.GetConfig().SetUpdate("LNDAddress", setupRequest.LNDAddress, setupRequest.UnlockPassword)
+		api.cfg.SetUpdate("LNDAddress", setupRequest.LNDAddress, setupRequest.UnlockPassword)
 	}
 	if setupRequest.LNDCertHex != "" {
-		api.svc.GetConfig().SetUpdate("LNDCertHex", setupRequest.LNDCertHex, setupRequest.UnlockPassword)
+		api.cfg.SetUpdate("LNDCertHex", setupRequest.LNDCertHex, setupRequest.UnlockPassword)
 	}
 	if setupRequest.LNDMacaroonHex != "" {
-		api.svc.GetConfig().SetUpdate("LNDMacaroonHex", setupRequest.LNDMacaroonHex, setupRequest.UnlockPassword)
+		api.cfg.SetUpdate("LNDMacaroonHex", setupRequest.LNDMacaroonHex, setupRequest.UnlockPassword)
 	}
 
 	if setupRequest.PhoenixdAddress != "" {
-		api.svc.GetConfig().SetUpdate("PhoenixdAddress", setupRequest.PhoenixdAddress, setupRequest.UnlockPassword)
+		api.cfg.SetUpdate("PhoenixdAddress", setupRequest.PhoenixdAddress, setupRequest.UnlockPassword)
 	}
 	if setupRequest.PhoenixdAuthorization != "" {
-		api.svc.GetConfig().SetUpdate("PhoenixdAuthorization", setupRequest.PhoenixdAuthorization, setupRequest.UnlockPassword)
+		api.cfg.SetUpdate("PhoenixdAuthorization", setupRequest.PhoenixdAuthorization, setupRequest.UnlockPassword)
 	}
 
 	return nil
@@ -692,11 +698,4 @@ func (api *api) parseExpiresAt(expiresAtString string) (*time.Time, error) {
 		expiresAt = &expiresAtValue
 	}
 	return expiresAt, nil
-}
-
-func (api *api) GetLSPService() lsp.LSPService {
-	return api.lspSvc
-}
-func (api *api) GetBackupService() backup.BackupService {
-	return api.backupSvc
 }

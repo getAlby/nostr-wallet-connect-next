@@ -34,10 +34,6 @@ As data storage SQLite is used.
     # edit the config for your needs
     vim .env
 
-#### Optional Requirements
-
-See [Greenlight](./README_GREENLIGHT.md)
-
 ## Development
 
 ### Required Software
@@ -90,7 +86,7 @@ _If you get a blank screen, try running in your normal terminal (outside of vsco
 
 ### Testing
 
-    $ go test
+    $ go test ./tests
 
 ### Profiling
 

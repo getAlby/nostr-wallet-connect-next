@@ -12,7 +12,7 @@ import (
 )
 
 func (api *api) RequestEsploraApi(endpoint string) (interface{}, error) {
-	url := api.svc.GetConfig().GetEnv().LDKEsploraServer + endpoint
+	url := api.cfg.GetEnv().LDKEsploraServer + endpoint
 
 	client := http.Client{
 		Timeout: time.Second * 10,

@@ -16,6 +16,7 @@ import (
 
 	echologrus "github.com/davrux/echo-logrus/v4"
 	"github.com/getAlby/nostr-wallet-connect/http"
+	"github.com/getAlby/nostr-wallet-connect/service"
 	"github.com/labstack/echo/v4"
 	log "github.com/sirupsen/logrus"
 )
@@ -25,28 +26,27 @@ import (
 func main() {
 	log.Info("NWC Starting in HTTP mode")
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, os.Kill)
-	svc, _ := NewService(ctx)
+	svc, _ := service.NewService(ctx)
 
-	echologrus.Logger = svc.logger
+	echologrus.Logger = svc.GetLogger()
 	e := echo.New()
 
 	//register shared routes
-	httpSvc := http.NewHttpService(svc, svc.logger, svc.db, svc.eventPublisher)
+	httpSvc := http.NewHttpService(svc, svc.GetLogger(), svc.GetDB(), svc.GetEventPublisher())
 	httpSvc.RegisterSharedRoutes(e)
 	//start Echo server
 	go func() {
-		if err := e.Start(fmt.Sprintf(":%v", svc.cfg.GetEnv().Port)); err != nil && err != nethttp.ErrServerClosed {
-			svc.logger.Fatalf("shutting down the server: %v", err)
+		if err := e.Start(fmt.Sprintf(":%v", svc.GetConfig().GetEnv().Port)); err != nil && err != nethttp.ErrServerClosed {
+			svc.GetLogger().Fatalf("shutting down the server: %v", err)
 		}
 	}()
 	//handle graceful shutdown
 	<-ctx.Done()
-	svc.logger.Infof("Shutting down echo server...")
+	svc.GetLogger().Infof("Shutting down echo server...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	e.Shutdown(ctx)
-	svc.logger.Info("Echo server exited")
-	svc.logger.Info("Waiting for service to exit...")
-	svc.wg.Wait()
-	svc.logger.Info("Service exited")
+	svc.GetLogger().Info("Echo server exited")
+	svc.WaitShutdown()
+	svc.GetLogger().Info("Service exited")
 }
