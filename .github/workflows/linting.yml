@@ -23,6 +23,7 @@ jobs:
           cache-dependency-path: frontend/yarn.lock
 
       - run: yarn install
+      - run: yarn prepare:http
 
       - name: Linting
         run: yarn lint:js
