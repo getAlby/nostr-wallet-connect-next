@@ -91,7 +91,9 @@ func (svc *albyOAuthService) CallbackHandler(ctx context.Context, code string) e
 		svc.config.SetUpdate(userIdentifierKey, me.Identifier, "")
 	} else {
 		if existingUserIdentifier != me.Identifier {
-			return errors.New("alby identifier does not match")
+			// remove token so user can retry with correct account
+			svc.config.SetUpdate(accessTokenKey, me.Identifier, "")
+			return errors.New("Alby Hub is connected to a different alby account. Please log out of your Alby Account at getalby.com and try again.")
 		}
 	}
 
