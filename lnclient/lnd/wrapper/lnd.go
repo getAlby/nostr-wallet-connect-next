@@ -91,6 +91,10 @@ func (wrapper *LNDWrapper) ListChannels(ctx context.Context, req *lnrpc.ListChan
 	return wrapper.client.ListChannels(ctx, req, options...)
 }
 
+func (wrapper *LNDWrapper) GetTransactions(ctx context.Context, req *lnrpc.GetTransactionsRequest, options ...grpc.CallOption) (*lnrpc.TransactionDetails, error) {
+	return wrapper.client.GetTransactions(ctx, req, options...)
+}
+
 func (wrapper *LNDWrapper) PendingChannels(ctx context.Context, req *lnrpc.PendingChannelsRequest, options ...grpc.CallOption) (*lnrpc.PendingChannelsResponse, error) {
 	return wrapper.client.PendingChannels(ctx, req, options...)
 }

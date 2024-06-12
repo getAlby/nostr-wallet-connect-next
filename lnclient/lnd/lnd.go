@@ -152,6 +152,21 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 		return nil, err
 	}
 
+	nodeInfo, err := svc.GetInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// hardcoding required confirmations as there seems to be no way to get the number of required confirmations in LND
+	var confirmationsRequired uint32 = 6
+	// get recent transactions to check how many confirmations pending channel(s) have
+	recentOnchainTransactions, err := svc.client.GetTransactions(ctx, &lnrpc.GetTransactionsRequest{
+		StartHeight: int32(nodeInfo.BlockHeight - confirmationsRequired),
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	channels := make([]lnclient.Channel, len(activeResp.Channels)+len(pendingResp.PendingOpenChannels))
 
 	for i, lndChannel := range activeResp.Channels {
@@ -160,6 +175,10 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 		if len(channelPointParts) == 2 {
 			fundingTxId = channelPointParts[0]
 		}
+
+		// first 3 bytes of the channel ID are the block height
+		channelOpeningBlockHeight := lndChannel.ChanId >> 40
+		confirmations := nodeInfo.BlockHeight - uint32(channelOpeningBlockHeight)
 
 		channels[i] = lnclient.Channel{
 			InternalChannel:       lndChannel,
@@ -170,8 +189,8 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 			Active:                lndChannel.Active,
 			Public:                !lndChannel.Private,
 			FundingTxId:           fundingTxId,
-			Confirmations:         nil,
-			ConfirmationsRequired: nil,
+			Confirmations:         &confirmations,
+			ConfirmationsRequired: &confirmationsRequired,
 		}
 	}
 
@@ -182,6 +201,14 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 			fundingTxId = channelPointParts[0]
 		}
 
+		var confirmations *uint32
+		for _, t := range recentOnchainTransactions.Transactions {
+			if t.TxHash == fundingTxId {
+				confirmations32 := uint32(t.NumConfirmations)
+				confirmations = &confirmations32
+			}
+		}
+
 		channels[j+len(activeResp.Channels)] = lnclient.Channel{
 			InternalChannel:       lndChannel,
 			LocalBalance:          lndChannel.Channel.LocalBalance * 1000,
@@ -190,8 +217,8 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 			Public:                !lndChannel.Channel.Private,
 			FundingTxId:           fundingTxId,
 			Active:                false,
-			Confirmations:         nil,
-			ConfirmationsRequired: nil,
+			Confirmations:         confirmations,
+			ConfirmationsRequired: &confirmationsRequired,
 		}
 	}
 
