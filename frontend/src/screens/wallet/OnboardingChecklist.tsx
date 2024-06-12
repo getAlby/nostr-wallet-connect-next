@@ -97,7 +97,7 @@ function OnboardingChecklist() {
             key={item.title}
             title={item.title}
             description={item.description}
-            checked={item.checked}
+            checked={item.checked !== undefined ? item.checked : false}
             to={item.to}
           />
         ))}
@@ -111,7 +111,7 @@ type ChecklistItemProps = {
   checked: boolean;
   description: string;
   to: string;
-}
+};
 
 function ChecklistItem({
   title,
