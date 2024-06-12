@@ -253,8 +253,23 @@ func (svc *LNDService) SendPaymentSync(ctx context.Context, payReq string) (*lnc
 	if err != nil {
 		return nil, err
 	}
+
+	if resp.PaymentError != "" {
+		return nil, errors.New(resp.PaymentError)
+	}
+
+	if resp.PaymentPreimage == nil {
+		return nil, errors.New("No preimage in response")
+	}
+
+	var fee uint64 = 0
+	if resp.PaymentRoute != nil {
+		fee = uint64(resp.PaymentRoute.TotalFeesMsat)
+	}
+
 	return &lnclient.PayInvoiceResponse{
 		Preimage: hex.EncodeToString(resp.PaymentPreimage),
+		Fee:      &fee,
 	}, nil
 }
 
