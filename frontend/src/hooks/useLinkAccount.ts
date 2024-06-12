@@ -13,7 +13,7 @@ export enum LinkStatus {
 
 export function useLinkAccount() {
   const { data: csrf } = useCSRF();
-  const { data: me } = useAlbyMe();
+  const { data: me, mutate: reloadAlbyMe } = useAlbyMe();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
   const [loading, setLoading] = useState(false);
   const [loadingLinkStatus, setLoadingLinkStatus] = useState(true);
@@ -45,7 +45,7 @@ export function useLinkAccount() {
           "Content-Type": "application/json",
         },
       });
-      setLinkStatus(LinkStatus.ThisNode);
+      await reloadAlbyMe();
       toast({
         title:
           "Your Alby Hub has successfully been linked to your Alby Account",

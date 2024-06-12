@@ -93,7 +93,7 @@ function AppList() {
                 {loadingLinkStatus && <Loading />}
                 {!albyConnection || linkStatus === LinkStatus.SharedNode ? (
                   <LoadingButton onClick={linkAccount} loading={loading}>
-                    <Link2Icon className="w-4 h-4 mr-2" />
+                    {!loading && <Link2Icon className="w-4 h-4 mr-2" />}
                     Link your Alby Account
                   </LoadingButton>
                 ) : linkStatus === LinkStatus.ThisNode ? (
