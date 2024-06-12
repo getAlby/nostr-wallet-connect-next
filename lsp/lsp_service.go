@@ -51,12 +51,20 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *New
 		selectedLsp = AlbyPlebsLSP()
 	case "ALBY_MUTINYNET":
 		selectedLsp = AlbyMutinynetPlebsLSP()
+	case "MEGALITH":
+		selectedLsp = MegalithLSP()
+	case "MEGALITH_MUTINYNET":
+		selectedLsp = MegalithMutinynetLSP()
 	default:
 		return nil, errors.New("unknown LSP")
 	}
 
 	if ls.svc.GetLNClient() == nil {
 		return nil, errors.New("LNClient not started")
+	}
+
+	if selectedLsp.LspType != LSP_TYPE_LSPS1 && request.Public {
+		return nil, errors.New("This LSP option does not support public channels")
 	}
 
 	ls.logger.Infoln("Requesting LSP info")
@@ -112,7 +120,7 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *New
 	case LSP_TYPE_PMLSP:
 		invoice, fee, err = ls.requestPMLSPInvoice(&selectedLsp, request.Amount, nodeInfo.Pubkey)
 	case LSP_TYPE_LSPS1:
-		invoice, fee, err = ls.requestLSPS1Invoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey)
+		invoice, fee, err = ls.requestLSPS1Invoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey, request.Public)
 
 	default:
 		return nil, fmt.Errorf("unsupported LSP type: %v", selectedLsp.LspType)
@@ -512,7 +520,7 @@ func (ls *lspService) requestPMLSPInvoice(selectedLsp *LSP, amount uint64, pubke
 	return invoice, fee, nil
 }
 
-func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP, amount uint64, pubkey string) (invoice string, fee uint64, err error) {
+func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP, amount uint64, pubkey string, public bool) (invoice string, fee uint64, err error) {
 	client := http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -544,7 +552,7 @@ func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP,
 		ChannelExpiryBlocks:          13000, // TODO: this should be customizable
 		Token:                        "",
 		RefundOnchainAddress:         refundAddress,
-		AnnounceChannel:              false, // TODO: this should be customizable
+		AnnounceChannel:              public,
 	}
 
 	payloadBytes, err := json.Marshal(newLSPS1ChannelRequest)
@@ -591,8 +599,8 @@ func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP,
 	}
 
 	type NewLSPS1ChannelPayment struct {
-		LightningInvoice string `json:"lightning_invoice"`
-		FeeTotalSat      string `json:"fee_total_sat"`
+		Bolt11Invoice string `json:"bolt11_invoice"`
+		FeeTotalSat   string `json:"fee_total_sat"`
 	}
 	type NewLSPS1ChannelResponse struct {
 		Payment NewLSPS1ChannelPayment `json:"payment"`
@@ -608,7 +616,7 @@ func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP,
 		return "", 0, fmt.Errorf("failed to deserialize json %s %s", selectedLsp.Url, string(body))
 	}
 
-	invoice = newChannelResponse.Payment.LightningInvoice
+	invoice = newChannelResponse.Payment.Bolt11Invoice
 	fee, err = strconv.ParseUint(newChannelResponse.Payment.FeeTotalSat, 10, 64)
 	if err != nil {
 		ls.logger.WithError(err).WithFields(logrus.Fields{
