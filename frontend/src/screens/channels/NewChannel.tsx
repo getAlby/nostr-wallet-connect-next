@@ -182,7 +182,7 @@ function NewChannelInternal({ network }: { network: Network }) {
                 className={cn(
                   "text-center border rounded p-2 cursor-pointer hover:border-muted-foreground",
                   +(order.amount || "0") === amount &&
-                  "border-primary hover:border-primary"
+                    "border-primary hover:border-primary"
                 )}
                 onClick={() => setAmount(amount.toString())}
               >
