@@ -28,7 +28,7 @@ function OnboardingChecklist() {
     hasChannelManagement &&
     albyBalance &&
     albyBalance.sats * (1 - ALBY_SERVICE_FEE) >
-    ALBY_MIN_BALANCE + 50000; /* accommodate for on-chain fees */
+      ALBY_MIN_BALANCE + 50000; /* accommodate for on-chain fees */
   const isLinked =
     albyMe &&
     nodeConnectionInfo &&
