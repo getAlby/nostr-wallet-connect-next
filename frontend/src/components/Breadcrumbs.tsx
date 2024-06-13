@@ -19,8 +19,6 @@ function Breadcrumbs() {
   const matches = useMatches() as MatchWithCrumb[]; // Type-cast useMatches result to MatchWithCrumb array
 
   const crumbs = matches
-    // Skip the root item
-    .slice(1)
     // First, get rid of any matches that don't have a handle or crumb
     .filter(
       (
