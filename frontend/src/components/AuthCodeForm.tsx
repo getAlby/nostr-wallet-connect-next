@@ -66,7 +66,9 @@ function AuthCodeForm() {
           />
           {!hasRequestedCode && (
             <>
-              <Button onClick={requestAuthCode}>Request Authorization Code</Button>
+              <Button onClick={requestAuthCode}>
+                Request Authorization Code
+              </Button>
             </>
           )}
           {hasRequestedCode && (
