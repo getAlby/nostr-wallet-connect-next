@@ -1,6 +1,6 @@
 import { toast } from "src/components/ui/use-toast";
 
-export function copyToClipboard(content: string) {
+export async function copyToClipboard(content: string) {
   const copyPromise = new Promise((resolve, reject) => {
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(content).then(resolve).catch(reject);
@@ -21,16 +21,15 @@ export function copyToClipboard(content: string) {
     }
   });
 
-  copyPromise
-    .then(() => {
-      toast({ title: "Copied to clipboard." });
-    })
-    .catch(() => {
-      toast({
-        title: "Failed to copy",
-        variant: "destructive",
-      });
+  try {
+    await copyPromise;
+    toast({ title: "Copied to clipboard." });
+  } catch (e) {
+    toast({
+      title: "Failed to copy to clipboard.",
+      variant: "destructive",
     });
+  }
 }
 
 function selectElement(element: Element) {
