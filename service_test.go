@@ -1144,6 +1144,16 @@ func TestHandleGetInfoEvent(t *testing.T) {
 		Content: payload,
 	}
 
+	expiresAt := time.Now().Add(24 * time.Hour)
+	appPermission := &db.AppPermission{
+		AppId:         app.ID,
+		App:           *app,
+		RequestMethod: nip47.GET_BALANCE_METHOD,
+		ExpiresAt:     &expiresAt,
+	}
+	err = svc.db.Create(appPermission).Error
+	assert.NoError(t, err)
+
 	reqEvent.ID = "test_get_info_without_permission"
 	requestEvent := &db.RequestEvent{
 		NostrId: reqEvent.ID,
@@ -1157,10 +1167,17 @@ func TestHandleGetInfoEvent(t *testing.T) {
 
 	svc.HandleGetInfoEvent(ctx, request, requestEvent, app, publishResponse)
 
-	assert.Equal(t, nip47.ERROR_RESTRICTED, responses[0].Error.Code)
+	requestMethodInfo := responses[0].Result.(*nip47.GetInfoResponse)
+	assert.Empty(t, requestMethodInfo.Alias)
+	assert.Empty(t, requestMethodInfo.Color)
+	assert.Empty(t, requestMethodInfo.Pubkey)
+	assert.Empty(t, requestMethodInfo.Network)
+	assert.Empty(t, requestMethodInfo.BlockHeight)
+	assert.Empty(t, requestMethodInfo.BlockHash)
+	assert.Equal(t, []string{nip47.GET_BALANCE_METHOD}, requestMethodInfo.Methods)
 
-	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &db.AppPermission{
+	expiresAt = time.Now().Add(24 * time.Hour)
+	appPermission = &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
 		RequestMethod: nip47.GET_INFO_METHOD,
@@ -1181,7 +1198,7 @@ func TestHandleGetInfoEvent(t *testing.T) {
 	assert.Equal(t, mockNodeInfo.Network, nodeInfo.Network)
 	assert.Equal(t, mockNodeInfo.BlockHeight, nodeInfo.BlockHeight)
 	assert.Equal(t, mockNodeInfo.BlockHash, nodeInfo.BlockHash)
-	assert.Equal(t, []string{"get_info"}, nodeInfo.Methods)
+	assert.Equal(t, []string{nip47.GET_BALANCE_METHOD, nip47.GET_INFO_METHOD}, nodeInfo.Methods)
 }
 
 func createTestService(ln *MockLn) (svc *Service, err error) {
