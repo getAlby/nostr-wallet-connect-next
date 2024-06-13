@@ -125,7 +125,10 @@ function ChecklistItem({
 }: ChecklistItemProps) {
   const content = (
     <div
-      className={`flex flex-col p-1.5 relative group ${!checked && "hover:bg-primary-foreground"}`}
+      className={cn(
+        "flex flex-col p-3 relative group rounded-lg",
+        !checked && "hover:bg-primary-foreground"
+      )}
     >
       {!checked && (
         <div className="absolute top-0 left-0 w-full h-full items-center justify-end pr-1.5 hidden group-hover:flex opacity-25">
@@ -133,8 +136,11 @@ function ChecklistItem({
         </div>
       )}
       <div className="flex items-center gap-2">
-        {checked && <CircleCheck className="w-6 h-6" />}
-        {!checked && <Circle className="w-6 h-6" />}
+        {checked ? (
+          <CircleCheck className="w-5 h-5" />
+        ) : (
+          <Circle className="w-5 h-5" />
+        )}
         <div
           className={cn(
             "text-sm font-medium leading-none",
@@ -145,7 +151,7 @@ function ChecklistItem({
         </div>
       </div>
       {!checked && (
-        <div className="text-muted-foreground text-sm ml-8">{description}</div>
+        <div className="text-muted-foreground text-sm ml-7">{description}</div>
       )}
     </div>
   );
