@@ -21,7 +21,6 @@ import {
 } from "react-router-dom";
 import SidebarHint from "src/components/SidebarHint";
 import UserAvatar from "src/components/UserAvatar";
-import { Avatar, AvatarFallback, AvatarImage } from "src/components/ui/avatar";
 import { Button } from "src/components/ui/button";
 import {
   DropdownMenu,
@@ -234,10 +233,7 @@ export default function AppLayout() {
                       to="#"
                       className="grid grid-flow-col gap-2 font-semibold text-lg whitespace-nowrap overflow-hidden text-ellipsis"
                     >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={albyMe?.avatar} alt="@satoshi" />
-                        <AvatarFallback>SN</AvatarFallback>
-                      </Avatar>
+                      <UserAvatar className="h-8 w-8" />
                     </Link>
                   </DropdownMenuTrigger>
                   <UserMenuContent />
