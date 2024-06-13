@@ -15,8 +15,8 @@ func (svc *Service) HandleGetInfoEvent(ctx context.Context, nip47Request *nip47.
 		Methods: svc.GetMethods(app),
 	}
 
-	resp := svc.checkPermission(nip47Request, requestEvent.NostrId, app, 0)
-	if resp != nil {
+	hasPermission, _, _ := svc.hasPermission(app, nip47Request.Method, 0)
+	if !hasPermission {
 		// get_info should still return request_methods even without a permission
 		publishResponse(&nip47.Response{
 			ResultType: nip47Request.Method,
