@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "src/components/ui/use-toast";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useCSRF } from "src/hooks/useCSRF";
@@ -16,21 +16,19 @@ export function useLinkAccount() {
   const { data: me, mutate: reloadAlbyMe } = useAlbyMe();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
   const [loading, setLoading] = useState(false);
-  const [loadingLinkStatus, setLoadingLinkStatus] = useState(true);
-  const [linkStatus, setLinkStatus] = useState<LinkStatus | undefined>();
 
-  useEffect(() => {
-    if (me && nodeConnectionInfo) {
-      if (me?.keysend_pubkey === nodeConnectionInfo.pubkey) {
-        setLinkStatus(LinkStatus.ThisNode);
-      } else if (me.shared_node) {
-        setLinkStatus(LinkStatus.SharedNode);
-      } else {
-        setLinkStatus(LinkStatus.OtherNode);
-      }
-      setLoadingLinkStatus(false);
+  let linkStatus: LinkStatus | undefined;
+  if (me && nodeConnectionInfo) {
+    if (me?.keysend_pubkey === nodeConnectionInfo.pubkey) {
+      linkStatus = LinkStatus.ThisNode;
+    } else if (me.shared_node) {
+      linkStatus = LinkStatus.SharedNode;
+    } else {
+      linkStatus = LinkStatus.OtherNode;
     }
-  }, [me, nodeConnectionInfo]);
+  }
+
+  const loadingLinkStatus = !linkStatus;
 
   async function linkAccount() {
     try {
