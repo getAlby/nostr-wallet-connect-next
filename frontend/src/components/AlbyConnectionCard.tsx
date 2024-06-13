@@ -47,7 +47,7 @@ function AlbyConnectionCard({ connection }: { connection?: App }) {
               <UserAvatar className="h-14 w-14" />
               <div className="flex flex-col">
                 <div className="text-xl font-semibold">{albyMe?.name}</div>
-                <div className="flex flex-row items-center gap-1">
+                <div className="flex flex-row items-center gap-1 text-sm">
                   <ZapIcon className="w-4 h-4" />
                   {albyMe?.lightning_address}
                 </div>
