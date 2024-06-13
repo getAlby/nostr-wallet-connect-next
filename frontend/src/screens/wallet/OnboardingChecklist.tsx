@@ -16,24 +16,14 @@ import { cn } from "src/lib/utils";
 
 function OnboardingChecklist() {
   // const { data: albyBalance } = useAlbyBalance();
-  const { data: albyMe, isLoading: isAlbyMeLoading } = useAlbyMe();
-  const { data: apps, isLoading: isAppsLoading } = useApps();
-  const { data: channels, isLoading: isChannelsLoading } = useChannels();
-  const {
-    data: info,
-    hasChannelManagement,
-    hasMnemonic,
-    isLoading: isInfoLoading,
-  } = useInfo();
-  const { data: nodeConnectionInfo, isLoading: isNodeInfoLoading } =
-    useNodeConnectionInfo();
+  const { data: albyMe } = useAlbyMe();
+  const { data: apps } = useApps();
+  const { data: channels } = useChannels();
+  const { data: info, hasChannelManagement, hasMnemonic } = useInfo();
+  const { data: nodeConnectionInfo } = useNodeConnectionInfo();
 
   const isLoading =
-    isAlbyMeLoading ||
-    isAppsLoading ||
-    isChannelsLoading ||
-    isInfoLoading ||
-    isNodeInfoLoading;
+    !albyMe || !apps || !channels || !info || !nodeConnectionInfo;
 
   if (isLoading) {
     return;
