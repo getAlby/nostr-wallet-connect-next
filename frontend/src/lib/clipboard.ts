@@ -10,11 +10,21 @@ export function copyToClipboard(content: string) {
     textArea.style.position = "absolute";
     textArea.style.opacity = "0";
     document.body.appendChild(textArea);
-    textArea.select();
+    selectElement(textArea);
     new Promise((res, rej) => {
       document.execCommand("copy") ? res(content) : rej();
       textArea.remove();
     });
   }
   toast({ title: "Copied to clipboard." });
+}
+
+function selectElement(element: Element) {
+  const selection = window.getSelection();
+  if (selection) {
+    selection.removeAllRanges();
+    const range = document.createRange();
+    range.selectNode(element);
+    selection.addRange(range);
+  }
 }
