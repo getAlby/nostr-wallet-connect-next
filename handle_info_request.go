@@ -11,9 +11,17 @@ import (
 
 func (svc *Service) HandleGetInfoEvent(ctx context.Context, nip47Request *nip47.Request, requestEvent *db.RequestEvent, app *db.App, publishResponse func(*nip47.Response, nostr.Tags)) {
 
+	responsePayload := &nip47.GetInfoResponse{
+		Methods: svc.GetMethods(app),
+	}
+
 	resp := svc.checkPermission(nip47Request, requestEvent.NostrId, app, 0)
 	if resp != nil {
-		publishResponse(resp, nostr.Tags{})
+		// get_info should still return request_methods even without a permission
+		publishResponse(&nip47.Response{
+			ResultType: nip47Request.Method,
+			Result:     responsePayload,
+		}, nostr.Tags{})
 		return
 	}
 
@@ -45,15 +53,12 @@ func (svc *Service) HandleGetInfoEvent(ctx context.Context, nip47Request *nip47.
 		network = "mainnet"
 	}
 
-	responsePayload := &nip47.GetInfoResponse{
-		Alias:       info.Alias,
-		Color:       info.Color,
-		Pubkey:      info.Pubkey,
-		Network:     network,
-		BlockHeight: info.BlockHeight,
-		BlockHash:   info.BlockHash,
-		Methods:     svc.GetMethods(app),
-	}
+	responsePayload.Alias = info.Alias
+	responsePayload.Color = info.Color
+	responsePayload.Pubkey = info.Pubkey
+	responsePayload.Network = network
+	responsePayload.BlockHeight = info.BlockHeight
+	responsePayload.BlockHash = info.BlockHash
 
 	publishResponse(&nip47.Response{
 		ResultType: nip47Request.Method,
