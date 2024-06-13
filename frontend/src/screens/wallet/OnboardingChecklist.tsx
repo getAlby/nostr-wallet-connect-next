@@ -1,4 +1,4 @@
-import { Circle, CircleCheck } from "lucide-react";
+import { ChevronRight, Circle, CircleCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   Card,
@@ -7,8 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "src/components/ui/card";
-import { ALBY_MIN_BALANCE, ALBY_SERVICE_FEE } from "src/constants";
-import { useAlbyBalance } from "src/hooks/useAlbyBalance";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useApps } from "src/hooks/useApps";
 import { useChannels } from "src/hooks/useChannels";
@@ -17,18 +15,19 @@ import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo";
 import { cn } from "src/lib/utils";
 
 function OnboardingChecklist() {
-  const { data: albyBalance } = useAlbyBalance();
+  // const { data: albyBalance } = useAlbyBalance();
   const { data: albyMe } = useAlbyMe();
   const { data: apps } = useApps();
   const { data: channels } = useChannels();
   const { data: info, hasChannelManagement, hasMnemonic } = useInfo();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
 
-  const hasAlbyBalance =
+  /*const hasAlbyBalance =
     hasChannelManagement &&
     albyBalance &&
     albyBalance.sats * (1 - ALBY_SERVICE_FEE) >
-      ALBY_MIN_BALANCE + 50000; /* accommodate for on-chain fees */
+      ALBY_MIN_BALANCE + 50000; // accommodate for on-chain fees
+      */
   const isLinked =
     albyMe &&
     nodeConnectionInfo &&
@@ -37,8 +36,8 @@ function OnboardingChecklist() {
   const hasBackedUp =
     hasMnemonic &&
     info &&
-    (!info.nextBackupReminder ||
-      new Date(info.nextBackupReminder).getTime() > new Date().getTime());
+    info.nextBackupReminder &&
+    new Date(info.nextBackupReminder).getTime() > new Date().getTime();
   const hasCustomApp =
     apps && apps.find((x) => x.name !== "getalby.com") !== undefined;
 
@@ -54,14 +53,15 @@ function OnboardingChecklist() {
       title: "Link your Alby Account",
       description: "Link your lightning address & other apps to this hub.",
       checked: isLinked,
-      to: "/settings",
+      to: "/apps",
     },
-    {
+    // TODO: enable when we can always migrate funds
+    /*{
       title: "Migrate your balance to your Alby Hub",
       description: "Move your existing funds into self-custody.",
       checked: !hasAlbyBalance,
       to: "/onboarding/lightning/migrate-alby",
-    },
+    },*/
     {
       title: "Connect your first app",
       description:
@@ -69,13 +69,17 @@ function OnboardingChecklist() {
       checked: hasCustomApp,
       to: "/appstore",
     },
-    {
-      title: "Backup your keys",
-      description:
-        "Secure your keys by creating a backup to ensure you don't lose access.",
-      checked: hasBackedUp,
-      to: "/settings/key-backup",
-    },
+    ...(hasMnemonic
+      ? [
+          {
+            title: "Backup your keys",
+            description:
+              "Secure your keys by creating a backup to ensure you don't lose access.",
+            checked: hasBackedUp,
+            to: "/settings/key-backup",
+          },
+        ]
+      : []),
   ];
 
   const sortedChecklistItems = checklistItems.sort(
@@ -91,13 +95,13 @@ function OnboardingChecklist() {
           Hub.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+      <CardContent className="flex flex-col">
         {sortedChecklistItems.map((item) => (
           <ChecklistItem
             key={item.title}
             title={item.title}
             description={item.description}
-            checked={item.checked !== undefined ? item.checked : false}
+            checked={!!item.checked}
             to={item.to}
           />
         ))}
@@ -120,7 +124,14 @@ function ChecklistItem({
   to,
 }: ChecklistItemProps) {
   const content = (
-    <div className="flex flex-col">
+    <div
+      className={`flex flex-col p-1.5 relative group ${!checked && "hover:bg-primary-foreground"}`}
+    >
+      {!checked && (
+        <div className="absolute top-0 left-0 w-full h-full items-center justify-end pr-1.5 hidden group-hover:flex opacity-25">
+          <ChevronRight className="w-8 h-8" />
+        </div>
+      )}
       <div className="flex items-center gap-2">
         {checked && <CircleCheck className="w-6 h-6" />}
         {!checked && <Circle className="w-6 h-6" />}
