@@ -1,4 +1,3 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { Separator } from "@radix-ui/react-dropdown-menu";
 import { Progress } from "@radix-ui/react-progress";
 import {
@@ -12,6 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
+import UserAvatar from "src/components/UserAvatar";
 import { Button } from "src/components/ui/button";
 import {
   Card,
@@ -44,10 +44,7 @@ function AlbyConnectionCard({ connection }: { connection?: App }) {
         <div className="grid grid-cols-1 xl:grid-cols-2 mt-5 gap-3 items-center">
           <div className="flex flex-col gap-4">
             <div className="flex flex-row gap-4 ">
-              <Avatar className="h-14 w-14">
-                <AvatarImage src={albyMe?.avatar} alt="@satoshi" />
-                <AvatarFallback>SN</AvatarFallback>
-              </Avatar>
+              <UserAvatar className="h-14 w-14" />
               <div className="flex flex-col">
                 <div className="text-xl font-semibold">{albyMe?.name}</div>
                 <div className="flex flex-row items-center gap-1">
