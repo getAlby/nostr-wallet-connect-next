@@ -1,5 +1,3 @@
-import { Separator } from "@radix-ui/react-dropdown-menu";
-import { Progress } from "@radix-ui/react-progress";
 import {
   CheckCircle2,
   CircleX,
@@ -21,6 +19,8 @@ import {
   CardTitle,
 } from "src/components/ui/card";
 import { LoadingButton } from "src/components/ui/loading-button";
+import { Progress } from "src/components/ui/progress";
+import { Separator } from "src/components/ui/separator";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { LinkStatus, useLinkAccount } from "src/hooks/useLinkAccount";
 import { App } from "src/types";

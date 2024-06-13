@@ -137,7 +137,7 @@ function ChecklistItem({
       )}
       <div className="flex items-center gap-2">
         {checked ? (
-          <CircleCheck className="w-5 h-5 mt-1" />
+          <CircleCheck className="w-5 h-5" />
         ) : (
           <Circle className="w-5 h-5" />
         )}
