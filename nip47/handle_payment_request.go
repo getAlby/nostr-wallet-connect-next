@@ -77,7 +77,7 @@ func (svc *nip47Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request
 		svc.eventPublisher.Publish(&events.Event{
 			Event: "nwc_payment_failed",
 			Properties: map[string]interface{}{
-				// "error":   fmt.Sprintf("%v", err),
+				"error":   err.Error(),
 				"invoice": bolt11,
 				"amount":  paymentRequest.MSatoshi / 1000,
 			},

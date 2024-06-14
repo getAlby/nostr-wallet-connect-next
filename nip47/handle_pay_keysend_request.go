@@ -53,7 +53,7 @@ func (svc *nip47Service) HandlePayKeysendEvent(ctx context.Context, nip47Request
 		svc.eventPublisher.Publish(&events.Event{
 			Event: "nwc_payment_failed",
 			Properties: map[string]interface{}{
-				// "error":   fmt.Sprintf("%v", err),
+				"error":   err.Error(),
 				"keysend": true,
 				"amount":  payParams.Amount / 1000,
 			},

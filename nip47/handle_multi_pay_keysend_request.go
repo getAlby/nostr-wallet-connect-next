@@ -67,7 +67,7 @@ func (svc *nip47Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Re
 				svc.eventPublisher.Publish(&events.Event{
 					Event: "nwc_payment_failed",
 					Properties: map[string]interface{}{
-						// "error":   fmt.Sprintf("%v", err),
+						"error":   err.Error(),
 						"keysend": true,
 						"multi":   true,
 						"amount":  keysendInfo.Amount / 1000,
