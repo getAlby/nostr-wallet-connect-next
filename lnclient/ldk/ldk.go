@@ -1011,11 +1011,11 @@ func (ls *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) 
 		if spontaneousPaymentKind.Preimage != nil {
 			preimage = *spontaneousPaymentKind.Preimage
 		}
-		customRecords := map[string]string{}
+		tlvRecords := map[string]string{}
 		for _, tlv := range spontaneousPaymentKind.CustomTlvs {
-			customRecords[strconv.FormatUint(tlv.Type, 10)] = b64.StdEncoding.EncodeToString(tlv.Value)
+			tlvRecords[strconv.FormatUint(tlv.Type, 10)] = b64.StdEncoding.EncodeToString(tlv.Value)
 		}
-		metadata["custom_records"] = customRecords
+		metadata["tlv_records"] = tlvRecords
 	}
 
 	var amount uint64 = 0
