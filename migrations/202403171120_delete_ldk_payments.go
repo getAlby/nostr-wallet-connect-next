@@ -9,6 +9,7 @@ import (
 	"database/sql"
 
 	"github.com/getAlby/nostr-wallet-connect/config"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/go-gormigrate/gormigrate/v2"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -16,14 +17,14 @@ import (
 
 // Delete LDK payments that were not migrated to the new LDK format (PaymentKind)
 // TODO: delete this sometime in the future (only affects current testers)
-func _202403171120_delete_ldk_payments(appConfig *config.AppConfig, logger *logrus.Logger) *gormigrate.Migration {
+func _202403171120_delete_ldk_payments(appConfig *config.AppConfig) *gormigrate.Migration {
 	return &gormigrate.Migration{
 		ID: "202403171120_delete_ldk_payments",
 		Migrate: func(tx *gorm.DB) error {
 
 			ldkDbPath := filepath.Join(appConfig.Workdir, "ldk", "storage", "ldk_node_data.sqlite")
 			if _, err := os.Stat(ldkDbPath); errors.Is(err, os.ErrNotExist) {
-				logger.Info("No LDK database, skipping migration")
+				logger.Logger.Info("No LDK database, skipping migration")
 				return nil
 			}
 			ldkDb, err := sql.Open("sqlite", ldkDbPath)
@@ -38,7 +39,7 @@ func _202403171120_delete_ldk_payments(appConfig *config.AppConfig, logger *logr
 			if err != nil {
 				return err
 			}
-			logger.WithFields(logrus.Fields{
+			logger.Logger.WithFields(logrus.Fields{
 				"rowsAffected": rowsAffected,
 			}).Info("Removed incompatible payments from LDK database")
 

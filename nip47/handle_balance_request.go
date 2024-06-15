@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
@@ -20,14 +21,14 @@ func (svc *nip47Service) HandleGetBalanceEvent(ctx context.Context, nip47Request
 		return
 	}
 
-	svc.logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 	}).Info("Fetching balance")
 
 	balance, err := svc.lnClient.GetBalance(ctx)
 	if err != nil {
-		svc.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 		}).Infof("Failed to fetch balance: %v", err)

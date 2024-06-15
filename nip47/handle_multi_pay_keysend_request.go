@@ -6,6 +6,7 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
@@ -43,7 +44,7 @@ func (svc *nip47Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Re
 			insertPaymentResult := svc.db.Create(&payment)
 			mu.Unlock()
 			if insertPaymentResult.Error != nil {
-				svc.logger.WithFields(logrus.Fields{
+				logger.Logger.WithFields(logrus.Fields{
 					"requestEventNostrId": requestEvent.NostrId,
 					"recipientPubkey":     keysendInfo.Pubkey,
 					"keysendId":           keysendInfo.Id,
@@ -51,7 +52,7 @@ func (svc *nip47Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Re
 				return
 			}
 
-			svc.logger.WithFields(logrus.Fields{
+			logger.Logger.WithFields(logrus.Fields{
 				"requestEventNostrId": requestEvent.NostrId,
 				"appId":               app.ID,
 				"recipientPubkey":     keysendInfo.Pubkey,
@@ -59,7 +60,7 @@ func (svc *nip47Service) HandleMultiPayKeysendEvent(ctx context.Context, nip47Re
 
 			preimage, err := svc.lnClient.SendKeysend(ctx, keysendInfo.Amount, keysendInfo.Pubkey, keysendInfo.Preimage, keysendInfo.TLVRecords)
 			if err != nil {
-				svc.logger.WithFields(logrus.Fields{
+				logger.Logger.WithFields(logrus.Fields{
 					"requestEventNostrId": requestEvent.NostrId,
 					"appId":               app.ID,
 					"recipientPubkey":     keysendInfo.Pubkey,

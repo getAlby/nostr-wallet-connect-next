@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
@@ -23,7 +24,7 @@ func (svc *nip47Service) HandleListTransactionsEvent(ctx context.Context, nip47R
 		return
 	}
 
-	svc.logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		// TODO: log request fields from listParams
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
@@ -37,7 +38,7 @@ func (svc *nip47Service) HandleListTransactionsEvent(ctx context.Context, nip47R
 	}
 	transactions, err := svc.lnClient.ListTransactions(ctx, listParams.From, listParams.Until, limit, listParams.Offset, listParams.Unpaid, listParams.Type)
 	if err != nil {
-		svc.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			// TODO: log request fields from listParams
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,

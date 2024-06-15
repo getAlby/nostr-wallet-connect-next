@@ -5,20 +5,18 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
 type dbService struct {
-	db     *gorm.DB
-	logger *logrus.Logger
+	db *gorm.DB
 }
 
-func NewDBService(db *gorm.DB, logger *logrus.Logger) *dbService {
+func NewDBService(db *gorm.DB) *dbService {
 	return &dbService{
-		db:     db,
-		logger: logger,
+		db: db,
 	}
 }
 
@@ -33,7 +31,7 @@ func (svc *dbService) CreateApp(name string, pubkey string, maxAmount int, budge
 		//validate public key
 		decoded, err := hex.DecodeString(pairingPublicKey)
 		if err != nil || len(decoded) != 32 {
-			svc.logger.WithField("pairingPublicKey", pairingPublicKey).Error("Invalid public key format")
+			logger.Logger.WithField("pairingPublicKey", pairingPublicKey).Error("Invalid public key format")
 			return nil, "", fmt.Errorf("invalid public key format: %s", pairingPublicKey)
 		}
 	}
@@ -65,7 +63,7 @@ func (svc *dbService) CreateApp(name string, pubkey string, maxAmount int, budge
 	})
 
 	if err != nil {
-		svc.logger.WithError(err).Error("Failed to save app")
+		logger.Logger.WithError(err).Error("Failed to save app")
 		return nil, "", err
 	}
 

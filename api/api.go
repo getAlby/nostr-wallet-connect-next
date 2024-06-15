@@ -18,26 +18,25 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/getAlby/nostr-wallet-connect/service"
 	"github.com/getAlby/nostr-wallet-connect/utils"
 )
 
 type api struct {
-	logger *logrus.Logger
-	db     *gorm.DB
-	dbSvc  db.DBService
-	cfg    config.Config
-	svc    service.Service
+	db    *gorm.DB
+	dbSvc db.DBService
+	cfg   config.Config
+	svc   service.Service
 }
 
-func NewAPI(svc service.Service, logger *logrus.Logger, gormDb *gorm.DB, config config.Config) *api {
+func NewAPI(svc service.Service, gormDb *gorm.DB, config config.Config) *api {
 	return &api{
-		logger: logger,
-		db:     gormDb,
-		dbSvc:  db.NewDBService(gormDb, logger),
-		cfg:    config,
-		svc:    svc,
+		db:    gormDb,
+		dbSvc: db.NewDBService(gormDb),
+		cfg:   config,
+		svc:   svc,
 	}
 }
 
@@ -295,7 +294,7 @@ func (api *api) ChangeUnlockPassword(changeUnlockPasswordRequest *ChangeUnlockPa
 	err := api.cfg.ChangeUnlockPassword(changeUnlockPasswordRequest.CurrentUnlockPassword, changeUnlockPasswordRequest.NewUnlockPassword)
 
 	if err != nil {
-		api.logger.WithError(err).Error("failed to change unlock password")
+		logger.Logger.WithError(err).Error("failed to change unlock password")
 		return err
 	}
 
@@ -305,7 +304,7 @@ func (api *api) ChangeUnlockPassword(changeUnlockPasswordRequest *ChangeUnlockPa
 }
 
 func (api *api) Stop() error {
-	api.logger.Info("Running Stop command")
+	logger.Logger.Info("Running Stop command")
 	if api.svc.GetLNClient() == nil {
 		return errors.New("LNClient not started")
 	}
@@ -315,7 +314,7 @@ func (api *api) Stop() error {
 	// The user will be forced to re-enter their unlock password to restart the node
 	err := api.svc.StopLNClient()
 	if err != nil {
-		api.logger.WithError(err).Error("Failed to stop LNClient")
+		logger.Logger.WithError(err).Error("Failed to stop LNClient")
 	}
 
 	return err
@@ -360,7 +359,7 @@ func (api *api) DisconnectPeer(ctx context.Context, peerId string) error {
 	if api.svc.GetLNClient() == nil {
 		return errors.New("LNClient not started")
 	}
-	api.logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"peer_id": peerId,
 	}).Info("Disconnecting peer")
 	return api.svc.GetLNClient().DisconnectPeer(ctx, peerId)
@@ -370,7 +369,7 @@ func (api *api) CloseChannel(ctx context.Context, peerId, channelId string, forc
 	if api.svc.GetLNClient() == nil {
 		return nil, errors.New("LNClient not started")
 	}
-	api.logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"peer_id":    peerId,
 		"channel_id": channelId,
 		"force":      force,
@@ -403,7 +402,7 @@ func (api *api) GetUnusedOnchainAddress(ctx context.Context) (string, error) {
 
 	currentAddress, err := api.cfg.Get(config.OnchainAddressKey, "")
 	if err != nil {
-		api.logger.WithError(err).Error("Failed to get current address from config")
+		logger.Logger.WithError(err).Error("Failed to get current address from config")
 		return "", err
 	}
 
@@ -411,13 +410,13 @@ func (api *api) GetUnusedOnchainAddress(ctx context.Context) (string, error) {
 		// check if address has any transactions
 		response, err := api.RequestEsploraApi("/address/" + currentAddress + "/txs")
 		if err != nil {
-			api.logger.WithError(err).Error("Failed to get current address transactions")
+			logger.Logger.WithError(err).Error("Failed to get current address transactions")
 			return currentAddress, nil
 		}
 
 		transactions, ok := response.([]interface{})
 		if !ok {
-			api.logger.WithField("response", response).Error("Failed to cast esplora address txs response", response)
+			logger.Logger.WithField("response", response).Error("Failed to cast esplora address txs response", response)
 			return currentAddress, nil
 		}
 
@@ -429,7 +428,7 @@ func (api *api) GetUnusedOnchainAddress(ctx context.Context) (string, error) {
 
 	newAddress, err := api.GetNewOnchainAddress(ctx)
 	if err != nil {
-		api.logger.WithError(err).Error("Failed to retrieve new onchain address")
+		logger.Logger.WithError(err).Error("Failed to retrieve new onchain address")
 		return "", err
 	}
 	return newAddress, nil
@@ -483,7 +482,7 @@ func (api *api) RequestMempoolApi(endpoint string) (interface{}, error) {
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		api.logger.WithError(err).WithFields(logrus.Fields{
+		logger.Logger.WithError(err).WithFields(logrus.Fields{
 			"url": url,
 		}).Error("Failed to create http request")
 		return nil, err
@@ -491,7 +490,7 @@ func (api *api) RequestMempoolApi(endpoint string) (interface{}, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		api.logger.WithError(err).WithFields(logrus.Fields{
+		logger.Logger.WithError(err).WithFields(logrus.Fields{
 			"url": url,
 		}).Error("Failed to send request")
 		return nil, err
@@ -501,7 +500,7 @@ func (api *api) RequestMempoolApi(endpoint string) (interface{}, error) {
 
 	body, readErr := io.ReadAll(res.Body)
 	if readErr != nil {
-		api.logger.WithError(err).WithFields(logrus.Fields{
+		logger.Logger.WithError(err).WithFields(logrus.Fields{
 			"url": url,
 		}).Error("Failed to read response body")
 		return nil, errors.New("failed to read response body")
@@ -510,7 +509,7 @@ func (api *api) RequestMempoolApi(endpoint string) (interface{}, error) {
 	var jsonContent interface{}
 	jsonErr := json.Unmarshal(body, &jsonContent)
 	if jsonErr != nil {
-		api.logger.WithError(jsonErr).WithFields(logrus.Fields{
+		logger.Logger.WithError(jsonErr).WithFields(logrus.Fields{
 			"url": url,
 		}).Error("Failed to deserialize json")
 		return nil, fmt.Errorf("failed to deserialize json %s %s", url, string(body))
@@ -529,7 +528,7 @@ func (api *api) GetInfo(ctx context.Context) (*InfoResponse, error) {
 	info.OAuthRedirect = !api.cfg.GetEnv().IsDefaultClientId()
 	albyUserIdentifier, err := api.svc.GetAlbyOAuthSvc().GetUserIdentifier()
 	if err != nil {
-		api.logger.WithError(err).Error("Failed to get alby user identifier")
+		logger.Logger.WithError(err).Error("Failed to get alby user identifier")
 		return nil, err
 	}
 	info.AlbyUserIdentifier = albyUserIdentifier
@@ -537,7 +536,7 @@ func (api *api) GetInfo(ctx context.Context) (*InfoResponse, error) {
 	if api.svc.GetLNClient() != nil {
 		nodeInfo, err := api.svc.GetLNClient().GetInfo(ctx)
 		if err != nil {
-			api.logger.WithError(err).Error("Failed to get nodeInfo")
+			logger.Logger.WithError(err).Error("Failed to get nodeInfo")
 			return nil, err
 		}
 
@@ -568,11 +567,11 @@ func (api *api) Start(startRequest *StartRequest) error {
 func (api *api) Setup(ctx context.Context, setupRequest *SetupRequest) error {
 	info, err := api.GetInfo(ctx)
 	if err != nil {
-		api.logger.WithError(err).Error("Failed to get info")
+		logger.Logger.WithError(err).Error("Failed to get info")
 		return err
 	}
 	if info.SetupCompleted {
-		api.logger.Error("Cannot re-setup node")
+		logger.Logger.Error("Cannot re-setup node")
 		return errors.New("setup already completed")
 	}
 
@@ -676,7 +675,7 @@ func (api *api) GetLogOutput(ctx context.Context, logType string, getLogRequest 
 			return nil, err
 		}
 	} else if logType == LogTypeApp {
-		logFileName := api.svc.GetLogFilePath()
+		logFileName := logger.GetLogFilePath()
 
 		logData, err = utils.ReadFileTail(logFileName, getLogRequest.MaxLen)
 		if err != nil {
@@ -695,7 +694,7 @@ func (api *api) parseExpiresAt(expiresAtString string) (*time.Time, error) {
 		var err error
 		expiresAtValue, err := time.Parse(time.RFC3339, expiresAtString)
 		if err != nil {
-			api.logger.WithField("expiresAt", expiresAtString).Error("Invalid expiresAt")
+			logger.Logger.WithField("expiresAt", expiresAtString).Error("Invalid expiresAt")
 			return nil, fmt.Errorf("invalid expiresAt: %v", err)
 		}
 		expiresAtValue = time.Date(expiresAtValue.Year(), expiresAtValue.Month(), expiresAtValue.Day(), 23, 59, 59, 0, expiresAtValue.Location())

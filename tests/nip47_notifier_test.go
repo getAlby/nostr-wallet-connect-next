@@ -36,7 +36,7 @@ func TestSendNotification(t *testing.T) {
 	err = svc.db.Create(appPermission).Error
 	assert.NoError(t, err)
 
-	nip47NotificationQueue := nip47.NewNip47NotificationQueue(svc.logger)
+	nip47NotificationQueue := nip47.NewNip47NotificationQueue()
 	svc.eventPublisher.RegisterSubscriber(nip47NotificationQueue)
 
 	testEvent := &events.Event{
@@ -55,9 +55,9 @@ func TestSendNotification(t *testing.T) {
 
 	relay := NewMockRelay()
 
-	nip47Svc := nip47.NewNip47Service(svc.db, svc.logger, svc.eventPublisher, svc.cfg, svc.lnClient)
+	nip47Svc := nip47.NewNip47Service(svc.db, svc.eventPublisher, svc.cfg, svc.lnClient)
 
-	notifier := nip47.NewNip47Notifier(nip47Svc, relay, svc.logger, svc.cfg, svc.db, svc.lnClient)
+	notifier := nip47.NewNip47Notifier(nip47Svc, relay, svc.cfg, svc.db, svc.lnClient)
 	notifier.ConsumeEvent(ctx, receivedEvent)
 
 	assert.NotNil(t, relay.publishedEvent)
@@ -93,7 +93,7 @@ func TestSendNotificationNoPermission(t *testing.T) {
 	_, _, err = createApp(svc)
 	assert.NoError(t, err)
 
-	nip47NotificationQueue := nip47.NewNip47NotificationQueue(svc.logger)
+	nip47NotificationQueue := nip47.NewNip47NotificationQueue()
 	svc.eventPublisher.RegisterSubscriber(nip47NotificationQueue)
 
 	testEvent := &events.Event{
@@ -112,9 +112,9 @@ func TestSendNotificationNoPermission(t *testing.T) {
 
 	relay := NewMockRelay()
 
-	nip47Svc := nip47.NewNip47Service(svc.db, svc.logger, svc.eventPublisher, svc.cfg, svc.lnClient)
+	nip47Svc := nip47.NewNip47Service(svc.db, svc.eventPublisher, svc.cfg, svc.lnClient)
 
-	notifier := nip47.NewNip47Notifier(nip47Svc, relay, svc.logger, svc.cfg, svc.db, svc.lnClient)
+	notifier := nip47.NewNip47Notifier(nip47Svc, relay, svc.cfg, svc.db, svc.lnClient)
 	notifier.ConsumeEvent(ctx, receivedEvent)
 
 	assert.Nil(t, relay.publishedEvent)

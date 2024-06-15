@@ -8,6 +8,7 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/nbd-wtf/go-nostr"
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
@@ -35,7 +36,7 @@ func (svc *nip47Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Re
 			bolt11 = strings.ToLower(bolt11)
 			paymentRequest, err := decodepay.Decodepay(bolt11)
 			if err != nil {
-				svc.logger.WithFields(logrus.Fields{
+				logger.Logger.WithFields(logrus.Fields{
 					"requestEventNostrId": requestEvent.NostrId,
 					"appId":               app.ID,
 					"bolt11":              bolt11,
@@ -70,7 +71,7 @@ func (svc *nip47Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Re
 			insertPaymentResult := svc.db.Create(&payment)
 			mu.Unlock()
 			if insertPaymentResult.Error != nil {
-				svc.logger.WithFields(logrus.Fields{
+				logger.Logger.WithFields(logrus.Fields{
 					"requestEventNostrId": requestEvent.NostrId,
 					"paymentRequest":      bolt11,
 					"invoiceId":           invoiceInfo.Id,
@@ -78,7 +79,7 @@ func (svc *nip47Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Re
 				return
 			}
 
-			svc.logger.WithFields(logrus.Fields{
+			logger.Logger.WithFields(logrus.Fields{
 				"requestEventNostrId": requestEvent.NostrId,
 				"appId":               app.ID,
 				"bolt11":              bolt11,
@@ -86,7 +87,7 @@ func (svc *nip47Service) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Re
 
 			response, err := svc.lnClient.SendPaymentSync(ctx, bolt11)
 			if err != nil {
-				svc.logger.WithFields(logrus.Fields{
+				logger.Logger.WithFields(logrus.Fields{
 					"requestEventNostrId": requestEvent.NostrId,
 					"appId":               app.ID,
 					"bolt11":              bolt11,

@@ -5,6 +5,7 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
@@ -37,7 +38,7 @@ func (svc *nip47Service) HandlePayKeysendEvent(ctx context.Context, nip47Request
 		return
 	}
 
-	svc.logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 		"senderPubkey":        payParams.Pubkey,
@@ -45,7 +46,7 @@ func (svc *nip47Service) HandlePayKeysendEvent(ctx context.Context, nip47Request
 
 	preimage, err := svc.lnClient.SendKeysend(ctx, payParams.Amount, payParams.Pubkey, payParams.Preimage, payParams.TLVRecords)
 	if err != nil {
-		svc.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 			"recipientPubkey":     payParams.Pubkey,

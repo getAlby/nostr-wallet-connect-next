@@ -10,23 +10,21 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/adrg/xdg"
 	"github.com/nbd-wtf/go-nostr"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 
 	"github.com/glebarez/sqlite"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/orandin/lumberjackrus"
 	"gorm.io/gorm"
 
 	alby "github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
@@ -41,16 +39,10 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 
-const (
-	logDir      = "log"
-	logFilename = "nwc.log"
-)
-
 type service struct {
 	cfg            config.Config
 	db             *gorm.DB
 	lnClient       lnclient.LNClient
-	logger         *logrus.Logger
 	albyOAuthSvc   alby.AlbyOAuthService
 	eventPublisher events.EventPublisher
 	ctx            context.Context
@@ -68,38 +60,21 @@ func NewService(ctx context.Context) (*service, error) {
 		return nil, err
 	}
 
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{})
-	logger.SetOutput(os.Stdout)
-	logLevel, err := strconv.Atoi(appConfig.LogLevel)
-	if err != nil {
-		logLevel = int(logrus.InfoLevel)
-	}
-	logger.SetLevel(logrus.Level(logLevel))
+	logger.Init(appConfig.LogLevel)
 
 	if appConfig.Workdir == "" {
 		appConfig.Workdir = filepath.Join(xdg.DataHome, "/alby-nwc")
-		logger.WithField("workdir", appConfig.Workdir).Info("No workdir specified, using default")
+		logger.Logger.WithField("workdir", appConfig.Workdir).Info("No workdir specified, using default")
 	}
 	// make sure workdir exists
 	os.MkdirAll(appConfig.Workdir, os.ModePerm)
 
-	fileLoggerHook, err := lumberjackrus.NewHook(
-		&lumberjackrus.LogFile{
-			Filename:   filepath.Join(appConfig.Workdir, logDir, logFilename),
-			MaxAge:     3,
-			MaxBackups: 3,
-		},
-		logrus.InfoLevel,
-		&logrus.JSONFormatter{},
-		nil,
-	)
+	err = logger.AddFileLogger(appConfig.Workdir)
 	if err != nil {
 		return nil, err
 	}
-	logger.AddHook(fileLoggerHook)
 
-	finishRestoreNode(logger, appConfig.Workdir)
+	finishRestoreNode(appConfig.Workdir)
 
 	// If DATABASE_URI is a URI or a path, leave it unchanged.
 	// If it only contains a filename, prepend the workdir.
@@ -130,18 +105,18 @@ func NewService(ctx context.Context) (*service, error) {
 	}
 	sqlDb.SetMaxOpenConns(1)
 
-	err = migrations.Migrate(gormDB, appConfig, logger)
+	err = migrations.Migrate(gormDB, appConfig)
 	if err != nil {
-		logger.WithError(err).Error("Failed to migrate")
+		logger.Logger.WithError(err).Error("Failed to migrate")
 		return nil, err
 	}
 
-	cfg := config.NewConfig(gormDB, appConfig, logger)
+	cfg := config.NewConfig(gormDB, appConfig)
 
-	eventPublisher := events.NewEventPublisher(logger)
+	eventPublisher := events.NewEventPublisher()
 
 	if err != nil {
-		logger.WithError(err).Error("Failed to create Alby OAuth service")
+		logger.Logger.WithError(err).Error("Failed to create Alby OAuth service")
 		return nil, err
 	}
 
@@ -151,9 +126,8 @@ func NewService(ctx context.Context) (*service, error) {
 		db:             gormDB,
 		ctx:            ctx,
 		wg:             &wg,
-		logger:         logger,
 		eventPublisher: eventPublisher,
-		albyOAuthSvc:   alby.NewAlbyOAuthService(logger, cfg, cfg.GetEnv(), db.NewDBService(gormDB, logger)),
+		albyOAuthSvc:   alby.NewAlbyOAuthService(cfg, cfg.GetEnv(), db.NewDBService(gormDB)),
 	}
 
 	eventPublisher.RegisterSubscriber(svc.albyOAuthSvc)
@@ -175,10 +149,10 @@ func NewService(ctx context.Context) (*service, error) {
 
 func (svc *service) StopLNClient() error {
 	if svc.lnClient != nil {
-		svc.logger.Info("Shutting down LDK client")
+		logger.Logger.Info("Shutting down LDK client")
 		err := svc.lnClient.Shutdown()
 		if err != nil {
-			svc.logger.WithError(err).Error("Failed to stop LN backend")
+			logger.Logger.WithError(err).Error("Failed to stop LN backend")
 			svc.eventPublisher.Publish(&events.Event{
 				Event: "nwc_node_stop_failed",
 				Properties: map[string]interface{}{
@@ -187,7 +161,7 @@ func (svc *service) StopLNClient() error {
 			})
 			return err
 		}
-		svc.logger.Info("Publishing node shutdown event")
+		logger.Logger.Info("Publishing node shutdown event")
 		svc.lnClient = nil
 		svc.eventPublisher.Publish(&events.Event{
 			Event: "nwc_node_stopped",
@@ -195,7 +169,7 @@ func (svc *service) StopLNClient() error {
 		// TODO: move this, use contexts instead
 		svc.nip47Service.Stop()
 	}
-	svc.logger.Info("LNClient stopped successfully")
+	logger.Logger.Info("LNClient stopped successfully")
 	return nil
 }
 
@@ -210,53 +184,53 @@ func (svc *service) launchLNBackend(ctx context.Context, encryptionKey string) e
 		return errors.New("no LNBackendType specified")
 	}
 
-	svc.logger.Infof("Launching LN Backend: %s", lnBackend)
+	logger.Logger.Infof("Launching LN Backend: %s", lnBackend)
 	var lnClient lnclient.LNClient
 	switch lnBackend {
 	case config.LNDBackendType:
 		LNDAddress, _ := svc.cfg.Get("LNDAddress", encryptionKey)
 		LNDCertHex, _ := svc.cfg.Get("LNDCertHex", encryptionKey)
 		LNDMacaroonHex, _ := svc.cfg.Get("LNDMacaroonHex", encryptionKey)
-		lnClient, err = lnd.NewLNDService(ctx, svc.logger, LNDAddress, LNDCertHex, LNDMacaroonHex)
+		lnClient, err = lnd.NewLNDService(ctx, LNDAddress, LNDCertHex, LNDMacaroonHex)
 	case config.LDKBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		LDKWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "ldk")
 
-		lnClient, err = ldk.NewLDKService(ctx, svc.logger, svc.cfg, svc.eventPublisher, Mnemonic, LDKWorkdir, svc.cfg.GetEnv().LDKNetwork, svc.cfg.GetEnv().LDKEsploraServer, svc.cfg.GetEnv().LDKGossipSource)
+		lnClient, err = ldk.NewLDKService(ctx, svc.cfg, svc.eventPublisher, Mnemonic, LDKWorkdir, svc.cfg.GetEnv().LDKNetwork, svc.cfg.GetEnv().LDKEsploraServer, svc.cfg.GetEnv().LDKGossipSource)
 	case config.GreenlightBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
 		GreenlightWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "greenlight")
 
-		lnClient, err = greenlight.NewGreenlightService(svc.cfg, svc.logger, Mnemonic, GreenlightInviteCode, GreenlightWorkdir, encryptionKey)
+		lnClient, err = greenlight.NewGreenlightService(svc.cfg, Mnemonic, GreenlightInviteCode, GreenlightWorkdir, encryptionKey)
 	case config.BreezBackendType:
 		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
 		BreezAPIKey, _ := svc.cfg.Get("BreezAPIKey", encryptionKey)
 		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
 		BreezWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "breez")
 
-		lnClient, err = breez.NewBreezService(svc.logger, Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
+		lnClient, err = breez.NewBreezService(Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
 	case config.PhoenixBackendType:
 		PhoenixdAddress, _ := svc.cfg.Get("PhoenixdAddress", encryptionKey)
 		PhoenixdAuthorization, _ := svc.cfg.Get("PhoenixdAuthorization", encryptionKey)
 
-		lnClient, err = phoenixd.NewPhoenixService(svc.logger, PhoenixdAddress, PhoenixdAuthorization)
+		lnClient, err = phoenixd.NewPhoenixService(PhoenixdAddress, PhoenixdAuthorization)
 	case config.CashuBackendType:
 		cashuMintUrl, _ := svc.cfg.Get("CashuMintUrl", encryptionKey)
 		cashuWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "cashu")
 
-		lnClient, err = cashu.NewCashuService(svc.logger, cashuWorkdir, cashuMintUrl)
+		lnClient, err = cashu.NewCashuService(cashuWorkdir, cashuMintUrl)
 	default:
-		svc.logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
+		logger.Logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
 	}
 	if err != nil {
-		svc.logger.WithError(err).Error("Failed to launch LN backend")
+		logger.Logger.WithError(err).Error("Failed to launch LN backend")
 		return err
 	}
 
 	info, err := lnClient.GetInfo(ctx)
 	if err != nil {
-		svc.logger.WithError(err).Error("Failed to fetch node info")
+		logger.Logger.WithError(err).Error("Failed to fetch node info")
 	}
 	if info != nil && info.Pubkey != "" {
 		svc.eventPublisher.SetGlobalProperty("node_id", info.Pubkey)
@@ -281,7 +255,7 @@ func (svc *service) createFilters(identityPubkey string) nostr.Filters {
 }
 
 func (svc *service) noticeHandler(notice string) {
-	svc.logger.Infof("Received a notice %s", notice)
+	logger.Logger.Infof("Received a notice %s", notice)
 }
 
 func (svc *service) GetLNClient() lnclient.LNClient {
@@ -294,65 +268,61 @@ func (svc *service) StartSubscription(ctx context.Context, sub *nostr.Subscripti
 	go func() {
 		// block till EOS is received
 		<-sub.EndOfStoredEvents
-		svc.logger.Info("Received EOS")
+		logger.Logger.Info("Received EOS")
 
 		// loop through incoming events
 		for event := range sub.Events {
 			go svc.nip47Service.HandleEvent(ctx, sub, event)
 		}
-		svc.logger.Info("Relay subscription events channel ended")
+		logger.Logger.Info("Relay subscription events channel ended")
 	}()
 
 	<-ctx.Done()
 
 	if sub.Relay.ConnectionError != nil {
-		svc.logger.WithField("connectionError", sub.Relay.ConnectionError).Error("Relay error")
+		logger.Logger.WithField("connectionError", sub.Relay.ConnectionError).Error("Relay error")
 		return sub.Relay.ConnectionError
 	}
-	svc.logger.Info("Exiting subscription...")
+	logger.Logger.Info("Exiting subscription...")
 	return nil
 }
 
-func (svc *service) GetLogFilePath() string {
-	return filepath.Join(svc.cfg.GetEnv().Workdir, logDir, logFilename)
-}
-
-func finishRestoreNode(logger *logrus.Logger, workDir string) {
+func finishRestoreNode(workDir string) {
 	restoreDir := filepath.Join(workDir, "restore")
 	if restoreDirStat, err := os.Stat(restoreDir); err == nil && restoreDirStat.IsDir() {
-		logger.WithField("restoreDir", restoreDir).Infof("Restore directory found. Finishing Node restore")
+		logger.Logger.WithField("restoreDir", restoreDir).Infof("Restore directory found. Finishing Node restore")
 
 		existingFiles, err := os.ReadDir(restoreDir)
 		if err != nil {
-			logger.WithError(err).Fatal("Failed to read WORK_DIR")
+			logger.Logger.WithError(err).Fatal("Failed to read WORK_DIR")
 		}
 
 		for _, file := range existingFiles {
 			if file.Name() != "restore" {
 				err = os.RemoveAll(filepath.Join(workDir, file.Name()))
 				if err != nil {
-					logger.WithField("filename", file.Name()).WithError(err).Fatal("Failed to remove file")
+					logger.Logger.WithField("filename", file.Name()).WithError(err).Fatal("Failed to remove file")
 				}
-				logger.WithField("filename", file.Name()).Info("removed file")
+				logger.Logger.WithField("filename", file.Name()).Info("removed file")
 			}
 		}
 
 		files, err := os.ReadDir(restoreDir)
 		if err != nil {
-			logger.WithError(err).Fatal("Failed to read restore directory")
+			logger.Logger.WithError(err).Fatal("Failed to read restore directory")
 		}
 		for _, file := range files {
 			err = os.Rename(filepath.Join(restoreDir, file.Name()), filepath.Join(workDir, file.Name()))
 			if err != nil {
-				logger.WithField("filename", file.Name()).WithError(err).Fatal("Failed to move file")
+				logger.Logger.WithField("filename", file.Name()).WithError(err).Fatal("Failed to move file")
 			}
-			logger.WithField("filename", file.Name()).Info("copied file from restore directory")
+			logger.Logger.WithField("filename", file.Name()).Info("copied file from restore directory")
 		}
 		err = os.RemoveAll(restoreDir)
 		if err != nil {
-			logger.WithError(err).Fatal("Failed to remove restore directory")
+			logger.Logger.WithError(err).Fatal("Failed to remove restore directory")
 		}
-		logger.WithField("restoreDir", restoreDir).Info("removed restore directory")
+		logger.Logger.WithField("restoreDir", restoreDir).Info("removed restore directory")
 	}
 }
 
@@ -437,15 +407,11 @@ func (svc *service) GetDB() *gorm.DB {
 	return svc.db
 }
 
-func (svc *service) GetLogger() *logrus.Logger {
-	return svc.logger
-}
-
 func (svc *service) GetEventPublisher() events.EventPublisher {
 	return svc.eventPublisher
 }
 
 func (svc *service) WaitShutdown() {
-	svc.logger.Info("Waiting for service to exit...")
+	logger.Logger.Info("Waiting for service to exit...")
 	svc.wg.Wait()
 }

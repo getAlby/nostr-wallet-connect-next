@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
@@ -22,14 +23,14 @@ func (svc *nip47Service) HandleSignMessageEvent(ctx context.Context, nip47Reques
 		return
 	}
 
-	svc.logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 	}).Info("Signing message")
 
 	signature, err := svc.lnClient.SignMessage(ctx, signParams.Message)
 	if err != nil {
-		svc.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 		}).Infof("Failed to sign message: %v", err)

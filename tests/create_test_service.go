@@ -6,6 +6,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/migrations"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/glebarez/sqlite"
@@ -26,16 +27,16 @@ func createTestService() (svc *TestService, err error) {
 		return nil, err
 	}
 
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{})
-	logger.SetOutput(os.Stdout)
-	logger.SetLevel(logrus.InfoLevel)
+	logger.Logger = logrus.New()
+	logger.Logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.Logger.SetOutput(os.Stdout)
+	logger.Logger.SetLevel(logrus.InfoLevel)
 
 	appConfig := &config.AppConfig{
 		Workdir: ".test",
 	}
 
-	err = migrations.Migrate(gormDb, appConfig, logger)
+	err = migrations.Migrate(gormDb, appConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -43,20 +44,18 @@ func createTestService() (svc *TestService, err error) {
 	cfg := config.NewConfig(
 		gormDb,
 		appConfig,
-		logger,
 	)
 
 	cfg.Start("")
 
-	eventPublisher := events.NewEventPublisher(logger)
+	eventPublisher := events.NewEventPublisher()
 
 	return &TestService{
 		cfg:            cfg,
 		db:             gormDb,
 		lnClient:       mockLn,
-		logger:         logger,
 		eventPublisher: eventPublisher,
-		nip47Svc:       nip47.NewNip47Service(gormDb, logger, eventPublisher, cfg, mockLn),
+		nip47Svc:       nip47.NewNip47Service(gormDb, eventPublisher, cfg, mockLn),
 	}, nil
 }
 
@@ -64,7 +63,6 @@ type TestService struct {
 	cfg            config.Config
 	db             *gorm.DB
 	lnClient       lnclient.LNClient
-	logger         *logrus.Logger
 	eventPublisher events.EventPublisher
 	nip47Svc       nip47.Nip47Service
 }

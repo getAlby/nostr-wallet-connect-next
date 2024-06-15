@@ -7,6 +7,7 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/nbd-wtf/go-nostr"
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
@@ -26,7 +27,7 @@ func (svc *nip47Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request
 	bolt11 = strings.ToLower(bolt11)
 	paymentRequest, err := decodepay.Decodepay(bolt11)
 	if err != nil {
-		svc.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 			"bolt11":              bolt11,
@@ -61,7 +62,7 @@ func (svc *nip47Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request
 		return
 	}
 
-	svc.logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 		"bolt11":              bolt11,
@@ -69,7 +70,7 @@ func (svc *nip47Service) HandlePayInvoiceEvent(ctx context.Context, nip47Request
 
 	response, err := svc.lnClient.SendPaymentSync(ctx, bolt11)
 	if err != nil {
-		svc.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 			"bolt11":              bolt11,

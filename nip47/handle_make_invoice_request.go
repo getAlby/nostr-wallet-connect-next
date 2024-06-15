@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
@@ -23,7 +24,7 @@ func (svc *nip47Service) HandleMakeInvoiceEvent(ctx context.Context, nip47Reques
 		return
 	}
 
-	svc.logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"requestEventNostrId": requestEvent.NostrId,
 		"appId":               app.ID,
 		"amount":              makeInvoiceParams.Amount,
@@ -39,7 +40,7 @@ func (svc *nip47Service) HandleMakeInvoiceEvent(ctx context.Context, nip47Reques
 
 	transaction, err := svc.lnClient.MakeInvoice(ctx, makeInvoiceParams.Amount, makeInvoiceParams.Description, makeInvoiceParams.DescriptionHash, expiry)
 	if err != nil {
-		svc.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestEvent.NostrId,
 			"appId":               app.ID,
 			"amount":              makeInvoiceParams.Amount,

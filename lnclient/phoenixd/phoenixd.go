@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 
 	"github.com/sirupsen/logrus"
@@ -67,12 +68,11 @@ type BalanceResponse struct {
 type PhoenixService struct {
 	Address       string
 	Authorization string
-	Logger        *logrus.Logger
 }
 
-func NewPhoenixService(logger *logrus.Logger, address string, authorization string) (result lnclient.LNClient, err error) {
+func NewPhoenixService(address string, authorization string) (result lnclient.LNClient, err error) {
 	authorizationBase64 := b64.StdEncoding.EncodeToString([]byte(":" + authorization))
-	phoenixService := &PhoenixService{Logger: logger, Address: address, Authorization: authorizationBase64}
+	phoenixService := &PhoenixService{Address: address, Authorization: authorizationBase64}
 
 	return phoenixService, nil
 }
@@ -138,7 +138,7 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 
 	incomingUrl := svc.Address + "/payments/incoming?" + incomingQuery.Encode()
 
-	svc.Logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"url": incomingUrl,
 	}).Infof("Fetching incoming tranasctions: %s", incomingUrl)
 	incomingReq, err := http.NewRequest(http.MethodGet, incomingUrl, nil)
@@ -197,7 +197,7 @@ func (svc *PhoenixService) ListTransactions(ctx context.Context, from, until, li
 
 	outgoingUrl := svc.Address + "/payments/outgoing?" + outgoingQuery.Encode()
 
-	svc.Logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"url": outgoingUrl,
 	}).Infof("Fetching outgoing tranasctions: %s", outgoingUrl)
 	outgoingReq, err := http.NewRequest(http.MethodGet, outgoingUrl, nil)
@@ -288,7 +288,7 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 
 	today := time.Now().UTC().Format("2006-02-01") // querying is too slow so we limit the invoices we query with the date - see list transactions
 	form.Add("externalId", today)                  // for some resone phoenixd requires an external id to query a list of invoices. thus we set this to nwc
-	svc.Logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"externalId": today,
 		"amountSat":  amountSat,
 	}).Infof("Requesting phoenix invoice")

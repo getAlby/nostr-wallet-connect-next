@@ -17,6 +17,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -41,12 +42,12 @@ func (bs *api) CreateBackup(unlockPassword string, w io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("failed to get storage dir: %w", err)
 	}
-	bs.logger.WithField("path", lnStorageDir).Info("Found node storage dir")
+	logger.Logger.WithField("path", lnStorageDir).Info("Found node storage dir")
 
 	// Reset the routing data to decrease the LDK DB size
 	err = bs.svc.GetLNClient().ResetRouter("ALL")
 	if err != nil {
-		bs.logger.WithError(err).Error("Failed to reset router")
+		logger.Logger.WithError(err).Error("Failed to reset router")
 		return fmt.Errorf("failed to reset router: %w", err)
 	}
 	// Stop the app to ensure no new requests are processed.
@@ -57,7 +58,7 @@ func (bs *api) CreateBackup(unlockPassword string, w io.Writer) error {
 	// to be used after its data is exported.
 	err = bs.svc.StopDb()
 	if err != nil {
-		bs.logger.WithError(err).Error("Failed to stop database")
+		logger.Logger.WithError(err).Error("Failed to stop database")
 		return fmt.Errorf("failed to close database: %w", err)
 	}
 
@@ -68,7 +69,7 @@ func (bs *api) CreateBackup(unlockPassword string, w io.Writer) error {
 		if err != nil {
 			return fmt.Errorf("failed to list files in the LNClient storage directory: %w", err)
 		}
-		bs.logger.WithField("lnFiles", lnFiles).Info("Listed node storage dir")
+		logger.Logger.WithField("lnFiles", lnFiles).Info("Listed node storage dir")
 
 		// Avoid backing up log files.
 		slices.DeleteFunc(lnFiles, func(s string) bool {
@@ -105,25 +106,25 @@ func (bs *api) CreateBackup(unlockPassword string, w io.Writer) error {
 	// Locate the main database file.
 	dbFilePath := bs.svc.GetConfig().GetEnv().DatabaseUri
 	// Add the database file to the archive.
-	bs.logger.WithField("nwc.db", dbFilePath).Info("adding nwc db to zip")
+	logger.Logger.WithField("nwc.db", dbFilePath).Info("adding nwc db to zip")
 	err = addFileToZip(dbFilePath, "nwc.db")
 	if err != nil {
-		bs.logger.WithError(err).Error("Failed to zip nwc db")
+		logger.Logger.WithError(err).Error("Failed to zip nwc db")
 		return fmt.Errorf("failed to write nwc db file to zip: %w", err)
 	}
 
 	for _, fileToArchive := range filesToArchive {
-		bs.logger.WithField("fileToArchive", fileToArchive).Info("adding file to zip")
+		logger.Logger.WithField("fileToArchive", fileToArchive).Info("adding file to zip")
 		relPath, err := filepath.Rel(workDir, fileToArchive)
 		if err != nil {
-			bs.logger.WithError(err).Error("Failed to get relative path of input file")
+			logger.Logger.WithError(err).Error("Failed to get relative path of input file")
 			return fmt.Errorf("failed to get relative path of input file: %w", err)
 		}
 
 		// Ensure forward slashes for zip format compatibility.
 		err = addFileToZip(fileToArchive, filepath.ToSlash(relPath))
 		if err != nil {
-			bs.logger.WithError(err).Error("Failed to write file to zip")
+			logger.Logger.WithError(err).Error("Failed to write file to zip")
 			return fmt.Errorf("failed to write input file to zip: %w", err)
 		}
 	}
@@ -198,17 +199,17 @@ func (bs *api) RestoreBackup(unlockPassword string, r io.Reader) error {
 		return nil
 	}
 
-	bs.logger.WithField("count", len(zr.File)).Info("Extracting files")
+	logger.Logger.WithField("count", len(zr.File)).Info("Extracting files")
 	for _, f := range zr.File {
-		bs.logger.WithField("file", f.Name).Info("Extracting file")
+		logger.Logger.WithField("file", f.Name).Info("Extracting file")
 		if err = extractZipEntry(f); err != nil {
 			return fmt.Errorf("failed to extract zip entry: %w", err)
 		}
 	}
-	bs.logger.WithField("count", len(zr.File)).Info("Extracted files")
+	logger.Logger.WithField("count", len(zr.File)).Info("Extracted files")
 
 	go func() {
-		bs.logger.Info("Backup restored. Shutting down Alby Hub...")
+		logger.Logger.Info("Backup restored. Shutting down Alby Hub...")
 		// schedule node shutdown after a few seconds to ensure frontend updates
 		time.Sleep(5 * time.Second)
 		os.Exit(0)

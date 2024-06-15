@@ -6,6 +6,7 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -26,7 +27,7 @@ func (svc *nip47Service) HasPermission(app *db.App, requestMethod string, amount
 	}
 	expiresAt := appPermission.ExpiresAt
 	if expiresAt != nil && expiresAt.Before(time.Now()) {
-		svc.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"requestMethod": requestMethod,
 			"expiresAt":     expiresAt.Unix(),
 			"appId":         app.ID,
@@ -52,7 +53,7 @@ func (svc *nip47Service) HasPermission(app *db.App, requestMethod string, amount
 func (svc *nip47Service) checkPermission(nip47Request *Request, requestNostrEventId string, app *db.App, amount int64) *Response {
 	hasPermission, code, message := svc.HasPermission(app, nip47Request.Method, amount)
 	if !hasPermission {
-		svc.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": requestNostrEventId,
 			"appId":               app.ID,
 			"code":                code,

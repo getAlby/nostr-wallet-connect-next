@@ -17,21 +17,20 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 
 type BreezService struct {
 	listener *BreezListener
 	svc      *breez_sdk.BlockingBreezServices
-	logger   *logrus.Logger
 }
 type BreezListener struct {
-	logger *logrus.Logger
 }
 
 func (listener BreezListener) Log(l breez_sdk.LogEntry) {
 	if l.Level != "TRACE" && l.Level != "DEBUG" {
-		listener.logger.WithField("level", l.Level).Print(l.Line)
+		logger.Logger.WithField("level", l.Level).Print(l.Line)
 	}
 }
 
@@ -39,7 +38,7 @@ func (BreezListener) OnEvent(e breez_sdk.BreezEvent) {
 	log.Printf("received event %#v", e)
 }
 
-func NewBreezService(logger *logrus.Logger, mnemonic, apiKey, inviteCode, workDir string) (result lnclient.LNClient, err error) {
+func NewBreezService(mnemonic, apiKey, inviteCode, workDir string) (result lnclient.LNClient, err error) {
 	if mnemonic == "" || apiKey == "" || inviteCode == "" || workDir == "" {
 		return nil, errors.New("one or more required breez configuration are missing")
 	}
@@ -59,9 +58,7 @@ func NewBreezService(logger *logrus.Logger, mnemonic, apiKey, inviteCode, workDi
 			InviteCode: &inviteCode,
 		},
 	}
-	listener := BreezListener{
-		logger: logger,
-	}
+	listener := BreezListener{}
 	config := breez_sdk.DefaultConfig(breez_sdk.EnvironmentTypeProduction, apiKey, nodeConfig)
 	config.WorkingDir = workDir
 	breez_sdk.SetLogStream(listener)
@@ -74,15 +71,15 @@ func NewBreezService(logger *logrus.Logger, mnemonic, apiKey, inviteCode, workDi
 		return nil, err
 	}
 	if err == nil {
-		logger.WithField("status", healthCheck.Status).Info("Current service status")
+		logger.Logger.WithField("status", healthCheck.Status).Info("Current service status")
 	}
 
 	nodeInfo, err := svc.NodeInfo()
 	if err != nil {
 		return nil, err
 	}
-	logger.WithField("info", nodeInfo).Info("Node info")
-	logger.WithFields(logrus.Fields{
+	logger.Logger.WithField("info", nodeInfo).Info("Node info")
+	logger.Logger.WithFields(logrus.Fields{
 		"ln balance":                     nodeInfo.ChannelsBalanceMsat,
 		"balance":                        nodeInfo.OnchainBalanceMsat,
 		"max_payable_msat":               nodeInfo.MaxPayableMsat,
@@ -95,7 +92,6 @@ func NewBreezService(logger *logrus.Logger, mnemonic, apiKey, inviteCode, workDi
 	return &BreezService{
 		listener: &listener,
 		svc:      svc,
-		logger:   logger,
 	}, nil
 }
 
@@ -344,10 +340,10 @@ func (bs *BreezService) GetNewOnchainAddress(ctx context.Context) (string, error
 	/*swapInfo, err := bs.svc.ReceiveOnchain(breez_sdk.ReceiveOnchainRequest{})
 
 	if err != nil {
-		bs.logger.Errorf("Failed to get onchain address: %v", err)
+		logger.Logger.Errorf("Failed to get onchain address: %v", err)
 		return "", err
 	}
-	bs.logger.Infof("This address has deposit limits! Min: %d Max: %d", swapInfo.MinAllowedDeposit, swapInfo.MaxAllowedDeposit)
+	logger.Logger.Infof("This address has deposit limits! Min: %d Max: %d", swapInfo.MinAllowedDeposit, swapInfo.MaxAllowedDeposit)
 
 	return swapInfo.BitcoinAddress, nil*/
 	return "", nil
@@ -357,7 +353,7 @@ func (bs *BreezService) GetOnchainBalance(ctx context.Context) (*lnclient.Onchai
 	response, err := bs.svc.NodeInfo()
 
 	if err != nil {
-		bs.logger.Errorf("Failed to get node info: %v", err)
+		logger.Logger.Errorf("Failed to get node info: %v", err)
 		return nil, err
 	}
 
@@ -374,7 +370,7 @@ func (bs *BreezService) RedeemOnchainFunds(ctx context.Context, toAddress string
 
 	recommendedFees, err := bs.svc.RecommendedFees()
 	if err != nil {
-		bs.logger.Errorf("Failed to get recommended fees info: %v", err)
+		logger.Logger.Errorf("Failed to get recommended fees info: %v", err)
 		return "", err
 	}
 
@@ -383,20 +379,20 @@ func (bs *BreezService) RedeemOnchainFunds(ctx context.Context, toAddress string
 	prepareRedeemOnchainFundsResponse, err := bs.svc.PrepareRedeemOnchainFunds(prepareReq)
 
 	if err != nil {
-		bs.logger.Errorf("Failed to prepare onchain address: %v", err)
+		logger.Logger.Errorf("Failed to prepare onchain address: %v", err)
 		return "", err
 	}
-	bs.logger.Infof("PrepareRedeemOnchainFunds response: %#v", prepareRedeemOnchainFundsResponse)
+	logger.Logger.Infof("PrepareRedeemOnchainFunds response: %#v", prepareRedeemOnchainFundsResponse)
 
 	redeemReq := breez_sdk.RedeemOnchainFundsRequest{SatPerVbyte: satPerVbyte, ToAddress: toAddress}
 	redeemOnchainFundsResponse, err := bs.svc.RedeemOnchainFunds(redeemReq)
 
 	if err != nil {
-		bs.logger.Errorf("Failed to redeem onchain funds: %v", err)
+		logger.Logger.Errorf("Failed to redeem onchain funds: %v", err)
 		return "", err
 	}
 
-	bs.logger.Infof("RedeemOnchainFunds response: %#v", redeemOnchainFundsResponse)
+	logger.Logger.Infof("RedeemOnchainFunds response: %#v", redeemOnchainFundsResponse)
 	return hex.EncodeToString(redeemOnchainFundsResponse.Txid), nil
 }
 

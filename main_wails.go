@@ -7,6 +7,7 @@ import (
 	"context"
 	"embed"
 
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/service"
 	"github.com/getAlby/nostr-wallet-connect/wails"
 	log "github.com/sirupsen/logrus"
@@ -27,11 +28,11 @@ func main() {
 
 	app := wails.NewApp(svc)
 	wails.LaunchWailsApp(app, assets, appIcon)
-	svc.GetLogger().Info("Wails app exited")
+	logger.Logger.Info("Wails app exited")
 
-	svc.GetLogger().Info("Cancelling service context...")
+	logger.Logger.Info("Cancelling service context...")
 	// cancel the service context
 	cancel()
 	svc.WaitShutdown()
-	svc.GetLogger().Info("Service exited")
+	logger.Logger.Info("Service exited")
 }

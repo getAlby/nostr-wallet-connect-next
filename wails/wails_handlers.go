@@ -37,7 +37,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 
 		err := app.svc.GetAlbyOAuthSvc().CallbackHandler(ctx, code)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -72,7 +72,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			updateAppRequest := &api.UpdateAppRequest{}
 			err := json.Unmarshal([]byte(body), updateAppRequest)
 			if err != nil {
-				app.svc.GetLogger().WithFields(logrus.Fields{
+				app.logger.Logger.WithFields(logrus.Fields{
 					"route":  route,
 					"method": method,
 					"body":   body,
@@ -169,7 +169,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 	case "/api/alby/me":
 		me, err := app.svc.GetAlbyOAuthSvc().GetMe(ctx)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -180,7 +180,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 	case "/api/alby/balance":
 		balance, err := app.svc.GetAlbyOAuthSvc().GetBalance(ctx)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -194,7 +194,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		payRequest := &alby.AlbyPayRequest{}
 		err := json.Unmarshal([]byte(body), payRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -218,7 +218,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			createAppRequest := &api.CreateAppRequest{}
 			err := json.Unmarshal([]byte(body), createAppRequest)
 			if err != nil {
-				app.svc.GetLogger().WithFields(logrus.Fields{
+				app.logger.Logger.WithFields(logrus.Fields{
 					"route":  route,
 					"method": method,
 					"body":   body,
@@ -235,7 +235,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		resetRouterRequest := &api.ResetRouterRequest{}
 		err := json.Unmarshal([]byte(body), resetRouterRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -269,7 +269,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			openChannelRequest := &api.OpenChannelRequest{}
 			err := json.Unmarshal([]byte(body), openChannelRequest)
 			if err != nil {
-				app.svc.GetLogger().WithFields(logrus.Fields{
+				app.logger.Logger.WithFields(logrus.Fields{
 					"route":  route,
 					"method": method,
 					"body":   body,
@@ -316,7 +316,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		redeemOnchainFundsRequest := &api.RedeemOnchainFundsRequest{}
 		err := json.Unmarshal([]byte(body), redeemOnchainFundsRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -358,7 +358,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			connectPeerRequest := &api.ConnectPeerRequest{}
 			err := json.Unmarshal([]byte(body), connectPeerRequest)
 			if err != nil {
-				app.svc.GetLogger().WithFields(logrus.Fields{
+				app.logger.Logger.WithFields(logrus.Fields{
 					"route":  route,
 					"method": method,
 					"body":   body,
@@ -406,7 +406,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		backupReminderRequest := &api.BackupReminderRequest{}
 		err := json.Unmarshal([]byte(body), backupReminderRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -416,7 +416,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 
 		err = app.api.SetNextBackupReminder(backupReminderRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -428,7 +428,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		changeUnlockPasswordRequest := &api.ChangeUnlockPasswordRequest{}
 		err := json.Unmarshal([]byte(body), changeUnlockPasswordRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -438,7 +438,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 
 		err = app.api.ChangeUnlockPassword(changeUnlockPasswordRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -450,7 +450,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		startRequest := &api.StartRequest{}
 		err := json.Unmarshal([]byte(body), startRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -459,7 +459,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		err = app.api.Start(startRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -473,7 +473,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		setupRequest := &api.SetupRequest{}
 		err := json.Unmarshal([]byte(body), setupRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -482,7 +482,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		err = app.api.Setup(ctx, setupRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -494,7 +494,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		sendPaymentProbesRequest := &api.SendPaymentProbesRequest{}
 		err := json.Unmarshal([]byte(body), sendPaymentProbesRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -503,7 +503,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		sendPaymentProbesResponse, err := app.api.SendPaymentProbes(ctx, sendPaymentProbesRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -515,7 +515,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		sendSpontaneousPaymentProbesRequest := &api.SendSpontaneousPaymentProbesRequest{}
 		err := json.Unmarshal([]byte(body), sendSpontaneousPaymentProbesRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -524,7 +524,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		sendSpontaneousPaymentProbesResponse, err := app.api.SendSpontaneousPaymentProbes(ctx, sendSpontaneousPaymentProbesRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -536,7 +536,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		backupRequest := &api.BasicBackupRequest{}
 		err := json.Unmarshal([]byte(body), backupRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -549,7 +549,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			DefaultFilename: "nwc.bkp",
 		})
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -559,7 +559,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 
 		backupFile, err := os.Create(saveFilePath)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -572,7 +572,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		err = app.api.CreateBackup(backupRequest.UnlockPassword, backupFile)
 
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -584,7 +584,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		restoreRequest := &api.BasicRestoreWailsRequest{}
 		err := json.Unmarshal([]byte(body), restoreRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -597,7 +597,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			DefaultFilename: "nwc.bkp",
 		})
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -607,7 +607,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 
 		backupFile, err := os.Open(backupFilePath)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -619,7 +619,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 
 		err = app.api.RestoreBackup(restoreRequest.UnlockPassword, backupFile)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -637,7 +637,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		getLogOutputRequest := &api.GetLogOutputRequest{}
 		err := json.Unmarshal([]byte(body), getLogOutputRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -646,7 +646,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		logOutputResponse, err := app.api.GetLogOutput(ctx, logType, getLogOutputRequest)
 		if err != nil {
-			app.svc.GetLogger().WithFields(logrus.Fields{
+			app.logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
 				"method": method,
 				"body":   body,
@@ -656,7 +656,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		return WailsRequestRouterResponse{Body: logOutputResponse, Error: ""}
 	}
 
-	app.svc.GetLogger().WithFields(logrus.Fields{
+	app.logger.Logger.WithFields(logrus.Fields{
 		"route":  route,
 		"method": method,
 	}).Error("Unhandled route")

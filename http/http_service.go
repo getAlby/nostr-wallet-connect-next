@@ -12,13 +12,13 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
 	"github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/service"
 
 	"github.com/getAlby/nostr-wallet-connect/api"
@@ -30,7 +30,6 @@ type HttpService struct {
 	albyHttpSvc    *alby.AlbyHttpService
 	cfg            config.Config
 	db             *gorm.DB
-	logger         *logrus.Logger
 	eventPublisher events.EventPublisher
 }
 
@@ -39,13 +38,12 @@ const (
 	sessionCookieAuthKey = "authenticated"
 )
 
-func NewHttpService(svc service.Service, logger *logrus.Logger, db *gorm.DB, eventPublisher events.EventPublisher) *HttpService {
+func NewHttpService(svc service.Service, db *gorm.DB, eventPublisher events.EventPublisher) *HttpService {
 	return &HttpService{
-		api:            api.NewAPI(svc, logger, db, svc.GetConfig()),
-		albyHttpSvc:    alby.NewAlbyHttpService(svc.GetAlbyOAuthSvc(), logger, svc.GetConfig().GetEnv()),
+		api:            api.NewAPI(svc, db, svc.GetConfig()),
+		albyHttpSvc:    alby.NewAlbyHttpService(svc.GetAlbyOAuthSvc(), svc.GetConfig().GetEnv()),
 		cfg:            svc.GetConfig(),
 		db:             db,
-		logger:         logger,
 		eventPublisher: eventPublisher,
 	}
 }
@@ -257,7 +255,7 @@ func (httpSvc *HttpService) saveSessionCookie(c echo.Context) error {
 	sess.Values[sessionCookieAuthKey] = true
 	err := sess.Save(c.Request(), c.Response())
 	if err != nil {
-		httpSvc.logger.WithError(err).Error("Failed to save session")
+		logger.Logger.WithError(err).Error("Failed to save session")
 	}
 	return err
 }
@@ -410,7 +408,7 @@ func (httpSvc *HttpService) mempoolApiHandler(c echo.Context) error {
 
 	response, err := httpSvc.api.RequestMempoolApi(endpoint)
 	if err != nil {
-		httpSvc.logger.WithField("endpoint", endpoint).WithError(err).Error("Failed to request mempool API")
+		logger.Logger.WithField("endpoint", endpoint).WithError(err).Error("Failed to request mempool API")
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Message: fmt.Sprintf("Failed to request mempool API: %s", err.Error()),
 		})
@@ -637,7 +635,7 @@ func (httpSvc *HttpService) appsUpdateHandler(c echo.Context) error {
 	err := httpSvc.api.UpdateApp(&app, &requestData)
 
 	if err != nil {
-		httpSvc.logger.WithError(err).Error("Failed to update app")
+		logger.Logger.WithError(err).Error("Failed to update app")
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Message: fmt.Sprintf("Failed to update app: %v", err),
 		})
@@ -685,7 +683,7 @@ func (httpSvc *HttpService) appsCreateHandler(c echo.Context) error {
 	responseBody, err := httpSvc.api.CreateApp(&requestData)
 
 	if err != nil {
-		httpSvc.logger.WithField("requestData", requestData).WithError(err).Error("Failed to save app")
+		logger.Logger.WithField("requestData", requestData).WithError(err).Error("Failed to save app")
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Message: fmt.Sprintf("Failed to save app: %v", err),
 		})

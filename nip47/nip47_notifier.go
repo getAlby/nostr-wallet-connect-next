@@ -9,6 +9,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/sirupsen/logrus"
@@ -23,16 +24,14 @@ type Nip47Notifier struct {
 	db       *gorm.DB
 	nip47Svc *nip47Service
 	relay    Relay
-	logger   *logrus.Logger
 	cfg      config.Config
 	lnClient lnclient.LNClient
 }
 
-func NewNip47Notifier(nip47Svc *nip47Service, relay Relay, logger *logrus.Logger, cfg config.Config, db *gorm.DB, lnClient lnclient.LNClient) *Nip47Notifier {
+func NewNip47Notifier(nip47Svc *nip47Service, relay Relay, cfg config.Config, db *gorm.DB, lnClient lnclient.LNClient) *Nip47Notifier {
 	return &Nip47Notifier{
 		nip47Svc: nip47Svc,
 		relay:    relay,
-		logger:   logger,
 		cfg:      cfg,
 		db:       db,
 		lnClient: lnClient,
@@ -46,13 +45,13 @@ func (notifier *Nip47Notifier) ConsumeEvent(ctx context.Context, event *events.E
 
 	paymentReceivedEventProperties, ok := event.Properties.(*events.PaymentReceivedEventProperties)
 	if !ok {
-		notifier.logger.WithField("event", event).Error("Failed to cast event")
+		logger.Logger.WithField("event", event).Error("Failed to cast event")
 		return errors.New("failed to cast event")
 	}
 
 	transaction, err := notifier.lnClient.LookupInvoice(ctx, paymentReceivedEventProperties.PaymentHash)
 	if err != nil {
-		notifier.logger.
+		logger.Logger.
 			WithField("paymentHash", paymentReceivedEventProperties.PaymentHash).
 			WithError(err).
 			Error("Failed to lookup invoice by payment hash")
@@ -82,14 +81,14 @@ func (notifier *Nip47Notifier) notifySubscribers(ctx context.Context, notificati
 }
 
 func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App, notification *Notification, tags nostr.Tags) {
-	notifier.logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"notification": notification,
 		"appId":        app.ID,
 	}).Info("Notifying subscriber")
 
 	ss, err := nip04.ComputeSharedSecret(app.NostrPubkey, notifier.cfg.GetNostrSecretKey())
 	if err != nil {
-		notifier.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"notification": notification,
 			"appId":        app.ID,
 		}).WithError(err).Error("Failed to compute shared secret")
@@ -98,7 +97,7 @@ func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App
 
 	payloadBytes, err := json.Marshal(notification)
 	if err != nil {
-		notifier.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"notification": notification,
 			"appId":        app.ID,
 		}).WithError(err).Error("Failed to stringify notification")
@@ -106,7 +105,7 @@ func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App
 	}
 	msg, err := nip04.Encrypt(string(payloadBytes), ss)
 	if err != nil {
-		notifier.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"notification": notification,
 			"appId":        app.ID,
 		}).WithError(err).Error("Failed to encrypt notification payload")
@@ -125,7 +124,7 @@ func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App
 	}
 	err = event.Sign(notifier.cfg.GetNostrSecretKey())
 	if err != nil {
-		notifier.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"notification": notification,
 			"appId":        app.ID,
 		}).WithError(err).Error("Failed to sign event")
@@ -134,13 +133,13 @@ func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App
 
 	err = notifier.relay.Publish(ctx, *event)
 	if err != nil {
-		notifier.logger.WithFields(logrus.Fields{
+		logger.Logger.WithFields(logrus.Fields{
 			"notification": notification,
 			"appId":        app.ID,
 		}).WithError(err).Error("Failed to publish notification")
 		return
 	}
-	notifier.logger.WithFields(logrus.Fields{
+	logger.Logger.WithFields(logrus.Fields{
 		"notification": notification,
 		"appId":        app.ID,
 	}).Info("Published notification event")

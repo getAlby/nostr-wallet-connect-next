@@ -24,7 +24,7 @@ type WailsApp struct {
 func NewApp(svc service.Service) *WailsApp {
 	return &WailsApp{
 		svc: svc,
-		api: api.NewAPI(svc, svc.GetLogger(), svc.GetDB(), svc.GetConfig()),
+		api: api.NewAPI(svc, svc.GetDB(), svc.GetConfig()),
 	}
 }
 
@@ -35,7 +35,7 @@ func (app *WailsApp) startup(ctx context.Context) {
 }
 
 func LaunchWailsApp(app *WailsApp, assets embed.FS, appIcon []byte) {
-	logger := NewWailsLogger(app.svc.GetLogger())
+	logger := NewWailsLogger(app.logger.Logger)
 
 	err := wails.Run(&options.App{
 		Title:  "AlbyHub",
@@ -45,7 +45,6 @@ func LaunchWailsApp(app *WailsApp, assets embed.FS, appIcon []byte) {
 			Assets: assets,
 		},
 		// HideWindowOnClose: true, // with this on, there is no way to close the app - wait for v3
-		Logger: logger,
 
 		//BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup: app.startup,
@@ -75,7 +74,7 @@ func NewWailsLogger(appLogger *logrus.Logger) WailsLogger {
 }
 
 type WailsLogger struct {
-	AppLogger *logrus.Logger
+	App
 }
 
 func (logger WailsLogger) Print(message string) {
@@ -91,15 +90,15 @@ func (logger WailsLogger) Debug(message string) {
 }
 
 func (logger WailsLogger) Info(message string) {
-	logger.AppLogger.Info(message)
+	logger.Applogger.Logger.Info(message)
 }
 
 func (logger WailsLogger) Warning(message string) {
-	logger.AppLogger.Warning(message)
+	logger.Applogger.Logger.Warning(message)
 }
 
 func (logger WailsLogger) Error(message string) {
-	logger.AppLogger.Error(message)
+	logger.Applogger.Logger.Error(message)
 }
 
 func (logger WailsLogger) Fatal(message string) {
