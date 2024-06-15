@@ -9,6 +9,7 @@ import {
 } from "src/types";
 
 import { Payment, init } from "@getalby/bitcoin-connect-react";
+import { Invoice } from "@getalby/lightning-tools";
 import { Copy, QrCode, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
@@ -598,6 +599,10 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
     });
   }, [channels, csrf, order.amount, order.isPublic, order.lsp]);
 
+  const invoiceAmount =
+    wrappedInvoiceResponse &&
+    new Invoice({ pr: wrappedInvoiceResponse.invoice }).satoshi;
+
   return (
     <div className="flex flex-col gap-5">
       <AppHeader
@@ -608,9 +613,9 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
             : "Please wait, loading..."
         }
       />
-      {!wrappedInvoiceResponse && <Loading />}
+      {(!wrappedInvoiceResponse || !invoiceAmount) && <Loading />}
 
-      {wrappedInvoiceResponse && (
+      {wrappedInvoiceResponse && invoiceAmount && (
         <>
           <div className="max-w-md flex flex-col gap-5">
             <div className="border rounded-lg">
@@ -627,13 +632,22 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
                       sats
                     </TableCell>
                   </TableRow>
+                  {invoiceAmount < +order.amount && (
+                    <TableRow>
+                      <TableCell className="font-medium p-3">
+                        Incoming Liquidity
+                      </TableCell>
+                      <TableCell className="text-right p-3">
+                        {new Intl.NumberFormat().format(+order.amount)} sats
+                      </TableCell>
+                    </TableRow>
+                  )}
                   <TableRow>
                     <TableCell className="font-medium p-3">
                       Amount to pay
                     </TableCell>
                     <TableCell className="font-semibold text-right p-3">
-                      {new Intl.NumberFormat().format(parseInt(order.amount))}{" "}
-                      sats
+                      {new Intl.NumberFormat().format(invoiceAmount)} sats
                     </TableCell>
                   </TableRow>
                 </TableBody>
