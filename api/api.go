@@ -612,6 +612,10 @@ func (api *api) Setup(ctx context.Context, setupRequest *SetupRequest) error {
 		api.cfg.SetUpdate("PhoenixdAuthorization", setupRequest.PhoenixdAuthorization, setupRequest.UnlockPassword)
 	}
 
+	if setupRequest.CashuMintUrl != "" {
+		api.svc.GetConfig().SetUpdate("CashuMintUrl", setupRequest.CashuMintUrl, setupRequest.UnlockPassword)
+	}
+
 	return nil
 }
 
