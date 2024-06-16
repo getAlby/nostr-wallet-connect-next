@@ -19,10 +19,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type lspConnectionInfo struct {
-	Pubkey  string
-	Address string
-	Port    uint16
+type lspInfo struct {
+	Pubkey                 string
+	Address                string
+	Port                   uint16
+	MaxChannelExpiryBlocks uint64
 }
 
 func (api *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstantChannelInvoiceRequest) (*NewInstantChannelInvoiceResponse, error) {
@@ -58,7 +59,7 @@ func (api *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstan
 
 	logger.Logger.Infoln("Requesting LSP info")
 
-	var lspInfo *lspConnectionInfo
+	var lspInfo *lspInfo
 	var err error
 	switch selectedLsp.LspType {
 	case lsp.LSP_TYPE_FLOW_2_0:
@@ -109,7 +110,7 @@ func (api *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstan
 	case lsp.LSP_TYPE_PMLSP:
 		invoice, fee, err = api.requestPMLSPInvoice(&selectedLsp, request.Amount, nodeInfo.Pubkey)
 	case lsp.LSP_TYPE_LSPS1:
-		invoice, fee, err = api.requestLSPS1Invoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey, request.Public)
+		invoice, fee, err = api.requestLSPS1Invoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey, request.Public, lspInfo.MaxChannelExpiryBlocks)
 
 	default:
 		return nil, fmt.Errorf("unsupported LSP type: %v", selectedLsp.LspType)
@@ -131,13 +132,16 @@ func (api *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstan
 	return newChannelResponse, nil
 }
 
-func (api *api) getLSPS1LSPInfo(url string) (*lspConnectionInfo, error) {
-	type LSPS1LSPInfo struct {
-		// TODO: implement options
-		Options interface{} `json:"options"`
-		URIs    []string    `json:"uris"`
+func (api *api) getLSPS1LSPInfo(url string) (*lspInfo, error) {
+
+	type lsps1LSPInfoOptions struct {
+		MaxChannelExpiryBlocks uint64 `json:"max_channel_expiry_blocks"`
 	}
-	var lsps1LspInfo LSPS1LSPInfo
+	type lsps1LSPInfo struct {
+		Options lsps1LSPInfoOptions `json:"options"`
+		URIs    []string            `json:"uris"`
+	}
+	var lsps1LspInfo lsps1LSPInfo
 	client := http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -193,13 +197,14 @@ func (api *api) getLSPS1LSPInfo(url string) (*lspConnectionInfo, error) {
 		return nil, err
 	}
 
-	return &lspConnectionInfo{
-		Pubkey:  parts[1],
-		Address: parts[2],
-		Port:    uint16(port),
+	return &lspInfo{
+		Pubkey:                 parts[1],
+		Address:                parts[2],
+		Port:                   uint16(port),
+		MaxChannelExpiryBlocks: lsps1LspInfo.Options.MaxChannelExpiryBlocks,
 	}, nil
 }
-func (api *api) getFlowLSPInfo(url string) (*lspConnectionInfo, error) {
+func (api *api) getFlowLSPInfo(url string) (*lspInfo, error) {
 	type FlowLSPConnectionMethod struct {
 		Address string `json:"address"`
 		Port    uint16 `json:"port"`
@@ -260,7 +265,7 @@ func (api *api) getFlowLSPInfo(url string) (*lspConnectionInfo, error) {
 		return nil, errors.New("unexpected LSP connection method")
 	}
 
-	return &lspConnectionInfo{
+	return &lspInfo{
 		Pubkey:  flowLspInfo.Pubkey,
 		Address: flowLspInfo.ConnectionMethods[ipIndex].Address,
 		Port:    flowLspInfo.ConnectionMethods[ipIndex].Port,
@@ -514,7 +519,7 @@ func (api *api) requestPMLSPInvoice(selectedLsp *lsp.LSP, amount uint64, pubkey 
 	return invoice, fee, nil
 }
 
-func (api *api) requestLSPS1Invoice(ctx context.Context, selectedLsp *lsp.LSP, amount uint64, pubkey string, public bool) (invoice string, fee uint64, err error) {
+func (api *api) requestLSPS1Invoice(ctx context.Context, selectedLsp *lsp.LSP, amount uint64, pubkey string, public bool, channelExpiryBlocks uint64) (invoice string, fee uint64, err error) {
 	client := http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -551,7 +556,7 @@ func (api *api) requestLSPS1Invoice(ctx context.Context, selectedLsp *lsp.LSP, a
 		ClientBalanceSat:             "0",
 		RequiredChannelConfirmations: requiredChannelConfirmations,
 		FundingConfirmsWithinBlocks:  6,
-		ChannelExpiryBlocks:          13000, // TODO: this should be customizable
+		ChannelExpiryBlocks:          channelExpiryBlocks,
 		Token:                        "",
 		RefundOnchainAddress:         refundAddress,
 		AnnounceChannel:              public,
