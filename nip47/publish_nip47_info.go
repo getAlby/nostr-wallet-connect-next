@@ -14,9 +14,9 @@ func (svc *nip47Service) PublishNip47Info(ctx context.Context, relay *nostr.Rela
 	ev.Kind = models.INFO_EVENT_KIND
 	ev.Content = models.CAPABILITIES
 	ev.CreatedAt = nostr.Now()
-	ev.PubKey = svc.cfg.GetNostrPublicKey()
+	ev.PubKey = svc.keys.GetNostrPublicKey()
 	ev.Tags = nostr.Tags{[]string{"notifications", notifications.NOTIFICATION_TYPES}}
-	err := ev.Sign(svc.cfg.GetNostrSecretKey())
+	err := ev.Sign(svc.keys.GetNostrSecretKey())
 	if err != nil {
 		return err
 	}

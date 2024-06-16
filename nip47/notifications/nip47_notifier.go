@@ -12,6 +12,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/getAlby/nostr-wallet-connect/nip47/permissions"
+	"github.com/getAlby/nostr-wallet-connect/service/keys"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/sirupsen/logrus"
@@ -25,18 +26,20 @@ type Relay interface {
 type Nip47Notifier struct {
 	relay          Relay
 	cfg            config.Config
+	keys           keys.Keys
 	lnClient       lnclient.LNClient
 	db             *gorm.DB
 	permissionsSvc permissions.PermissionsService
 }
 
-func NewNip47Notifier(relay Relay, db *gorm.DB, cfg config.Config, permissionsSvc permissions.PermissionsService, lnClient lnclient.LNClient) *Nip47Notifier {
+func NewNip47Notifier(relay Relay, db *gorm.DB, cfg config.Config, keys keys.Keys, permissionsSvc permissions.PermissionsService, lnClient lnclient.LNClient) *Nip47Notifier {
 	return &Nip47Notifier{
 		relay:          relay,
 		cfg:            cfg,
 		db:             db,
 		lnClient:       lnClient,
 		permissionsSvc: permissionsSvc,
+		keys:           keys,
 	}
 }
 
@@ -88,7 +91,7 @@ func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App
 		"appId":        app.ID,
 	}).Info("Notifying subscriber")
 
-	ss, err := nip04.ComputeSharedSecret(app.NostrPubkey, notifier.cfg.GetNostrSecretKey())
+	ss, err := nip04.ComputeSharedSecret(app.NostrPubkey, notifier.keys.GetNostrSecretKey())
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"notification": notification,
@@ -118,13 +121,13 @@ func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App
 	allTags = append(allTags, tags...)
 
 	event := &nostr.Event{
-		PubKey:    notifier.cfg.GetNostrPublicKey(),
+		PubKey:    notifier.keys.GetNostrPublicKey(),
 		CreatedAt: nostr.Now(),
 		Kind:      models.NOTIFICATION_KIND,
 		Tags:      allTags,
 		Content:   msg,
 	}
-	err = event.Sign(notifier.cfg.GetNostrSecretKey())
+	err = event.Sign(notifier.keys.GetNostrSecretKey())
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"notification": notification,

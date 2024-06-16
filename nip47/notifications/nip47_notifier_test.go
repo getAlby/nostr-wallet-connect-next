@@ -58,7 +58,7 @@ func TestSendNotification(t *testing.T) {
 
 	permissionsSvc := permissions.NewPermissionsService(svc.DB, svc.EventPublisher)
 
-	notifier := NewNip47Notifier(relay, svc.DB, svc.Cfg, permissionsSvc, svc.LNClient)
+	notifier := NewNip47Notifier(relay, svc.DB, svc.Cfg, svc.Keys, permissionsSvc, svc.LNClient)
 	notifier.ConsumeEvent(ctx, receivedEvent)
 
 	assert.NotNil(t, relay.publishedEvent)
@@ -115,7 +115,7 @@ func TestSendNotificationNoPermission(t *testing.T) {
 
 	permissionsSvc := permissions.NewPermissionsService(svc.DB, svc.EventPublisher)
 
-	notifier := NewNip47Notifier(relay, svc.DB, svc.Cfg, permissionsSvc, svc.LNClient)
+	notifier := NewNip47Notifier(relay, svc.DB, svc.Cfg, svc.Keys, permissionsSvc, svc.LNClient)
 	notifier.ConsumeEvent(ctx, receivedEvent)
 
 	assert.Nil(t, relay.publishedEvent)

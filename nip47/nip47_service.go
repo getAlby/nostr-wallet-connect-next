@@ -8,6 +8,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47/notifications"
 	permissions "github.com/getAlby/nostr-wallet-connect/nip47/permissions"
+	"github.com/getAlby/nostr-wallet-connect/service/keys"
 	"github.com/nbd-wtf/go-nostr"
 	"gorm.io/gorm"
 )
@@ -16,6 +17,7 @@ type nip47Service struct {
 	permissionsService     permissions.PermissionsService
 	nip47NotificationQueue notifications.Nip47NotificationQueue
 	cfg                    config.Config
+	keys                   keys.Keys
 	db                     *gorm.DB
 	eventPublisher         events.EventPublisher
 }
@@ -27,7 +29,7 @@ type Nip47Service interface {
 	CreateResponse(initialEvent *nostr.Event, content interface{}, tags nostr.Tags, ss []byte) (result *nostr.Event, err error)
 }
 
-func NewNip47Service(db *gorm.DB, cfg config.Config, eventPublisher events.EventPublisher) *nip47Service {
+func NewNip47Service(db *gorm.DB, cfg config.Config, keys keys.Keys, eventPublisher events.EventPublisher) *nip47Service {
 	nip47NotificationQueue := notifications.NewNip47NotificationQueue()
 	eventPublisher.RegisterSubscriber(nip47NotificationQueue)
 	return &nip47Service{
@@ -36,11 +38,12 @@ func NewNip47Service(db *gorm.DB, cfg config.Config, eventPublisher events.Event
 		db:                     db,
 		permissionsService:     permissions.NewPermissionsService(db, eventPublisher),
 		eventPublisher:         eventPublisher,
+		keys:                   keys,
 	}
 }
 
 func (svc *nip47Service) StartNotifier(ctx context.Context, relay *nostr.Relay, lnClient lnclient.LNClient) {
-	nip47Notifier := notifications.NewNip47Notifier(relay, svc.db, svc.cfg, svc.permissionsService, lnClient)
+	nip47Notifier := notifications.NewNip47Notifier(relay, svc.db, svc.cfg, svc.keys, svc.permissionsService, lnClient)
 	go func() {
 		for {
 			select {

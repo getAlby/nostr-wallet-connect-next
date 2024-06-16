@@ -26,7 +26,7 @@ func (svc *nip47Service) HandleEvent(ctx context.Context, sub *nostr.Subscriptio
 		"eventKind":           event.Kind,
 	}).Info("Processing Event")
 
-	ss, err := nip04.ComputeSharedSecret(event.PubKey, svc.cfg.GetNostrSecretKey())
+	ss, err := nip04.ComputeSharedSecret(event.PubKey, svc.keys.GetNostrSecretKey())
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
@@ -140,7 +140,7 @@ func (svc *nip47Service) HandleEvent(ctx context.Context, sub *nostr.Subscriptio
 	}).Info("App found for nostr event")
 
 	//to be extra safe, decrypt using the key found from the app
-	ss, err = nip04.ComputeSharedSecret(app.NostrPubkey, svc.cfg.GetNostrSecretKey())
+	ss, err = nip04.ComputeSharedSecret(app.NostrPubkey, svc.keys.GetNostrSecretKey())
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"requestEventNostrId": event.ID,
@@ -345,13 +345,13 @@ func (svc *nip47Service) CreateResponse(initialEvent *nostr.Event, content inter
 	allTags = append(allTags, tags...)
 
 	resp := &nostr.Event{
-		PubKey:    svc.cfg.GetNostrPublicKey(),
+		PubKey:    svc.keys.GetNostrPublicKey(),
 		CreatedAt: nostr.Now(),
 		Kind:      models.RESPONSE_KIND,
 		Tags:      allTags,
 		Content:   msg,
 	}
-	err = resp.Sign(svc.cfg.GetNostrSecretKey())
+	err = resp.Sign(svc.keys.GetNostrSecretKey())
 	if err != nil {
 		return nil, err
 	}

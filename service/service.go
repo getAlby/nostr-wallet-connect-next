@@ -19,6 +19,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/logger"
+	"github.com/getAlby/nostr-wallet-connect/service/keys"
 
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
@@ -38,6 +39,7 @@ type service struct {
 	wg             *sync.WaitGroup
 	nip47Service   nip47.Nip47Service
 	appCancelFn    context.CancelFunc
+	keys           keys.Keys
 }
 
 func NewService(ctx context.Context) (*service, error) {
@@ -88,15 +90,18 @@ func NewService(ctx context.Context) (*service, error) {
 		return nil, err
 	}
 
+	keys := keys.NewKeys()
+
 	var wg sync.WaitGroup
 	svc := &service{
 		cfg:            cfg,
 		ctx:            ctx,
 		wg:             &wg,
 		eventPublisher: eventPublisher,
-		albyOAuthSvc:   alby.NewAlbyOAuthService(gormDB, cfg),
-		nip47Service:   nip47.NewNip47Service(gormDB, cfg, eventPublisher),
+		albyOAuthSvc:   alby.NewAlbyOAuthService(gormDB, cfg, keys),
+		nip47Service:   nip47.NewNip47Service(gormDB, cfg, keys, eventPublisher),
 		db:             gormDB,
+		keys:           keys,
 	}
 
 	eventPublisher.RegisterSubscriber(svc.albyOAuthSvc)
@@ -230,6 +235,10 @@ func (svc *service) GetEventPublisher() events.EventPublisher {
 
 func (svc *service) GetLNClient() lnclient.LNClient {
 	return svc.lnClient
+}
+
+func (svc *service) GetKeys() keys.Keys {
+	return svc.keys
 }
 
 func (svc *service) WaitShutdown() {

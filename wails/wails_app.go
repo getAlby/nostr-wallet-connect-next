@@ -26,7 +26,7 @@ type WailsApp struct {
 func NewApp(svc service.Service) *WailsApp {
 	return &WailsApp{
 		svc: svc,
-		api: api.NewAPI(svc, svc.GetDB(), svc.GetConfig(), svc.GetEventPublisher()),
+		api: api.NewAPI(svc, svc.GetDB(), svc.GetConfig(), svc.GetKeys(), svc.GetEventPublisher()),
 		db:  svc.GetDB(),
 	}
 }

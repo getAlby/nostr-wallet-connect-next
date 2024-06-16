@@ -8,6 +8,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
+	"github.com/getAlby/nostr-wallet-connect/service/keys"
 	"gorm.io/gorm"
 )
 
@@ -35,7 +36,8 @@ func CreateTestService() (svc *TestService, err error) {
 		gormDb,
 	)
 
-	cfg.Start("")
+	keys := keys.NewKeys()
+	keys.Init(cfg, "")
 
 	eventPublisher := events.NewEventPublisher()
 
@@ -44,10 +46,12 @@ func CreateTestService() (svc *TestService, err error) {
 		LNClient:       mockLn,
 		EventPublisher: eventPublisher,
 		DB:             gormDb,
+		Keys:           keys,
 	}, nil
 }
 
 type TestService struct {
+	Keys           keys.Keys
 	Cfg            config.Config
 	LNClient       lnclient.LNClient
 	EventPublisher events.EventPublisher

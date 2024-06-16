@@ -23,6 +23,7 @@ import (
 	nip47 "github.com/getAlby/nostr-wallet-connect/nip47/models"
 	permissions "github.com/getAlby/nostr-wallet-connect/nip47/permissions"
 	"github.com/getAlby/nostr-wallet-connect/service"
+	"github.com/getAlby/nostr-wallet-connect/service/keys"
 	"github.com/getAlby/nostr-wallet-connect/utils"
 )
 
@@ -32,15 +33,17 @@ type api struct {
 	cfg            config.Config
 	svc            service.Service
 	permissionsSvc permissions.PermissionsService
+	keys           keys.Keys
 }
 
-func NewAPI(svc service.Service, gormDB *gorm.DB, config config.Config, eventsPublisher events.EventPublisher) *api {
+func NewAPI(svc service.Service, gormDB *gorm.DB, config config.Config, keys keys.Keys, eventsPublisher events.EventPublisher) *api {
 	return &api{
 		db:             gormDB,
 		dbSvc:          db.NewDBService(gormDB),
 		cfg:            config,
 		svc:            svc,
 		permissionsSvc: permissions.NewPermissionsService(gormDB, eventsPublisher),
+		keys:           keys,
 	}
 }
 
@@ -82,7 +85,7 @@ func (api *api) CreateApp(createAppRequest *CreateAppRequest) (*CreateAppRespons
 		if err == nil {
 			query := returnToUrl.Query()
 			query.Add("relay", relayUrl)
-			query.Add("pubkey", api.cfg.GetNostrPublicKey())
+			query.Add("pubkey", api.keys.GetNostrPublicKey())
 			// if user.LightningAddress != "" {
 			// 	query.Add("lud16", user.LightningAddress)
 			// }
@@ -95,7 +98,7 @@ func (api *api) CreateApp(createAppRequest *CreateAppRequest) (*CreateAppRespons
 	// if user.LightningAddress != "" {
 	// 	lud16 = fmt.Sprintf("&lud16=%s", user.LightningAddress)
 	// }
-	responseBody.PairingUri = fmt.Sprintf("nostr+walletconnect://%s?relay=%s&secret=%s%s", api.cfg.GetNostrPublicKey(), relayUrl, pairingSecretKey, lud16)
+	responseBody.PairingUri = fmt.Sprintf("nostr+walletconnect://%s?relay=%s&secret=%s%s", api.keys.GetNostrPublicKey(), relayUrl, pairingSecretKey, lud16)
 	return responseBody, nil
 }
 

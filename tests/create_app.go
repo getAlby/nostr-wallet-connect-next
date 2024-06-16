@@ -13,7 +13,7 @@ func CreateApp(svc *TestService) (app *db.App, ss []byte, err error) {
 		return nil, nil, err
 	}
 
-	ss, err = nip04.ComputeSharedSecret(svc.Cfg.GetNostrPublicKey(), senderPrivkey)
+	ss, err = nip04.ComputeSharedSecret(svc.Keys.GetNostrPublicKey(), senderPrivkey)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -9,17 +9,14 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/logger"
-	"github.com/nbd-wtf/go-nostr"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type config struct {
-	Env            *AppConfig
-	CookieSecret   string
-	NostrSecretKey string
-	NostrPublicKey string
-	db             *gorm.DB
+	Env          *AppConfig
+	CookieSecret string
+	db           *gorm.DB
 }
 
 const (
@@ -82,14 +79,6 @@ func (cfg *config) init(env *AppConfig) {
 		}
 		cfg.CookieSecret, _ = cfg.Get("CookieSecret", "")
 	}
-}
-
-func (cfg *config) GetNostrPublicKey() string {
-	return cfg.NostrPublicKey
-}
-
-func (cfg *config) GetNostrSecretKey() string {
-	return cfg.NostrSecretKey
 }
 
 func (cfg *config) GetCookieSecret() string {
@@ -214,24 +203,6 @@ func (cfg *config) CheckUnlockPassword(encryptionKey string) bool {
 
 func (cfg *config) Setup(encryptionKey string) {
 	cfg.SetUpdate("UnlockPasswordCheck", unlockPasswordCheck, encryptionKey)
-}
-
-// TODO: move Nostr out of config
-func (cfg *config) Start(encryptionKey string) error {
-	nostrSecretKey, _ := cfg.Get("NostrSecretKey", encryptionKey)
-
-	if nostrSecretKey == "" {
-		nostrSecretKey = nostr.GeneratePrivateKey()
-		cfg.SetUpdate("NostrSecretKey", nostrSecretKey, encryptionKey)
-	}
-	nostrPublicKey, err := nostr.GetPublicKey(nostrSecretKey)
-	if err != nil {
-		logger.Logger.WithError(err).Error("Error converting nostr privkey to pubkey")
-		return err
-	}
-	cfg.NostrSecretKey = nostrSecretKey
-	cfg.NostrPublicKey = nostrPublicKey
-	return nil
 }
 
 func (cfg *config) GetEnv() *AppConfig {

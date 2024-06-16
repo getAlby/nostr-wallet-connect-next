@@ -5,6 +5,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/service/keys"
 	"gorm.io/gorm"
 )
 
@@ -20,4 +21,5 @@ type Service interface {
 	GetLNClient() lnclient.LNClient
 	GetDB() *gorm.DB
 	GetConfig() config.Config
+	GetKeys() keys.Keys
 }

@@ -26,19 +26,19 @@ func (svc *service) StartNostr(ctx context.Context, encryptionKey string) error 
 
 	relayUrl := svc.cfg.GetRelayUrl()
 
-	err := svc.cfg.Start(encryptionKey)
+	err := svc.keys.Init(svc.cfg, encryptionKey)
 	if err != nil {
-		logger.Logger.WithError(err).Fatal("Failed to start config")
+		logger.Logger.WithError(err).Fatal("Failed to init nostr keys")
 	}
 
-	npub, err := nip19.EncodePublicKey(svc.cfg.GetNostrPublicKey())
+	npub, err := nip19.EncodePublicKey(svc.keys.GetNostrPublicKey())
 	if err != nil {
 		logger.Logger.WithError(err).Fatal("Error converting nostr privkey to pubkey")
 	}
 
 	logger.Logger.WithFields(logrus.Fields{
 		"npub": npub,
-		"hex":  svc.cfg.GetNostrPublicKey(),
+		"hex":  svc.keys.GetNostrPublicKey(),
 	}).Info("Starting nostr-wallet-connect")
 	svc.wg.Add(1)
 	go func() {
@@ -72,7 +72,7 @@ func (svc *service) StartNostr(ctx context.Context, encryptionKey string) error 
 			//connect to the relay
 			logger.Logger.Infof("Connecting to the relay: %s", relayUrl)
 
-			relay, err := nostr.RelayConnect(ctx, relayUrl, nostr.WithNoticeHandler(svc.noticeHandler))
+			relay, err = nostr.RelayConnect(ctx, relayUrl, nostr.WithNoticeHandler(svc.noticeHandler))
 			if err != nil {
 				logger.Logger.WithError(err).Error("Failed to connect to relay")
 				continue
@@ -85,7 +85,7 @@ func (svc *service) StartNostr(ctx context.Context, encryptionKey string) error 
 			}
 
 			logger.Logger.Info("Subscribing to events")
-			sub, err := relay.Subscribe(ctx, svc.createFilters(svc.cfg.GetNostrPublicKey()))
+			sub, err := relay.Subscribe(ctx, svc.createFilters(svc.keys.GetNostrPublicKey()))
 			if err != nil {
 				logger.Logger.WithError(err).Error("Failed to subscribe to events")
 				continue

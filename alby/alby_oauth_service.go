@@ -21,12 +21,14 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	nip47 "github.com/getAlby/nostr-wallet-connect/nip47/models"
+	"github.com/getAlby/nostr-wallet-connect/service/keys"
 )
 
 type albyOAuthService struct {
 	cfg       config.Config
 	oauthConf *oauth2.Config
 	db        *gorm.DB
+	keys      keys.Keys
 }
 
 const (
@@ -36,7 +38,7 @@ const (
 	userIdentifierKey    = "AlbyUserIdentifier"
 )
 
-func NewAlbyOAuthService(db *gorm.DB, cfg config.Config) *albyOAuthService {
+func NewAlbyOAuthService(db *gorm.DB, cfg config.Config, keys keys.Keys) *albyOAuthService {
 	conf := &oauth2.Config{
 		ClientID:     cfg.GetEnv().AlbyClientId,
 		ClientSecret: cfg.GetEnv().AlbyClientSecret,
@@ -58,6 +60,7 @@ func NewAlbyOAuthService(db *gorm.DB, cfg config.Config) *albyOAuthService {
 		oauthConf: conf,
 		cfg:       cfg,
 		db:        db,
+		keys:      keys,
 	}
 	return albyOAuthSvc
 }
@@ -540,7 +543,7 @@ func (svc *albyOAuthService) createAlbyAccountNWCNode(ctx context.Context) (stri
 	}
 
 	createNodeRequest := createNWCNodeRequest{
-		WalletPubkey: svc.cfg.GetNostrPublicKey(),
+		WalletPubkey: svc.keys.GetNostrPublicKey(),
 	}
 
 	body := bytes.NewBuffer([]byte{})

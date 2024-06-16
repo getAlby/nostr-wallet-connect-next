@@ -32,7 +32,7 @@ func TestCreateResponse(t *testing.T) {
 
 	reqEvent.ID = "12345"
 
-	ss, err := nip04.ComputeSharedSecret(reqPubkey, svc.Cfg.GetNostrSecretKey())
+	ss, err := nip04.ComputeSharedSecret(reqPubkey, svc.Keys.GetNostrSecretKey())
 	assert.NoError(t, err)
 
 	type dummyResponse struct {
@@ -46,13 +46,13 @@ func TestCreateResponse(t *testing.T) {
 		},
 	}
 
-	nip47svc := NewNip47Service(svc.DB, svc.Cfg, svc.EventPublisher)
+	nip47svc := NewNip47Service(svc.DB, svc.Cfg, svc.Keys, svc.EventPublisher)
 
 	res, err := nip47svc.CreateResponse(reqEvent, nip47Response, nostr.Tags{}, ss)
 	assert.NoError(t, err)
 	assert.Equal(t, reqPubkey, res.Tags.GetFirst([]string{"p"}).Value())
 	assert.Equal(t, reqEvent.ID, res.Tags.GetFirst([]string{"e"}).Value())
-	assert.Equal(t, svc.Cfg.GetNostrPublicKey(), res.PubKey)
+	assert.Equal(t, svc.Keys.GetNostrPublicKey(), res.PubKey)
 
 	decrypted, err := nip04.Decrypt(res.Content, ss)
 	assert.NoError(t, err)
