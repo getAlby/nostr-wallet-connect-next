@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-raspberry-pi:
-    uses: ./.github/workflows/package-raspberry-pi.yaml
+    uses: ./.github/workflows/package-raspberry-pi.yml
 
   build-wails:
     uses: ./.github/workflows/wails2.yaml
