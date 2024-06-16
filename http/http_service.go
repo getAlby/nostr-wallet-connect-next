@@ -40,7 +40,7 @@ const (
 
 func NewHttpService(svc service.Service, eventPublisher events.EventPublisher) *HttpService {
 	return &HttpService{
-		api:            api.NewAPI(svc, svc.GetDB(), svc.GetConfig(), svc.GetKeys(), svc.GetEventPublisher()),
+		api:            api.NewAPI(svc, svc.GetDB(), svc.GetConfig(), svc.GetKeys(), svc.GetAlbyOAuthSvc(), svc.GetEventPublisher()),
 		albyHttpSvc:    alby.NewAlbyHttpService(svc.GetAlbyOAuthSvc(), svc.GetConfig().GetEnv()),
 		cfg:            svc.GetConfig(),
 		eventPublisher: eventPublisher,

@@ -25,11 +25,11 @@ import (
 func (api *api) CreateBackup(unlockPassword string, w io.Writer) error {
 	var err error
 
-	if !api.svc.GetConfig().CheckUnlockPassword(unlockPassword) {
+	if !api.cfg.CheckUnlockPassword(unlockPassword) {
 		return errors.New("invalid unlock password")
 	}
 
-	workDir, err := filepath.Abs(api.svc.GetConfig().GetEnv().Workdir)
+	workDir, err := filepath.Abs(api.cfg.GetEnv().Workdir)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute workdir: %w", err)
 	}
@@ -105,7 +105,7 @@ func (api *api) CreateBackup(unlockPassword string, w io.Writer) error {
 	}
 
 	// Locate the main database file.
-	dbFilePath := api.svc.GetConfig().GetEnv().DatabaseUri
+	dbFilePath := api.cfg.GetEnv().DatabaseUri
 	// Add the database file to the archive.
 	logger.Logger.WithField("nwc.db", dbFilePath).Info("adding nwc db to zip")
 	err = addFileToZip(dbFilePath, "nwc.db")
@@ -134,12 +134,12 @@ func (api *api) CreateBackup(unlockPassword string, w io.Writer) error {
 }
 
 func (api *api) RestoreBackup(unlockPassword string, r io.Reader) error {
-	workDir, err := filepath.Abs(api.svc.GetConfig().GetEnv().Workdir)
+	workDir, err := filepath.Abs(api.cfg.GetEnv().Workdir)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute workdir: %w", err)
 	}
 
-	if strings.HasPrefix(api.svc.GetConfig().GetEnv().DatabaseUri, "file:") {
+	if strings.HasPrefix(api.cfg.GetEnv().DatabaseUri, "file:") {
 		return errors.New("cannot restore backup when database path is a file URI")
 	}
 

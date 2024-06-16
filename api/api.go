@@ -34,9 +34,10 @@ type api struct {
 	svc            service.Service
 	permissionsSvc permissions.PermissionsService
 	keys           keys.Keys
+	albyOAuthSvc   alby.AlbyOAuthService
 }
 
-func NewAPI(svc service.Service, gormDB *gorm.DB, config config.Config, keys keys.Keys, eventsPublisher events.EventPublisher) *api {
+func NewAPI(svc service.Service, gormDB *gorm.DB, config config.Config, keys keys.Keys, albyOAuthSvc alby.AlbyOAuthService, eventsPublisher events.EventPublisher) *api {
 	return &api{
 		db:             gormDB,
 		dbSvc:          db.NewDBService(gormDB),
@@ -44,6 +45,7 @@ func NewAPI(svc service.Service, gormDB *gorm.DB, config config.Config, keys key
 		svc:            svc,
 		permissionsSvc: permissions.NewPermissionsService(gormDB, eventsPublisher),
 		keys:           keys,
+		albyOAuthSvc:   albyOAuthSvc,
 	}
 }
 
@@ -276,7 +278,7 @@ func (api *api) ListChannels(ctx context.Context) ([]lnclient.Channel, error) {
 }
 
 func (api *api) GetChannelPeerSuggestions(ctx context.Context) ([]alby.ChannelPeerSuggestion, error) {
-	return api.svc.GetAlbyOAuthSvc().GetChannelPeerSuggestions(ctx)
+	return api.albyOAuthSvc.GetChannelPeerSuggestions(ctx)
 }
 
 func (api *api) ResetRouter(key string) error {
@@ -531,15 +533,15 @@ func (api *api) GetInfo(ctx context.Context) (*InfoResponse, error) {
 	info.SetupCompleted = unlockPasswordCheck != ""
 	info.Running = api.svc.GetLNClient() != nil
 	info.BackendType = backendType
-	info.AlbyAuthUrl = api.svc.GetAlbyOAuthSvc().GetAuthUrl()
+	info.AlbyAuthUrl = api.albyOAuthSvc.GetAuthUrl()
 	info.OAuthRedirect = !api.cfg.GetEnv().IsDefaultClientId()
-	albyUserIdentifier, err := api.svc.GetAlbyOAuthSvc().GetUserIdentifier()
+	albyUserIdentifier, err := api.albyOAuthSvc.GetUserIdentifier()
 	if err != nil {
 		logger.Logger.WithError(err).Error("Failed to get alby user identifier")
 		return nil, err
 	}
 	info.AlbyUserIdentifier = albyUserIdentifier
-	info.AlbyAccountConnected = api.svc.GetAlbyOAuthSvc().IsConnected(ctx)
+	info.AlbyAccountConnected = api.albyOAuthSvc.IsConnected(ctx)
 	if api.svc.GetLNClient() != nil {
 		nodeInfo, err := api.svc.GetLNClient().GetInfo(ctx)
 		if err != nil {
@@ -619,7 +621,7 @@ func (api *api) Setup(ctx context.Context, setupRequest *SetupRequest) error {
 	}
 
 	if setupRequest.CashuMintUrl != "" {
-		api.svc.GetConfig().SetUpdate("CashuMintUrl", setupRequest.CashuMintUrl, setupRequest.UnlockPassword)
+		api.cfg.SetUpdate("CashuMintUrl", setupRequest.CashuMintUrl, setupRequest.UnlockPassword)
 	}
 
 	return nil
