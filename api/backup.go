@@ -17,46 +17,47 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 
+	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func (bs *api) CreateBackup(unlockPassword string, w io.Writer) error {
+func (api *api) CreateBackup(unlockPassword string, w io.Writer) error {
 	var err error
 
-	if !bs.svc.GetConfig().CheckUnlockPassword(unlockPassword) {
+	if !api.svc.GetConfig().CheckUnlockPassword(unlockPassword) {
 		return errors.New("invalid unlock password")
 	}
 
-	workDir, err := filepath.Abs(bs.svc.GetConfig().GetEnv().Workdir)
+	workDir, err := filepath.Abs(api.svc.GetConfig().GetEnv().Workdir)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute workdir: %w", err)
 	}
 
 	lnStorageDir := ""
 
-	if bs.svc.GetLNClient() == nil {
+	if api.svc.GetLNClient() == nil {
 		return fmt.Errorf("node not running")
 	}
-	lnStorageDir, err = bs.svc.GetLNClient().GetStorageDir()
+	lnStorageDir, err = api.svc.GetLNClient().GetStorageDir()
 	if err != nil {
 		return fmt.Errorf("failed to get storage dir: %w", err)
 	}
 	logger.Logger.WithField("path", lnStorageDir).Info("Found node storage dir")
 
 	// Reset the routing data to decrease the LDK DB size
-	err = bs.svc.GetLNClient().ResetRouter("ALL")
+	err = api.svc.GetLNClient().ResetRouter("ALL")
 	if err != nil {
 		logger.Logger.WithError(err).Error("Failed to reset router")
 		return fmt.Errorf("failed to reset router: %w", err)
 	}
 	// Stop the app to ensure no new requests are processed.
-	bs.svc.StopApp()
+	api.svc.StopApp()
 
 	// Closing the database leaves the service in an inconsistent state,
 	// but that should not be a problem since the app is not expected
 	// to be used after its data is exported.
-	err = bs.svc.StopDb()
+	err = db.Stop(api.db)
 	if err != nil {
 		logger.Logger.WithError(err).Error("Failed to stop database")
 		return fmt.Errorf("failed to close database: %w", err)
@@ -104,7 +105,7 @@ func (bs *api) CreateBackup(unlockPassword string, w io.Writer) error {
 	}
 
 	// Locate the main database file.
-	dbFilePath := bs.svc.GetConfig().GetEnv().DatabaseUri
+	dbFilePath := api.svc.GetConfig().GetEnv().DatabaseUri
 	// Add the database file to the archive.
 	logger.Logger.WithField("nwc.db", dbFilePath).Info("adding nwc db to zip")
 	err = addFileToZip(dbFilePath, "nwc.db")
@@ -132,13 +133,13 @@ func (bs *api) CreateBackup(unlockPassword string, w io.Writer) error {
 	return nil
 }
 
-func (bs *api) RestoreBackup(unlockPassword string, r io.Reader) error {
-	workDir, err := filepath.Abs(bs.svc.GetConfig().GetEnv().Workdir)
+func (api *api) RestoreBackup(unlockPassword string, r io.Reader) error {
+	workDir, err := filepath.Abs(api.svc.GetConfig().GetEnv().Workdir)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute workdir: %w", err)
 	}
 
-	if strings.HasPrefix(bs.svc.GetConfig().GetEnv().DatabaseUri, "file:") {
+	if strings.HasPrefix(api.svc.GetConfig().GetEnv().DatabaseUri, "file:") {
 		return errors.New("cannot restore backup when database path is a file URI")
 	}
 

@@ -29,8 +29,8 @@ type HttpService struct {
 	api            api.API
 	albyHttpSvc    *alby.AlbyHttpService
 	cfg            config.Config
-	db             *gorm.DB
 	eventPublisher events.EventPublisher
+	db             *gorm.DB
 }
 
 const (
@@ -38,13 +38,13 @@ const (
 	sessionCookieAuthKey = "authenticated"
 )
 
-func NewHttpService(svc service.Service, db *gorm.DB, eventPublisher events.EventPublisher) *HttpService {
+func NewHttpService(svc service.Service, eventPublisher events.EventPublisher) *HttpService {
 	return &HttpService{
-		api:            api.NewAPI(svc, db, svc.GetConfig()),
+		api:            api.NewAPI(svc, svc.GetDB(), svc.GetConfig(), svc.GetEventPublisher()),
 		albyHttpSvc:    alby.NewAlbyHttpService(svc.GetAlbyOAuthSvc(), svc.GetConfig().GetEnv()),
 		cfg:            svc.GetConfig(),
-		db:             db,
 		eventPublisher: eventPublisher,
+		db:             svc.GetDB(),
 	}
 }
 
@@ -601,8 +601,10 @@ func (httpSvc *HttpService) appsListHandler(c echo.Context) error {
 }
 
 func (httpSvc *HttpService) appsShowHandler(c echo.Context) error {
-	app := db.App{}
-	findResult := httpSvc.db.Where("nostr_pubkey = ?", c.Param("pubkey")).First(&app)
+
+	// TODO: move this to DB service
+	dbApp := db.App{}
+	findResult := httpSvc.db.Where("nostr_pubkey = ?", c.Param("pubkey")).First(&dbApp)
 
 	if findResult.RowsAffected == 0 {
 		return c.JSON(http.StatusNotFound, ErrorResponse{
@@ -610,7 +612,7 @@ func (httpSvc *HttpService) appsShowHandler(c echo.Context) error {
 		})
 	}
 
-	response := httpSvc.api.GetApp(&app)
+	response := httpSvc.api.GetApp(&dbApp)
 
 	return c.JSON(http.StatusOK, response)
 }
@@ -623,8 +625,9 @@ func (httpSvc *HttpService) appsUpdateHandler(c echo.Context) error {
 		})
 	}
 
-	app := db.App{}
-	findResult := httpSvc.db.Where("nostr_pubkey = ?", c.Param("pubkey")).First(&app)
+	// TODO: move this to DB service
+	dbApp := db.App{}
+	findResult := httpSvc.db.Where("nostr_pubkey = ?", c.Param("pubkey")).First(&dbApp)
 
 	if findResult.RowsAffected == 0 {
 		return c.JSON(http.StatusNotFound, ErrorResponse{
@@ -632,7 +635,7 @@ func (httpSvc *HttpService) appsUpdateHandler(c echo.Context) error {
 		})
 	}
 
-	err := httpSvc.api.UpdateApp(&app, &requestData)
+	err := httpSvc.api.UpdateApp(&dbApp, &requestData)
 
 	if err != nil {
 		logger.Logger.WithError(err).Error("Failed to update app")
@@ -651,8 +654,9 @@ func (httpSvc *HttpService) appsDeleteHandler(c echo.Context) error {
 			Message: "Invalid pubkey parameter",
 		})
 	}
-	app := db.App{}
-	result := httpSvc.db.Where("nostr_pubkey = ?", pubkey).First(&app)
+	// TODO: move this to DB service
+	dbApp := db.App{}
+	result := httpSvc.db.Where("nostr_pubkey = ?", pubkey).First(&dbApp)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return c.JSON(http.StatusNotFound, ErrorResponse{
@@ -664,7 +668,7 @@ func (httpSvc *HttpService) appsDeleteHandler(c echo.Context) error {
 		})
 	}
 
-	if err := httpSvc.api.DeleteApp(&app); err != nil {
+	if err := httpSvc.api.DeleteApp(&dbApp); err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Message: "Failed to delete app",
 		})

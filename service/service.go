@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"database/sql"
+
 	"errors"
 	"fmt"
 	"net/http"
@@ -16,13 +16,12 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/nbd-wtf/go-nostr"
 	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
-
-	"github.com/glebarez/sqlite"
-	"github.com/joho/godotenv"
-	"github.com/kelseyhightower/envconfig"
 	"gorm.io/gorm"
 
-	alby "github.com/getAlby/nostr-wallet-connect/alby"
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
+
+	"github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 
@@ -35,12 +34,13 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/lnclient/ldk"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/lnd"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/phoenixd"
-	"github.com/getAlby/nostr-wallet-connect/migrations"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
+	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 )
 
 type service struct {
-	cfg            config.Config
+	cfg config.Config
+
 	db             *gorm.DB
 	lnClient       lnclient.LNClient
 	albyOAuthSvc   alby.AlbyOAuthService
@@ -85,33 +85,12 @@ func NewService(ctx context.Context) (*service, error) {
 		}
 	}
 
-	var gormDB *gorm.DB
-	var sqlDb *sql.DB
-	gormDB, err = gorm.Open(sqlite.Open(appConfig.DatabaseUri), &gorm.Config{})
+	gormDB, err := db.NewDB(appConfig.DatabaseUri)
 	if err != nil {
-		return nil, err
-	}
-	err = gormDB.Exec("PRAGMA foreign_keys=ON;").Error
-	if err != nil {
-		return nil, err
-	}
-	err = gormDB.Exec("PRAGMA auto_vacuum=FULL;").Error
-	if err != nil {
-		return nil, err
-	}
-	sqlDb, err = gormDB.DB()
-	if err != nil {
-		return nil, err
-	}
-	sqlDb.SetMaxOpenConns(1)
-
-	err = migrations.Migrate(gormDB, appConfig)
-	if err != nil {
-		logger.Logger.WithError(err).Error("Failed to migrate")
 		return nil, err
 	}
 
-	cfg := config.NewConfig(gormDB, appConfig)
+	cfg := config.NewConfig(appConfig, gormDB)
 
 	eventPublisher := events.NewEventPublisher()
 
@@ -123,11 +102,12 @@ func NewService(ctx context.Context) (*service, error) {
 	var wg sync.WaitGroup
 	svc := &service{
 		cfg:            cfg,
-		db:             gormDB,
 		ctx:            ctx,
 		wg:             &wg,
 		eventPublisher: eventPublisher,
-		albyOAuthSvc:   alby.NewAlbyOAuthService(cfg, cfg.GetEnv(), db.NewDBService(gormDB)),
+		albyOAuthSvc:   alby.NewAlbyOAuthService(gormDB, cfg),
+		nip47Service:   nip47.NewNip47Service(gormDB, cfg, eventPublisher),
+		db:             gormDB,
 	}
 
 	eventPublisher.RegisterSubscriber(svc.albyOAuthSvc)
@@ -166,8 +146,6 @@ func (svc *service) StopLNClient() error {
 		svc.eventPublisher.Publish(&events.Event{
 			Event: "nwc_node_stopped",
 		})
-		// TODO: move this, use contexts instead
-		svc.nip47Service.Stop()
 	}
 	logger.Logger.Info("LNClient stopped successfully")
 	return nil
@@ -249,7 +227,7 @@ func (svc *service) launchLNBackend(ctx context.Context, encryptionKey string) e
 func (svc *service) createFilters(identityPubkey string) nostr.Filters {
 	filter := nostr.Filter{
 		Tags:  nostr.TagMap{"p": []string{identityPubkey}},
-		Kinds: []int{nip47.REQUEST_KIND},
+		Kinds: []int{models.REQUEST_KIND},
 	}
 	return []nostr.Filter{filter}
 }
@@ -272,7 +250,7 @@ func (svc *service) StartSubscription(ctx context.Context, sub *nostr.Subscripti
 
 		// loop through incoming events
 		for event := range sub.Events {
-			go svc.nip47Service.HandleEvent(ctx, sub, event)
+			go svc.nip47Service.HandleEvent(ctx, sub, event, svc.lnClient)
 		}
 		logger.Logger.Info("Relay subscription events channel ended")
 	}()
@@ -378,17 +356,8 @@ func startDataDogProfiler(ctx context.Context) {
 	}()
 }
 
-func (svc *service) StopDb() error {
-	db, err := svc.db.DB()
-	if err != nil {
-		return fmt.Errorf("failed to get database connection: %w", err)
-	}
-
-	err = db.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close database connection: %w", err)
-	}
-	return nil
+func (svc *service) GetDB() *gorm.DB {
+	return svc.db
 }
 
 func (svc *service) GetConfig() config.Config {
@@ -401,10 +370,6 @@ func (svc *service) GetAlbyOAuthSvc() alby.AlbyOAuthService {
 
 func (svc *service) GetNip47Service() nip47.Nip47Service {
 	return svc.nip47Service
-}
-
-func (svc *service) GetDB() *gorm.DB {
-	return svc.db
 }
 
 func (svc *service) GetEventPublisher() events.EventPublisher {

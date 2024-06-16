@@ -86,7 +86,7 @@ _If you get a blank screen, try running in your normal terminal (outside of vsco
 
 ### Testing
 
-    $ go test ./tests
+    $ go test ./...
 
 ### Profiling
 

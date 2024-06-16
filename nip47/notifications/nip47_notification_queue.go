@@ -1,4 +1,4 @@
-package nip47
+package notifications
 
 import (
 	"context"

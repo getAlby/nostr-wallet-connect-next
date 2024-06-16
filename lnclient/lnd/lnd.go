@@ -18,7 +18,6 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/lnclient/lnd/wrapper"
 	"github.com/getAlby/nostr-wallet-connect/logger"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
 
 	"github.com/sirupsen/logrus"
 	// "gorm.io/gorm"
@@ -30,7 +29,6 @@ import (
 // todo: drop dependency on lndhub package
 type LNDService struct {
 	client *wrapper.LNDWrapper
-	// db     *gorm.DB
 }
 
 func (svc *LNDService) GetBalance(ctx context.Context) (balance int64, err error) {
@@ -41,7 +39,7 @@ func (svc *LNDService) GetBalance(ctx context.Context) (balance int64, err error
 	return int64(resp.LocalBalance.Msat), nil
 }
 
-func (svc *LNDService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Transaction, err error) {
+func (svc *LNDService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []lnclient.Transaction, err error) {
 	// Fetch invoices
 	var invoices []*lnrpc.Invoice
 	if invoiceType == "" || invoiceType == "incoming" {
@@ -102,7 +100,7 @@ func (svc *LNDService) ListTransactions(ctx context.Context, from, until, limit,
 			settledAt = &settledAtUnix
 		}
 
-		transaction := nip47.Transaction{
+		transaction := lnclient.Transaction{
 			Type:            "outgoing",
 			Invoice:         payment.PaymentRequest,
 			Preimage:        payment.PaymentPreimage,
@@ -245,7 +243,7 @@ func (svc *LNDService) ListChannels(ctx context.Context) ([]lnclient.Channel, er
 	return channels, nil
 }
 
-func (svc *LNDService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Transaction, err error) {
+func (svc *LNDService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *lnclient.Transaction, err error) {
 	var descriptionHashBytes []byte
 
 	if descriptionHash != "" {
@@ -276,7 +274,7 @@ func (svc *LNDService) MakeInvoice(ctx context.Context, amount int64, descriptio
 	return transaction, nil
 }
 
-func (svc *LNDService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Transaction, err error) {
+func (svc *LNDService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *lnclient.Transaction, err error) {
 	paymentHashBytes, err := hex.DecodeString(paymentHash)
 
 	if err != nil || len(paymentHashBytes) != 32 {
@@ -320,7 +318,7 @@ func (svc *LNDService) SendPaymentSync(ctx context.Context, payReq string) (*lnc
 	}, nil
 }
 
-func (svc *LNDService) SendKeysend(ctx context.Context, amount int64, destination, preimage string, custom_records []lnclient.TLVRecord) (respPreimage string, err error) {
+func (svc *LNDService) SendKeysend(ctx context.Context, amount uint64, destination, preimage string, custom_records []lnclient.TLVRecord) (respPreimage string, err error) {
 	destBytes, err := hex.DecodeString(destination)
 	if err != nil {
 		return "", err
@@ -357,7 +355,7 @@ func (svc *LNDService) SendKeysend(ctx context.Context, amount int64, destinatio
 	destCustomRecords[KEYSEND_CUSTOM_RECORD] = preImageBytes
 	sendPaymentRequest := &lnrpc.SendRequest{
 		Dest:              destBytes,
-		AmtMsat:           amount,
+		AmtMsat:           int64(amount),
 		PaymentHash:       paymentHashBytes,
 		DestFeatures:      []lnrpc.FeatureBit{lnrpc.FeatureBit_TLV_ONION_REQ},
 		DestCustomRecords: destCustomRecords,
@@ -681,7 +679,7 @@ func (svc *LNDService) GetBalances(ctx context.Context) (*lnclient.BalancesRespo
 	}, nil
 }
 
-func lndInvoiceToTransaction(invoice *lnrpc.Invoice) *nip47.Transaction {
+func lndInvoiceToTransaction(invoice *lnrpc.Invoice) *lnclient.Transaction {
 	var settledAt *int64
 	var preimage string
 	if invoice.State == lnrpc.Invoice_SETTLED {
@@ -695,7 +693,7 @@ func lndInvoiceToTransaction(invoice *lnrpc.Invoice) *nip47.Transaction {
 		expiresAt = &expiresAtUnix
 	}
 
-	return &nip47.Transaction{
+	return &lnclient.Transaction{
 		Type:            "incoming",
 		Invoice:         invoice.PaymentRequest,
 		Description:     invoice.Memo,

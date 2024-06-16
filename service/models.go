@@ -5,20 +5,19 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"gorm.io/gorm"
 )
 
 type Service interface {
-	GetLNClient() lnclient.LNClient
-	GetConfig() config.Config
 	StartApp(encryptionKey string) error
 	StopApp()
 	StopLNClient() error
-	StopDb() error
-	GetAlbyOAuthSvc() alby.AlbyOAuthService
-	GetNip47Service() nip47.Nip47Service
-	GetDB() *gorm.DB
 	WaitShutdown()
+
+	// TODO: remove getters (currently used by http / wails services)
+	GetAlbyOAuthSvc() alby.AlbyOAuthService
 	GetEventPublisher() events.EventPublisher
+	GetLNClient() lnclient.LNClient
+	GetDB() *gorm.DB
+	GetConfig() config.Config
 }

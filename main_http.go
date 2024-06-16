@@ -33,7 +33,7 @@ func main() {
 	e := echo.New()
 
 	//register shared routes
-	httpSvc := http.NewHttpService(svc, svc.GetDB(), svc.GetEventPublisher())
+	httpSvc := http.NewHttpService(svc, svc.GetEventPublisher())
 	httpSvc.RegisterSharedRoutes(e)
 	//start Echo server
 	go func() {

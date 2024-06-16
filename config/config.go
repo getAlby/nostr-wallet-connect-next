@@ -26,14 +26,15 @@ const (
 	unlockPasswordCheck = "THIS STRING SHOULD MATCH IF PASSWORD IS CORRECT"
 )
 
-func NewConfig(db *gorm.DB, env *AppConfig) *config {
-	cfg := &config{}
-	cfg.init(db, env)
+func NewConfig(env *AppConfig, db *gorm.DB) *config {
+	cfg := &config{
+		db: db,
+	}
+	cfg.init(env)
 	return cfg
 }
 
-func (cfg *config) init(db *gorm.DB, env *AppConfig) {
-	cfg.db = db
+func (cfg *config) init(env *AppConfig) {
 	cfg.Env = env
 
 	if cfg.Env.Relay != "" {
@@ -215,6 +216,7 @@ func (cfg *config) Setup(encryptionKey string) {
 	cfg.SetUpdate("UnlockPasswordCheck", unlockPasswordCheck, encryptionKey)
 }
 
+// TODO: move Nostr out of config
 func (cfg *config) Start(encryptionKey string) error {
 	nostrSecretKey, _ := cfg.Get("NostrSecretKey", encryptionKey)
 

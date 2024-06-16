@@ -1,4 +1,4 @@
-package nip47
+package notifications
 
 import (
 	"context"
@@ -10,6 +10,8 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
+	"github.com/getAlby/nostr-wallet-connect/nip47/models"
+	"github.com/getAlby/nostr-wallet-connect/nip47/permissions"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/sirupsen/logrus"
@@ -21,20 +23,20 @@ type Relay interface {
 }
 
 type Nip47Notifier struct {
-	db       *gorm.DB
-	nip47Svc *nip47Service
-	relay    Relay
-	cfg      config.Config
-	lnClient lnclient.LNClient
+	relay          Relay
+	cfg            config.Config
+	lnClient       lnclient.LNClient
+	db             *gorm.DB
+	permissionsSvc permissions.PermissionsService
 }
 
-func NewNip47Notifier(nip47Svc *nip47Service, relay Relay, cfg config.Config, db *gorm.DB, lnClient lnclient.LNClient) *Nip47Notifier {
+func NewNip47Notifier(relay Relay, db *gorm.DB, cfg config.Config, permissionsSvc permissions.PermissionsService, lnClient lnclient.LNClient) *Nip47Notifier {
 	return &Nip47Notifier{
-		nip47Svc: nip47Svc,
-		relay:    relay,
-		cfg:      cfg,
-		db:       db,
-		lnClient: lnClient,
+		relay:          relay,
+		cfg:            cfg,
+		db:             db,
+		lnClient:       lnClient,
+		permissionsSvc: permissionsSvc,
 	}
 }
 
@@ -72,7 +74,7 @@ func (notifier *Nip47Notifier) notifySubscribers(ctx context.Context, notificati
 	notifier.db.Find(&apps)
 
 	for _, app := range apps {
-		hasPermission, _, _ := notifier.nip47Svc.HasPermission(&app, NOTIFICATIONS_PERMISSION, 0)
+		hasPermission, _, _ := notifier.permissionsSvc.HasPermission(&app, permissions.NOTIFICATIONS_PERMISSION, 0)
 		if !hasPermission {
 			continue
 		}
@@ -118,7 +120,7 @@ func (notifier *Nip47Notifier) notifySubscriber(ctx context.Context, app *db.App
 	event := &nostr.Event{
 		PubKey:    notifier.cfg.GetNostrPublicKey(),
 		CreatedAt: nostr.Now(),
-		Kind:      NOTIFICATION_KIND,
+		Kind:      models.NOTIFICATION_KIND,
 		Tags:      allTags,
 		Content:   msg,
 	}

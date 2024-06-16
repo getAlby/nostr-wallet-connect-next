@@ -5,17 +5,16 @@ import (
 	"time"
 
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 
 // for the invoice:
 // lnbcrt5u1pjuywzppp5h69dt59cypca2wxu69sw8ga0g39a3yx7dqug5nthrw3rcqgfdu4qdqqcqzzsxqyz5vqsp5gzlpzszyj2k30qmpme7jsfzr24wqlvt9xdmr7ay34lfelz050krs9qyyssq038x07nh8yuv8hdpjh5y8kqp7zcd62ql9na9xh7pla44htjyy02sz23q7qm2tza6ct4ypljk54w9k9qsrsu95usk8ce726ytep6vhhsq9mhf9a
-const mockPaymentHash500 = "be8ad5d0b82071d538dcd160e3a3af444bd890de68388a4d771ba23c01096f2a"
+const MockPaymentHash500 = "be8ad5d0b82071d538dcd160e3a3af444bd890de68388a4d771ba23c01096f2a"
 
-const mockInvoice = "lntb1230n1pjypux0pp5xgxzcks5jtx06k784f9dndjh664wc08ucrganpqn52d0ftrh9n8sdqyw3jscqzpgxqyz5vqsp5rkx7cq252p3frx8ytjpzc55rkgyx2mfkzzraa272dqvr2j6leurs9qyyssqhutxa24r5hqxstchz5fxlslawprqjnarjujp5sm3xj7ex73s32sn54fthv2aqlhp76qmvrlvxppx9skd3r5ut5xutgrup8zuc6ay73gqmra29m"
-const mockPaymentHash = "320c2c5a1492ccfd5bc7aa4ad9b657d6aaec3cfcc0d1d98413a29af4ac772ccf" // for the above invoice
+const MockInvoice = "lntb1230n1pjypux0pp5xgxzcks5jtx06k784f9dndjh664wc08ucrganpqn52d0ftrh9n8sdqyw3jscqzpgxqyz5vqsp5rkx7cq252p3frx8ytjpzc55rkgyx2mfkzzraa272dqvr2j6leurs9qyyssqhutxa24r5hqxstchz5fxlslawprqjnarjujp5sm3xj7ex73s32sn54fthv2aqlhp76qmvrlvxppx9skd3r5ut5xutgrup8zuc6ay73gqmra29m"
+const MockPaymentHash = "320c2c5a1492ccfd5bc7aa4ad9b657d6aaec3cfcc0d1d98413a29af4ac772ccf" // for the above invoice
 
-var mockNodeInfo = lnclient.NodeInfo{
+var MockNodeInfo = lnclient.NodeInfo{
 	Alias:       "bob",
 	Color:       "#3399FF",
 	Pubkey:      "123pubkey",
@@ -24,20 +23,20 @@ var mockNodeInfo = lnclient.NodeInfo{
 	BlockHash:   "123blockhash",
 }
 
-var mockTime = time.Unix(1693876963, 0)
-var mockTimeUnix = mockTime.Unix()
+var MockTime = time.Unix(1693876963, 0)
+var MockTimeUnix = MockTime.Unix()
 
-var mockTransactions = []nip47.Transaction{
+var MockTransactions = []lnclient.Transaction{
 	{
 		Type:            "incoming",
-		Invoice:         mockInvoice,
+		Invoice:         MockInvoice,
 		Description:     "mock invoice 1",
 		DescriptionHash: "hash1",
 		Preimage:        "preimage1",
 		PaymentHash:     "payment_hash_1",
 		Amount:          1000,
 		FeesPaid:        50,
-		SettledAt:       &mockTimeUnix,
+		SettledAt:       &MockTimeUnix,
 		Metadata: map[string]interface{}{
 			"key1": "value1",
 			"key2": 42,
@@ -45,17 +44,17 @@ var mockTransactions = []nip47.Transaction{
 	},
 	{
 		Type:            "incoming",
-		Invoice:         mockInvoice,
+		Invoice:         MockInvoice,
 		Description:     "mock invoice 2",
 		DescriptionHash: "hash2",
 		Preimage:        "preimage2",
 		PaymentHash:     "payment_hash_2",
 		Amount:          2000,
 		FeesPaid:        75,
-		SettledAt:       &mockTimeUnix,
+		SettledAt:       &MockTimeUnix,
 	},
 }
-var mockTransaction = &mockTransactions[0]
+var MockTransaction = &MockTransactions[0]
 
 type MockLn struct {
 }
@@ -70,7 +69,7 @@ func (mln *MockLn) SendPaymentSync(ctx context.Context, payReq string) (*lnclien
 	}, nil
 }
 
-func (mln *MockLn) SendKeysend(ctx context.Context, amount int64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
+func (mln *MockLn) SendKeysend(ctx context.Context, amount uint64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
 	return "12345preimage", nil
 }
 
@@ -79,19 +78,19 @@ func (mln *MockLn) GetBalance(ctx context.Context) (balance int64, err error) {
 }
 
 func (mln *MockLn) GetInfo(ctx context.Context) (info *lnclient.NodeInfo, err error) {
-	return &mockNodeInfo, nil
+	return &MockNodeInfo, nil
 }
 
-func (mln *MockLn) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Transaction, err error) {
-	return mockTransaction, nil
+func (mln *MockLn) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *lnclient.Transaction, err error) {
+	return MockTransaction, nil
 }
 
-func (mln *MockLn) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Transaction, err error) {
-	return mockTransaction, nil
+func (mln *MockLn) LookupInvoice(ctx context.Context, paymentHash string) (transaction *lnclient.Transaction, err error) {
+	return MockTransaction, nil
 }
 
-func (mln *MockLn) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (invoices []nip47.Transaction, err error) {
-	return mockTransactions, nil
+func (mln *MockLn) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (invoices []lnclient.Transaction, err error) {
+	return MockTransactions, nil
 }
 func (mln *MockLn) Shutdown() error {
 	return nil

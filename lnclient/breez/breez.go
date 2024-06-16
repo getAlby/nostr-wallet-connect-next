@@ -18,7 +18,6 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 
 type BreezService struct {
@@ -117,7 +116,7 @@ func (bs *BreezService) SendPaymentSync(ctx context.Context, payReq string) (*ln
 
 }
 
-func (bs *BreezService) SendKeysend(ctx context.Context, amount int64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
+func (bs *BreezService) SendKeysend(ctx context.Context, amount uint64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
 	extraTlvs := []breez_sdk.TlvEntry{}
 	for _, record := range custom_records {
 		extraTlvs = append(extraTlvs, breez_sdk.TlvEntry{
@@ -128,7 +127,7 @@ func (bs *BreezService) SendKeysend(ctx context.Context, amount int64, destinati
 
 	sendSpontaneousPaymentRequest := breez_sdk.SendSpontaneousPaymentRequest{
 		NodeId:     destination,
-		AmountMsat: uint64(amount),
+		AmountMsat: amount,
 		ExtraTlvs:  &extraTlvs,
 	}
 	resp, err := bs.svc.SendSpontaneousPayment(sendSpontaneousPaymentRequest)
@@ -150,7 +149,7 @@ func (bs *BreezService) GetBalance(ctx context.Context) (balance int64, err erro
 	return int64(info.MaxPayableMsat), nil
 }
 
-func (bs *BreezService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Transaction, err error) {
+func (bs *BreezService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *lnclient.Transaction, err error) {
 	expiry32 := uint32(expiry)
 	receivePaymentRequest := breez_sdk.ReceivePaymentRequest{
 		// amount provided in msat
@@ -163,7 +162,7 @@ func (bs *BreezService) MakeInvoice(ctx context.Context, amount int64, descripti
 		return nil, err
 	}
 
-	tx := &nip47.Transaction{
+	tx := &lnclient.Transaction{
 		Type:        "incoming",
 		Invoice:     resp.LnInvoice.Bolt11,
 		Preimage:    hex.EncodeToString(resp.LnInvoice.PaymentSecret),
@@ -188,7 +187,7 @@ func (bs *BreezService) MakeInvoice(ctx context.Context, amount int64, descripti
 	return tx, nil
 }
 
-func (bs *BreezService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Transaction, err error) {
+func (bs *BreezService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *lnclient.Transaction, err error) {
 	log.Printf("p: %v", paymentHash)
 	payment, err := bs.svc.PaymentByHash(paymentHash)
 	if err != nil {
@@ -206,7 +205,7 @@ func (bs *BreezService) LookupInvoice(ctx context.Context, paymentHash string) (
 	}
 }
 
-func (bs *BreezService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Transaction, err error) {
+func (bs *BreezService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []lnclient.Transaction, err error) {
 
 	request := breez_sdk.ListPaymentsRequest{}
 	if limit > 0 {
@@ -231,7 +230,7 @@ func (bs *BreezService) ListTransactions(ctx context.Context, from, until, limit
 		return nil, err
 	}
 
-	transactions = []nip47.Transaction{}
+	transactions = []lnclient.Transaction{}
 	for _, payment := range payments {
 		if payment.PaymentType != breez_sdk.PaymentTypeReceived && payment.PaymentType != breez_sdk.PaymentTypeSent {
 			// skip other types of payments for now
@@ -277,7 +276,7 @@ func (bs *BreezService) CloseChannel(ctx context.Context, closeChannelRequest *l
 	return nil, nil
 }
 
-func breezPaymentToTransaction(payment *breez_sdk.Payment) (*nip47.Transaction, error) {
+func breezPaymentToTransaction(payment *breez_sdk.Payment) (*lnclient.Transaction, error) {
 	var lnDetails breez_sdk.PaymentDetailsLn
 	if payment.Details != nil {
 		lnDetails, _ = payment.Details.(breez_sdk.PaymentDetailsLn)
@@ -309,7 +308,7 @@ func breezPaymentToTransaction(payment *breez_sdk.Payment) (*nip47.Transaction, 
 		descriptionHash = paymentRequest.DescriptionHash
 	}
 
-	tx := &nip47.Transaction{
+	tx := &lnclient.Transaction{
 		Type:            txType,
 		Invoice:         lnDetails.Data.Bolt11,
 		Preimage:        lnDetails.Data.PaymentPreimage,

@@ -6,25 +6,28 @@ import (
 	"log"
 
 	"github.com/getAlby/nostr-wallet-connect/api"
+	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/service"
-	"github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
+	"gorm.io/gorm"
 )
 
 type WailsApp struct {
 	ctx context.Context
 	svc service.Service
 	api api.API
+	db  *gorm.DB
 }
 
 func NewApp(svc service.Service) *WailsApp {
 	return &WailsApp{
 		svc: svc,
-		api: api.NewAPI(svc, svc.GetDB(), svc.GetConfig()),
+		api: api.NewAPI(svc, svc.GetDB(), svc.GetConfig(), svc.GetEventPublisher()),
+		db:  svc.GetDB(),
 	}
 }
 
@@ -35,8 +38,6 @@ func (app *WailsApp) startup(ctx context.Context) {
 }
 
 func LaunchWailsApp(app *WailsApp, assets embed.FS, appIcon []byte) {
-	logger := NewWailsLogger(app.logger.Logger)
-
 	err := wails.Run(&options.App{
 		Title:  "AlbyHub",
 		Width:  1024,
@@ -44,6 +45,7 @@ func LaunchWailsApp(app *WailsApp, assets embed.FS, appIcon []byte) {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
+		Logger: NewWailsLogger(),
 		// HideWindowOnClose: true, // with this on, there is no way to close the app - wait for v3
 
 		//BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
@@ -67,40 +69,37 @@ func LaunchWailsApp(app *WailsApp, assets embed.FS, appIcon []byte) {
 	}
 }
 
-func NewWailsLogger(appLogger *logrus.Logger) WailsLogger {
-	return WailsLogger{
-		AppLogger: appLogger,
-	}
+func NewWailsLogger() WailsLogger {
+	return WailsLogger{}
 }
 
 type WailsLogger struct {
-	App
 }
 
-func (logger WailsLogger) Print(message string) {
-	logger.AppLogger.Print(message)
+func (wailsLogger WailsLogger) Print(message string) {
+	logger.Logger.Print(message)
 }
 
-func (logger WailsLogger) Trace(message string) {
-	logger.AppLogger.Trace(message)
+func (wailsLogger WailsLogger) Trace(message string) {
+	logger.Logger.Trace(message)
 }
 
-func (logger WailsLogger) Debug(message string) {
-	logger.AppLogger.Debug(message)
+func (wailsLogger WailsLogger) Debug(message string) {
+	logger.Logger.Debug(message)
 }
 
-func (logger WailsLogger) Info(message string) {
-	logger.Applogger.Logger.Info(message)
+func (wailsLogger WailsLogger) Info(message string) {
+	logger.Logger.Info(message)
 }
 
-func (logger WailsLogger) Warning(message string) {
-	logger.Applogger.Logger.Warning(message)
+func (wailsLogger WailsLogger) Warning(message string) {
+	logger.Logger.Warning(message)
 }
 
-func (logger WailsLogger) Error(message string) {
-	logger.Applogger.Logger.Error(message)
+func (wailsLogger WailsLogger) Error(message string) {
+	logger.Logger.Error(message)
 }
 
-func (logger WailsLogger) Fatal(message string) {
-	logger.AppLogger.Fatal(message)
+func (wailsLogger WailsLogger) Fatal(message string) {
+	logger.Logger.Fatal(message)
 }

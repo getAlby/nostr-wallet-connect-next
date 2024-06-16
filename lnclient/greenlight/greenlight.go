@@ -22,7 +22,6 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 
 type GreenlightService struct {
@@ -127,7 +126,7 @@ func (gs *GreenlightService) SendPaymentSync(ctx context.Context, payReq string)
 	}, nil
 }
 
-func (gs *GreenlightService) SendKeysend(ctx context.Context, amount int64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
+func (gs *GreenlightService) SendKeysend(ctx context.Context, amount uint64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
 
 	extraTlvs := []glalby.TlvEntry{}
 
@@ -138,11 +137,10 @@ func (gs *GreenlightService) SendKeysend(ctx context.Context, amount int64, dest
 		})
 	}
 
-	amount_u64 := uint64(amount)
 	// TODO: support passing custom preimage
 	response, err := gs.client.KeySend(glalby.KeySendRequest{
 		Destination: destination,
-		AmountMsat:  &amount_u64,
+		AmountMsat:  &amount,
 		ExtraTlvs:   &extraTlvs,
 	})
 
@@ -172,7 +170,7 @@ func (gs *GreenlightService) GetBalance(ctx context.Context) (balance int64, err
 	return balance, nil
 }
 
-func (gs *GreenlightService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Transaction, err error) {
+func (gs *GreenlightService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *lnclient.Transaction, err error) {
 	uexpiry := uint64(expiry)
 	// TODO: it seems description hash cannot be passed to greenlight
 	invoice, err := gs.client.MakeInvoice(glalby.MakeInvoiceRequest{
@@ -198,7 +196,7 @@ func (gs *GreenlightService) MakeInvoice(ctx context.Context, amount int64, desc
 	description = paymentRequest.Description
 	descriptionHash = paymentRequest.DescriptionHash
 	expiresAt := int64(invoice.ExpiresAt)
-	transaction = &nip47.Transaction{
+	transaction = &lnclient.Transaction{
 		Type:            "incoming",
 		Invoice:         invoice.Bolt11,
 		Description:     description,
@@ -212,7 +210,7 @@ func (gs *GreenlightService) MakeInvoice(ctx context.Context, amount int64, desc
 	return transaction, nil
 }
 
-func (gs *GreenlightService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Transaction, err error) {
+func (gs *GreenlightService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *lnclient.Transaction, err error) {
 	response, err := gs.client.ListInvoices(glalby.ListInvoicesRequest{
 		PaymentHash: &paymentHash,
 	})
@@ -241,7 +239,7 @@ func (gs *GreenlightService) LookupInvoice(ctx context.Context, paymentHash stri
 	return transaction, nil
 }
 
-func (gs *GreenlightService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Transaction, err error) {
+func (gs *GreenlightService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []lnclient.Transaction, err error) {
 	listInvoicesResponse, err := gs.client.ListInvoices(glalby.ListInvoicesRequest{})
 
 	if err != nil {
@@ -249,7 +247,7 @@ func (gs *GreenlightService) ListTransactions(ctx context.Context, from, until, 
 		return nil, err
 	}
 
-	transactions = []nip47.Transaction{}
+	transactions = []lnclient.Transaction{}
 
 	if err != nil {
 		log.Printf("ListInvoices failed: %v", err)
@@ -543,7 +541,7 @@ func (gs *GreenlightService) SignMessage(ctx context.Context, message string) (s
 	return response.Zbase, nil
 }
 
-func (gs *GreenlightService) greenlightInvoiceToTransaction(invoice *glalby.ListInvoicesInvoice) (*nip47.Transaction, error) {
+func (gs *GreenlightService) greenlightInvoiceToTransaction(invoice *glalby.ListInvoicesInvoice) (*lnclient.Transaction, error) {
 	description := ""
 	descriptionHash := ""
 	if invoice.Description != nil {
@@ -581,7 +579,7 @@ func (gs *GreenlightService) greenlightInvoiceToTransaction(invoice *glalby.List
 		settledAt = &paidAt
 	}
 
-	transaction := &nip47.Transaction{
+	transaction := &lnclient.Transaction{
 		Type:            "incoming",
 		Invoice:         bolt11,
 		Description:     description,

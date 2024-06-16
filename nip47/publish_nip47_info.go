@@ -4,16 +4,18 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/getAlby/nostr-wallet-connect/nip47/models"
+	"github.com/getAlby/nostr-wallet-connect/nip47/notifications"
 	"github.com/nbd-wtf/go-nostr"
 )
 
 func (svc *nip47Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay) error {
 	ev := &nostr.Event{}
-	ev.Kind = INFO_EVENT_KIND
-	ev.Content = CAPABILITIES
+	ev.Kind = models.INFO_EVENT_KIND
+	ev.Content = models.CAPABILITIES
 	ev.CreatedAt = nostr.Now()
 	ev.PubKey = svc.cfg.GetNostrPublicKey()
-	ev.Tags = nostr.Tags{[]string{"notifications", NOTIFICATION_TYPES}}
+	ev.Tags = nostr.Tags{[]string{"notifications", notifications.NOTIFICATION_TYPES}}
 	err := ev.Sign(svc.cfg.GetNostrSecretKey())
 	if err != nil {
 		return err

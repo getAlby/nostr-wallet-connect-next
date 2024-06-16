@@ -17,26 +17,30 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/alby"
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
+	nip47 "github.com/getAlby/nostr-wallet-connect/nip47/models"
+	permissions "github.com/getAlby/nostr-wallet-connect/nip47/permissions"
 	"github.com/getAlby/nostr-wallet-connect/service"
 	"github.com/getAlby/nostr-wallet-connect/utils"
 )
 
 type api struct {
-	db    *gorm.DB
-	dbSvc db.DBService
-	cfg   config.Config
-	svc   service.Service
+	db             *gorm.DB
+	dbSvc          db.DBService
+	cfg            config.Config
+	svc            service.Service
+	permissionsSvc permissions.PermissionsService
 }
 
-func NewAPI(svc service.Service, gormDb *gorm.DB, config config.Config) *api {
+func NewAPI(svc service.Service, gormDB *gorm.DB, config config.Config, eventsPublisher events.EventPublisher) *api {
 	return &api{
-		db:    gormDb,
-		dbSvc: db.NewDBService(gormDb),
-		cfg:   config,
-		svc:   svc,
+		db:             gormDB,
+		dbSvc:          db.NewDBService(gormDB),
+		cfg:            config,
+		svc:            svc,
+		permissionsSvc: permissions.NewPermissionsService(gormDB, eventsPublisher),
 	}
 }
 
@@ -138,7 +142,7 @@ func (api *api) UpdateApp(userApp *db.App, updateAppRequest *UpdateAppRequest) e
 					App:           *userApp,
 					RequestMethod: method,
 					ExpiresAt:     expiresAt,
-					MaxAmount:     maxAmount,
+					MaxAmount:     int(maxAmount),
 					BudgetRenewal: budgetRenewal,
 				}
 				if err := tx.Create(&perm).Error; err != nil {
@@ -187,10 +191,10 @@ func (api *api) GetApp(userApp *db.App) *App {
 	}
 
 	//renewsIn := ""
-	budgetUsage := int64(0)
-	maxAmount := paySpecificPermission.MaxAmount
+	budgetUsage := uint64(0)
+	maxAmount := uint64(paySpecificPermission.MaxAmount)
 	if maxAmount > 0 {
-		budgetUsage = api.svc.GetNip47Service().GetBudgetUsage(&paySpecificPermission)
+		budgetUsage = api.permissionsSvc.GetBudgetUsage(&paySpecificPermission)
 	}
 
 	response := App{
@@ -243,9 +247,9 @@ func (api *api) ListApps() ([]App, error) {
 			apiApp.ExpiresAt = permission.ExpiresAt
 			if permission.RequestMethod == nip47.PAY_INVOICE_METHOD {
 				apiApp.BudgetRenewal = permission.BudgetRenewal
-				apiApp.MaxAmount = permission.MaxAmount
+				apiApp.MaxAmount = uint64(permission.MaxAmount)
 				if apiApp.MaxAmount > 0 {
-					apiApp.BudgetUsage = api.svc.GetNip47Service().GetBudgetUsage(&permission)
+					apiApp.BudgetUsage = api.permissionsSvc.GetBudgetUsage(&permission)
 				}
 			}
 		}

@@ -11,12 +11,9 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/logger"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
 )
 
 func (svc *service) StartNostr(ctx context.Context, encryptionKey string) error {
-
-	svc.nip47Service = nip47.NewNip47Service(svc.db, svc.eventPublisher, svc.cfg, svc.lnClient)
 
 	relayUrl := svc.cfg.GetRelayUrl()
 

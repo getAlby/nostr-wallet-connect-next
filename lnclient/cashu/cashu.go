@@ -13,7 +13,6 @@ import (
 	"github.com/elnosh/gonuts/wallet/storage"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
 )
@@ -90,7 +89,7 @@ func (cs *CashuService) SendPaymentSync(ctx context.Context, invoice string) (re
 	}, nil
 }
 
-func (cs *CashuService) SendKeysend(ctx context.Context, amount int64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
+func (cs *CashuService) SendKeysend(ctx context.Context, amount uint64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
 	return "", errors.New("Keysend not supported")
 }
 
@@ -105,7 +104,7 @@ func (cs *CashuService) GetBalance(ctx context.Context) (balance int64, err erro
 	return int64(totalBalance * 1000), nil
 }
 
-func (cs *CashuService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Transaction, err error) {
+func (cs *CashuService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *lnclient.Transaction, err error) {
 	mintResponse, err := cs.wallet.RequestMint(uint64(amount / 1000))
 	if err != nil {
 		logger.Logger.WithError(err).Error("Failed to mint")
@@ -123,7 +122,7 @@ func (cs *CashuService) MakeInvoice(ctx context.Context, amount int64, descripti
 	return cs.LookupInvoice(ctx, paymentRequest.PaymentHash)
 }
 
-func (cs *CashuService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Transaction, err error) {
+func (cs *CashuService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *lnclient.Transaction, err error) {
 	cashuInvoice := cs.wallet.GetInvoiceByPaymentHash(paymentHash)
 
 	if cashuInvoice == nil {
@@ -138,8 +137,8 @@ func (cs *CashuService) LookupInvoice(ctx context.Context, paymentHash string) (
 	return transaction, nil
 }
 
-func (cs *CashuService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Transaction, err error) {
-	transactions = []nip47.Transaction{}
+func (cs *CashuService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []lnclient.Transaction, err error) {
+	transactions = []lnclient.Transaction{}
 
 	invoices := cs.wallet.GetAllInvoices()
 
@@ -274,7 +273,7 @@ func (cs *CashuService) GetBalances(ctx context.Context) (*lnclient.BalancesResp
 	}, nil
 }
 
-func (cs *CashuService) cashuInvoiceToTransaction(cashuInvoice *storage.Invoice) (*nip47.Transaction, error) {
+func (cs *CashuService) cashuInvoiceToTransaction(cashuInvoice *storage.Invoice) (*lnclient.Transaction, error) {
 	paymentRequest, err := decodepay.Decodepay(cashuInvoice.PaymentRequest)
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
@@ -300,7 +299,7 @@ func (cs *CashuService) cashuInvoiceToTransaction(cashuInvoice *storage.Invoice)
 		invoiceType = "incoming"
 	}
 
-	return &nip47.Transaction{
+	return &lnclient.Transaction{
 		Type:            invoiceType,
 		Invoice:         cashuInvoice.PaymentRequest,
 		PaymentHash:     paymentRequest.PaymentHash,

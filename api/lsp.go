@@ -25,7 +25,7 @@ type lspConnectionInfo struct {
 	Port    uint16
 }
 
-func (ls *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstantChannelInvoiceRequest) (*NewInstantChannelInvoiceResponse, error) {
+func (api *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstantChannelInvoiceRequest) (*NewInstantChannelInvoiceResponse, error) {
 	var selectedLsp lsp.LSP
 	switch request.LSP {
 	case "VOLTAGE":
@@ -48,7 +48,7 @@ func (ls *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstant
 		return nil, errors.New("unknown LSP")
 	}
 
-	if ls.svc.GetLNClient() == nil {
+	if api.svc.GetLNClient() == nil {
 		return nil, errors.New("LNClient not started")
 	}
 
@@ -64,10 +64,10 @@ func (ls *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstant
 	case lsp.LSP_TYPE_FLOW_2_0:
 		fallthrough
 	case lsp.LSP_TYPE_PMLSP:
-		lspInfo, err = ls.getFlowLSPInfo(selectedLsp.Url + "/info")
+		lspInfo, err = api.getFlowLSPInfo(selectedLsp.Url + "/info")
 
 	case lsp.LSP_TYPE_LSPS1:
-		lspInfo, err = ls.getLSPS1LSPInfo(selectedLsp.Url + "/get_info")
+		lspInfo, err = api.getLSPS1LSPInfo(selectedLsp.Url + "/get_info")
 
 	default:
 		return nil, fmt.Errorf("unsupported LSP type: %v", selectedLsp.LspType)
@@ -79,7 +79,7 @@ func (ls *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstant
 
 	logger.Logger.Infoln("Requesting own node info")
 
-	nodeInfo, err := ls.svc.GetLNClient().GetInfo(ctx)
+	nodeInfo, err := api.svc.GetLNClient().GetInfo(ctx)
 	if err != nil {
 		logger.Logger.WithError(err).WithFields(logrus.Fields{
 			"url": selectedLsp.Url,
@@ -89,7 +89,7 @@ func (ls *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstant
 
 	logger.Logger.WithField("lspInfo", lspInfo).Info("Connecting to LSP node as a peer")
 
-	err = ls.svc.GetLNClient().ConnectPeer(ctx, &lnclient.ConnectPeerRequest{
+	err = api.svc.GetLNClient().ConnectPeer(ctx, &lnclient.ConnectPeerRequest{
 		Pubkey:  lspInfo.Pubkey,
 		Address: lspInfo.Address,
 		Port:    lspInfo.Port,
@@ -105,11 +105,11 @@ func (ls *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstant
 
 	switch selectedLsp.LspType {
 	case lsp.LSP_TYPE_FLOW_2_0:
-		invoice, fee, err = ls.requestFlow20WrappedInvoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey)
+		invoice, fee, err = api.requestFlow20WrappedInvoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey)
 	case lsp.LSP_TYPE_PMLSP:
-		invoice, fee, err = ls.requestPMLSPInvoice(&selectedLsp, request.Amount, nodeInfo.Pubkey)
+		invoice, fee, err = api.requestPMLSPInvoice(&selectedLsp, request.Amount, nodeInfo.Pubkey)
 	case lsp.LSP_TYPE_LSPS1:
-		invoice, fee, err = ls.requestLSPS1Invoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey, request.Public)
+		invoice, fee, err = api.requestLSPS1Invoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey, request.Public)
 
 	default:
 		return nil, fmt.Errorf("unsupported LSP type: %v", selectedLsp.LspType)
@@ -131,7 +131,7 @@ func (ls *api) NewInstantChannelInvoice(ctx context.Context, request *NewInstant
 	return newChannelResponse, nil
 }
 
-func (ls *api) getLSPS1LSPInfo(url string) (*lspConnectionInfo, error) {
+func (api *api) getLSPS1LSPInfo(url string) (*lspConnectionInfo, error) {
 	type LSPS1LSPInfo struct {
 		// TODO: implement options
 		Options interface{} `json:"options"`
@@ -199,7 +199,7 @@ func (ls *api) getLSPS1LSPInfo(url string) (*lspConnectionInfo, error) {
 		Port:    uint16(port),
 	}, nil
 }
-func (ls *api) getFlowLSPInfo(url string) (*lspConnectionInfo, error) {
+func (api *api) getFlowLSPInfo(url string) (*lspConnectionInfo, error) {
 	type FlowLSPConnectionMethod struct {
 		Address string `json:"address"`
 		Port    uint16 `json:"port"`
@@ -267,7 +267,7 @@ func (ls *api) getFlowLSPInfo(url string) (*lspConnectionInfo, error) {
 	}, nil
 }
 
-func (ls *api) requestFlow20WrappedInvoice(ctx context.Context, selectedLsp *lsp.LSP, amount uint64, pubkey string) (invoice string, fee uint64, err error) {
+func (api *api) requestFlow20WrappedInvoice(ctx context.Context, selectedLsp *lsp.LSP, amount uint64, pubkey string) (invoice string, fee uint64, err error) {
 	logger.Logger.Infoln("Requesting fee information")
 
 	type FeeRequest struct {
@@ -352,7 +352,7 @@ func (ls *api) requestFlow20WrappedInvoice(ctx context.Context, selectedLsp *lsp
 
 	// because we don't want the sender to pay the fee
 	// see: https://docs.voltage.cloud/voltage-lsp#gqBqV
-	makeInvoiceResponse, err := ls.svc.GetLNClient().MakeInvoice(ctx, int64(amount)*1000-int64(feeResponse.FeeAmountMsat), "", "", 60*60)
+	makeInvoiceResponse, err := api.svc.GetLNClient().MakeInvoice(ctx, int64(amount)*1000-int64(feeResponse.FeeAmountMsat), "", "", 60*60)
 	if err != nil {
 		logger.Logger.WithError(err).Error("Failed to request own invoice")
 		return "", 0, fmt.Errorf("failed to request own invoice %v", err)
@@ -439,7 +439,7 @@ func (ls *api) requestFlow20WrappedInvoice(ctx context.Context, selectedLsp *lsp
 	return invoice, fee, nil
 }
 
-func (ls *api) requestPMLSPInvoice(selectedLsp *lsp.LSP, amount uint64, pubkey string) (invoice string, fee uint64, err error) {
+func (api *api) requestPMLSPInvoice(selectedLsp *lsp.LSP, amount uint64, pubkey string) (invoice string, fee uint64, err error) {
 	type NewInstantChannelRequest struct {
 		Amount uint64 `json:"amount"`
 		Pubkey string `json:"pubkey"`
@@ -514,7 +514,7 @@ func (ls *api) requestPMLSPInvoice(selectedLsp *lsp.LSP, amount uint64, pubkey s
 	return invoice, fee, nil
 }
 
-func (ls *api) requestLSPS1Invoice(ctx context.Context, selectedLsp *lsp.LSP, amount uint64, pubkey string, public bool) (invoice string, fee uint64, err error) {
+func (api *api) requestLSPS1Invoice(ctx context.Context, selectedLsp *lsp.LSP, amount uint64, pubkey string, public bool) (invoice string, fee uint64, err error) {
 	client := http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -531,7 +531,7 @@ func (ls *api) requestLSPS1Invoice(ctx context.Context, selectedLsp *lsp.LSP, am
 		AnnounceChannel              bool   `json:"announce_channel"`
 	}
 
-	refundAddress, err := ls.svc.GetLNClient().GetNewOnchainAddress(ctx)
+	refundAddress, err := api.svc.GetLNClient().GetNewOnchainAddress(ctx)
 	if err != nil {
 		logger.Logger.WithError(err).Error("Failed to request onchain address")
 		return "", 0, err

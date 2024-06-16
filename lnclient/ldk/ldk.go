@@ -27,7 +27,6 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/lsp"
-	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/getAlby/nostr-wallet-connect/utils"
 )
 
@@ -493,7 +492,7 @@ func (ls *LDKService) SendPaymentSync(ctx context.Context, invoice string) (*lnc
 	}, nil
 }
 
-func (ls *LDKService) SendKeysend(ctx context.Context, amount int64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
+func (ls *LDKService) SendKeysend(ctx context.Context, amount uint64, destination, preimage string, custom_records []lnclient.TLVRecord) (preImage string, err error) {
 	paymentStart := time.Now()
 	customTlvs := []ldk_node.TlvEntry{}
 
@@ -507,7 +506,7 @@ func (ls *LDKService) SendKeysend(ctx context.Context, amount int64, destination
 	ldkEventSubscription := ls.ldkEventBroadcaster.Subscribe()
 	defer ls.ldkEventBroadcaster.CancelSubscription(ldkEventSubscription)
 
-	paymentHash, err := ls.node.SpontaneousPayment().Send(uint64(amount), destination, customTlvs)
+	paymentHash, err := ls.node.SpontaneousPayment().Send(amount, destination, customTlvs)
 	if err != nil {
 		logger.Logger.WithError(err).Error("Keysend failed")
 		return "", err
@@ -627,7 +626,7 @@ func (ls *LDKService) getMaxSpendable() int64 {
 	return int64(spendable)
 }
 
-func (ls *LDKService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *nip47.Transaction, err error) {
+func (ls *LDKService) MakeInvoice(ctx context.Context, amount int64, description string, descriptionHash string, expiry int64) (transaction *lnclient.Transaction, err error) {
 
 	maxReceivable := ls.getMaxReceivable()
 
@@ -667,7 +666,7 @@ func (ls *LDKService) MakeInvoice(ctx context.Context, amount int64, description
 	description = paymentRequest.Description
 	descriptionHash = paymentRequest.DescriptionHash
 
-	transaction = &nip47.Transaction{
+	transaction = &lnclient.Transaction{
 		Type:            "incoming",
 		Invoice:         invoice,
 		PaymentHash:     paymentRequest.PaymentHash,
@@ -681,7 +680,7 @@ func (ls *LDKService) MakeInvoice(ctx context.Context, amount int64, description
 	return transaction, nil
 }
 
-func (ls *LDKService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *nip47.Transaction, err error) {
+func (ls *LDKService) LookupInvoice(ctx context.Context, paymentHash string) (transaction *lnclient.Transaction, err error) {
 
 	payment := ls.node.Payment(paymentHash)
 	if payment == nil {
@@ -699,8 +698,8 @@ func (ls *LDKService) LookupInvoice(ctx context.Context, paymentHash string) (tr
 	return transaction, nil
 }
 
-func (ls *LDKService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []nip47.Transaction, err error) {
-	transactions = []nip47.Transaction{}
+func (ls *LDKService) ListTransactions(ctx context.Context, from, until, limit, offset uint64, unpaid bool, invoiceType string) (transactions []lnclient.Transaction, err error) {
+	transactions = []lnclient.Transaction{}
 
 	// TODO: support pagination
 	payments := ls.node.ListPayments()
@@ -738,7 +737,7 @@ func (ls *LDKService) ListTransactions(ctx context.Context, from, until, limit, 
 		if offset < uint64(len(transactions)) {
 			transactions = transactions[offset:]
 		} else {
-			transactions = []nip47.Transaction{}
+			transactions = []lnclient.Transaction{}
 		}
 	}
 
@@ -949,7 +948,7 @@ func (ls *LDKService) SignMessage(ctx context.Context, message string) (string, 
 	return sign, nil
 }
 
-func (ls *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) (*nip47.Transaction, error) {
+func (ls *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) (*lnclient.Transaction, error) {
 	// logger.Logger.WithField("payment", payment).Debug("Mapping LDK payment to transaction")
 
 	transactionType := "incoming"
@@ -1027,7 +1026,7 @@ func (ls *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) 
 		fee = *payment.FeeMsat
 	}
 
-	return &nip47.Transaction{
+	return &lnclient.Transaction{
 		Type:            transactionType,
 		Preimage:        preimage,
 		PaymentHash:     paymentHash,
