@@ -306,11 +306,11 @@ func (svc *nip47Service) HandleEvent(ctx context.Context, sub *nostr.Subscriptio
 			HandleMakeInvoiceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
 	case models.LOOKUP_INVOICE_METHOD:
 		controllers.
-			NewlookupInvoiceController(lnClient).
+			NewLookupInvoiceController(lnClient).
 			HandleLookupInvoiceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
 	case models.LIST_TRANSACTIONS_METHOD:
 		controllers.
-			NewlistTransactionsController(lnClient).
+			NewListTransactionsController(lnClient).
 			HandleListTransactionsEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
 	case models.GET_INFO_METHOD:
 		controllers.

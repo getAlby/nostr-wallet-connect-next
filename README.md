@@ -88,6 +88,10 @@ _If you get a blank screen, try running in your normal terminal (outside of vsco
 
     $ go test ./...
 
+#### Test matching regular expression
+
+    $ go test ./... -run TestHandleGetInfoEvent
+
 ### Profiling
 
 The application supports both the Go pprof library and the DataDog profiler.

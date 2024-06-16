@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/stretchr/testify/assert"
@@ -77,8 +76,9 @@ func TestHandleMultiPayInvoiceEvent_NoPermission(t *testing.T) {
 	responses := []*models.Response{}
 	dTags := []nostr.Tags{}
 
-	requestEvent := &db.RequestEvent{}
-	svc.DB.Save(requestEvent)
+	dbRequestEvent := &db.RequestEvent{}
+	err = svc.DB.Create(&dbRequestEvent).Error
+	assert.NoError(t, err)
 
 	checkPermission := func(amountMsat uint64) *models.Response {
 		return &models.Response{
@@ -95,17 +95,17 @@ func TestHandleMultiPayInvoiceEvent_NoPermission(t *testing.T) {
 	}
 
 	NewMultiPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
-		HandleMultiPayInvoiceEvent(ctx, nip47Request, requestEvent.ID, app, checkPermission, publishResponse)
+		HandleMultiPayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
 
 	assert.Equal(t, 2, len(responses))
 	assert.Equal(t, 2, len(dTags))
 	for i := 0; i < len(responses); i++ {
 		assert.Equal(t, models.ERROR_RESTRICTED, responses[i].Error.Code)
 		assert.Equal(t, tests.MockPaymentHash, dTags[i].GetFirst([]string{"d"}).Value())
+		assert.Equal(t, responses[i].Result, nil)
 	}
 }
 
-// TODO: split up this test
 func TestHandleMultiPayInvoiceEvent_WithPermission(t *testing.T) {
 	ctx := context.TODO()
 
@@ -120,19 +120,45 @@ func TestHandleMultiPayInvoiceEvent_WithPermission(t *testing.T) {
 	err = json.Unmarshal([]byte(nip47MultiPayJson), nip47Request)
 	assert.NoError(t, err)
 
-	// with permission
-	maxAmount := 1000
-	budgetRenewal := "never"
-	expiresAt := time.Now().Add(24 * time.Hour)
-	appPermission := &db.AppPermission{
-		AppId:         app.ID,
-		App:           *app,
-		RequestMethod: models.PAY_INVOICE_METHOD,
-		MaxAmount:     maxAmount,
-		BudgetRenewal: budgetRenewal,
-		ExpiresAt:     &expiresAt,
+	responses := []*models.Response{}
+	dTags := []nostr.Tags{}
+
+	publishResponse := func(response *models.Response, tags nostr.Tags) {
+		responses = append(responses, response)
+		dTags = append(dTags, tags)
 	}
-	err = svc.DB.Create(appPermission).Error
+
+	checkPermission := func(amountMsat uint64) *models.Response {
+		return nil
+	}
+	dbRequestEvent := &db.RequestEvent{}
+	err = svc.DB.Create(&dbRequestEvent).Error
+	assert.NoError(t, err)
+
+	NewMultiPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
+		HandleMultiPayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
+
+	assert.Equal(t, 2, len(responses))
+	for i := 0; i < len(responses); i++ {
+		assert.Equal(t, "123preimage", responses[i].Result.(payResponse).Preimage)
+		assert.Equal(t, tests.MockPaymentHash, dTags[i].GetFirst([]string{"d"}).Value())
+		assert.Nil(t, responses[i].Error)
+	}
+
+}
+
+func TestHandleMultiPayInvoiceEvent_OneMalformedInvoice(t *testing.T) {
+	ctx := context.TODO()
+
+	defer tests.RemoveTestService()
+	svc, err := tests.CreateTestService()
+	assert.NoError(t, err)
+
+	app, _, err := tests.CreateApp(svc)
+	assert.NoError(t, err)
+
+	nip47Request := &models.Request{}
+	err = json.Unmarshal([]byte(nip47MultiPayOneMalformedInvoiceJson), nip47Request)
 	assert.NoError(t, err)
 
 	responses := []*models.Response{}
@@ -153,47 +179,34 @@ func TestHandleMultiPayInvoiceEvent_WithPermission(t *testing.T) {
 		HandleMultiPayInvoiceEvent(ctx, nip47Request, requestEvent.ID, app, checkPermission, publishResponse)
 
 	assert.Equal(t, 2, len(responses))
-	for i := 0; i < len(responses); i++ {
-		assert.Equal(t, responses[i].Result.(payResponse).Preimage, "123preimage")
-		assert.Equal(t, tests.MockPaymentHash, dTags[i].GetFirst([]string{"d"}).Value())
-	}
-
-	// one malformed invoice
-	err = json.Unmarshal([]byte(nip47MultiPayOneMalformedInvoiceJson), nip47Request)
-	assert.NoError(t, err)
-
-	responses = []*models.Response{}
-	dTags = []nostr.Tags{}
-	NewMultiPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
-		HandleMultiPayInvoiceEvent(ctx, nip47Request, requestEvent.ID, app, checkPermission, publishResponse)
-
-	assert.Equal(t, 2, len(responses))
 	assert.Equal(t, "invoiceId123", dTags[0].GetFirst([]string{"d"}).Value())
-	assert.Equal(t, responses[0].Error.Code, models.ERROR_INTERNAL)
+	assert.Equal(t, models.ERROR_INTERNAL, responses[0].Error.Code)
+	assert.Nil(t, responses[0].Result)
 
 	assert.Equal(t, tests.MockPaymentHash, dTags[1].GetFirst([]string{"d"}).Value())
-	assert.Equal(t, responses[1].Result.(payResponse).Preimage, "123preimage")
+	assert.Equal(t, "123preimage", responses[1].Result.(payResponse).Preimage)
+	assert.Nil(t, responses[1].Error)
 
-	// we've spent 369 till here in three payments
-
-	// // budget overflow
-	// newMaxAmount := 500
-	// err = svc.DB.Model(&db.AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", newMaxAmount).Error
-	// assert.NoError(t, err)
-
-	// err = json.Unmarshal([]byte(nip47MultiPayOneOverflowingBudgetJson), nip47Request)
-	// assert.NoError(t, err)
-
-	// responses = []*models.Response{}
-	// dTags = []nostr.Tags{}
-	// NewMultiPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
-	// 	HandleMultiPayInvoiceEvent(ctx, nip47Request, requestEvent.ID, app, checkPermission, publishResponse)
-
-	// // might be flaky because the two requests run concurrently
-	// // and there's more chance that the failed respons calls the
-	// // publishResponse as it's called earlier
-	// assert.Equal(t, responses[0].Error.Code, models.ERROR_QUOTA_EXCEEDED)
-	// assert.Equal(t, tests.MockPaymentHash500, dTags[0].GetFirst([]string{"d"}).Value())
-	// assert.Equal(t, responses[1].Result.(payResponse).Preimage, "123preimage")
-	// assert.Equal(t, tests.MockPaymentHash, dTags[1].GetFirst([]string{"d"}).Value())
 }
+
+// TODO: fix and re-enable this as a separate test
+// // budget overflow
+// newMaxAmount := 500
+// err = svc.DB.Model(&db.AppPermission{}).Where("app_id = ?", app.ID).Update("max_amount", newMaxAmount).Error
+// assert.NoError(t, err)
+
+// err = json.Unmarshal([]byte(nip47MultiPayOneOverflowingBudgetJson), nip47Request)
+// assert.NoError(t, err)
+
+// responses = []*models.Response{}
+// dTags = []nostr.Tags{}
+// NewMultiPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
+// 	HandleMultiPayInvoiceEvent(ctx, nip47Request, requestEvent.ID, app, checkPermission, publishResponse)
+
+// // might be flaky because the two requests run concurrently
+// // and there's more chance that the failed respons calls the
+// // publishResponse as it's called earlier
+// assert.Equal(t, responses[0].Error.Code, models.ERROR_QUOTA_EXCEEDED)
+// assert.Equal(t, tests.MockPaymentHash500, dTags[0].GetFirst([]string{"d"}).Value())
+// assert.Equal(t, responses[1].Result.(payResponse).Preimage, "123preimage")
+// assert.Equal(t, tests.MockPaymentHash, dTags[1].GetFirst([]string{"d"}).Value())

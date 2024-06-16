@@ -26,7 +26,7 @@ type lookupInvoiceController struct {
 	lnClient lnclient.LNClient
 }
 
-func NewlookupInvoiceController(lnClient lnclient.LNClient) *lookupInvoiceController {
+func NewLookupInvoiceController(lnClient lnclient.LNClient) *lookupInvoiceController {
 	return &lookupInvoiceController{
 		lnClient: lnClient,
 	}

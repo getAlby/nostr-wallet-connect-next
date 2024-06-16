@@ -27,7 +27,7 @@ type listTransactionsController struct {
 	lnClient lnclient.LNClient
 }
 
-func NewlistTransactionsController(lnClient lnclient.LNClient) *listTransactionsController {
+func NewListTransactionsController(lnClient lnclient.LNClient) *listTransactionsController {
 	return &listTransactionsController{
 		lnClient: lnClient,
 	}
