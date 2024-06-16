@@ -2,20 +2,15 @@ package service
 
 import (
 	"context"
+	"time"
 
-	"errors"
-	"fmt"
-	"net/http"
-	"net/http/pprof"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/adrg/xdg"
 	"github.com/nbd-wtf/go-nostr"
-	"gopkg.in/DataDog/dd-trace-go.v1/profiler"
 	"gorm.io/gorm"
 
 	"github.com/joho/godotenv"
@@ -28,12 +23,6 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
-	"github.com/getAlby/nostr-wallet-connect/lnclient/breez"
-	"github.com/getAlby/nostr-wallet-connect/lnclient/cashu"
-	"github.com/getAlby/nostr-wallet-connect/lnclient/greenlight"
-	"github.com/getAlby/nostr-wallet-connect/lnclient/ldk"
-	"github.com/getAlby/nostr-wallet-connect/lnclient/lnd"
-	"github.com/getAlby/nostr-wallet-connect/lnclient/phoenixd"
 	"github.com/getAlby/nostr-wallet-connect/nip47"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 )
@@ -127,103 +116,6 @@ func NewService(ctx context.Context) (*service, error) {
 	return svc, nil
 }
 
-func (svc *service) StopLNClient() error {
-	if svc.lnClient != nil {
-		logger.Logger.Info("Shutting down LDK client")
-		err := svc.lnClient.Shutdown()
-		if err != nil {
-			logger.Logger.WithError(err).Error("Failed to stop LN backend")
-			svc.eventPublisher.Publish(&events.Event{
-				Event: "nwc_node_stop_failed",
-				Properties: map[string]interface{}{
-					"error": fmt.Sprintf("%v", err),
-				},
-			})
-			return err
-		}
-		logger.Logger.Info("Publishing node shutdown event")
-		svc.lnClient = nil
-		svc.eventPublisher.Publish(&events.Event{
-			Event: "nwc_node_stopped",
-		})
-	}
-	logger.Logger.Info("LNClient stopped successfully")
-	return nil
-}
-
-func (svc *service) launchLNBackend(ctx context.Context, encryptionKey string) error {
-	err := svc.StopLNClient()
-	if err != nil {
-		return err
-	}
-
-	lnBackend, _ := svc.cfg.Get("LNBackendType", "")
-	if lnBackend == "" {
-		return errors.New("no LNBackendType specified")
-	}
-
-	logger.Logger.Infof("Launching LN Backend: %s", lnBackend)
-	var lnClient lnclient.LNClient
-	switch lnBackend {
-	case config.LNDBackendType:
-		LNDAddress, _ := svc.cfg.Get("LNDAddress", encryptionKey)
-		LNDCertHex, _ := svc.cfg.Get("LNDCertHex", encryptionKey)
-		LNDMacaroonHex, _ := svc.cfg.Get("LNDMacaroonHex", encryptionKey)
-		lnClient, err = lnd.NewLNDService(ctx, LNDAddress, LNDCertHex, LNDMacaroonHex)
-	case config.LDKBackendType:
-		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
-		LDKWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "ldk")
-
-		lnClient, err = ldk.NewLDKService(ctx, svc.cfg, svc.eventPublisher, Mnemonic, LDKWorkdir, svc.cfg.GetEnv().LDKNetwork, svc.cfg.GetEnv().LDKEsploraServer, svc.cfg.GetEnv().LDKGossipSource)
-	case config.GreenlightBackendType:
-		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
-		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
-		GreenlightWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "greenlight")
-
-		lnClient, err = greenlight.NewGreenlightService(svc.cfg, Mnemonic, GreenlightInviteCode, GreenlightWorkdir, encryptionKey)
-	case config.BreezBackendType:
-		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
-		BreezAPIKey, _ := svc.cfg.Get("BreezAPIKey", encryptionKey)
-		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
-		BreezWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "breez")
-
-		lnClient, err = breez.NewBreezService(Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
-	case config.PhoenixBackendType:
-		PhoenixdAddress, _ := svc.cfg.Get("PhoenixdAddress", encryptionKey)
-		PhoenixdAuthorization, _ := svc.cfg.Get("PhoenixdAuthorization", encryptionKey)
-
-		lnClient, err = phoenixd.NewPhoenixService(PhoenixdAddress, PhoenixdAuthorization)
-	case config.CashuBackendType:
-		cashuMintUrl, _ := svc.cfg.Get("CashuMintUrl", encryptionKey)
-		cashuWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "cashu")
-
-		lnClient, err = cashu.NewCashuService(cashuWorkdir, cashuMintUrl)
-	default:
-		logger.Logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
-	}
-	if err != nil {
-		logger.Logger.WithError(err).Error("Failed to launch LN backend")
-		return err
-	}
-
-	info, err := lnClient.GetInfo(ctx)
-	if err != nil {
-		logger.Logger.WithError(err).Error("Failed to fetch node info")
-	}
-	if info != nil && info.Pubkey != "" {
-		svc.eventPublisher.SetGlobalProperty("node_id", info.Pubkey)
-	}
-
-	svc.eventPublisher.Publish(&events.Event{
-		Event: "nwc_node_started",
-		Properties: map[string]interface{}{
-			"node_type": lnBackend,
-		},
-	})
-	svc.lnClient = lnClient
-	return nil
-}
-
 func (svc *service) createFilters(identityPubkey string) nostr.Filters {
 	filter := nostr.Filter{
 		Tags:  nostr.TagMap{"p": []string{identityPubkey}},
@@ -234,10 +126,6 @@ func (svc *service) createFilters(identityPubkey string) nostr.Filters {
 
 func (svc *service) noticeHandler(notice string) {
 	logger.Logger.Infof("Received a notice %s", notice)
-}
-
-func (svc *service) GetLNClient() lnclient.LNClient {
-	return svc.lnClient
 }
 
 func (svc *service) StartSubscription(ctx context.Context, sub *nostr.Subscription) error {
@@ -304,56 +192,20 @@ func finishRestoreNode(workDir string) {
 	}
 }
 
-func startProfiler(ctx context.Context, addr string) {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/debug/pprof/", pprof.Index)
-	mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-	mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-	mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
-
-	server := &http.Server{
-		Addr:    addr,
-		Handler: mux,
-	}
-
-	go func() {
-		<-ctx.Done()
-		err := server.Shutdown(context.Background())
-		if err != nil {
-			panic("pprof server shutdown failed: " + err.Error())
-		}
-	}()
-
-	go func() {
-		err := server.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			panic("pprof server failed: " + err.Error())
-		}
-	}()
+func (svc *service) Shutdown() {
+	svc.StopLNClient()
+	svc.eventPublisher.Publish(&events.Event{
+		Event: "nwc_stopped",
+	})
+	// wait for any remaining events
+	time.Sleep(1 * time.Second)
 }
 
-func startDataDogProfiler(ctx context.Context) {
-	opts := make([]profiler.Option, 0)
-
-	opts = append(opts, profiler.WithProfileTypes(
-		profiler.CPUProfile,
-		profiler.HeapProfile,
-		// higher overhead
-		profiler.BlockProfile,
-		profiler.MutexProfile,
-		profiler.GoroutineProfile,
-	))
-
-	err := profiler.Start(opts...)
-	if err != nil {
-		panic("failed to start DataDog profiler: " + err.Error())
+func (svc *service) StopApp() {
+	if svc.appCancelFn != nil {
+		svc.appCancelFn()
+		svc.wg.Wait()
 	}
-
-	go func() {
-		<-ctx.Done()
-		profiler.Stop()
-	}()
 }
 
 func (svc *service) GetDB() *gorm.DB {
@@ -374,6 +226,10 @@ func (svc *service) GetNip47Service() nip47.Nip47Service {
 
 func (svc *service) GetEventPublisher() events.EventPublisher {
 	return svc.eventPublisher
+}
+
+func (svc *service) GetLNClient() lnclient.LNClient {
+	return svc.lnClient
 }
 
 func (svc *service) WaitShutdown() {

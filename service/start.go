@@ -3,13 +3,22 @@ package service
 import (
 	"context"
 	"errors"
+	"path"
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip19"
 	"github.com/sirupsen/logrus"
 
+	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/breez"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/cashu"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/greenlight"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/ldk"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/lnd"
+	"github.com/getAlby/nostr-wallet-connect/lnclient/phoenixd"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 )
 
@@ -127,19 +136,75 @@ func (svc *service) StartApp(encryptionKey string) error {
 	return nil
 }
 
-// TODO: remove and call StopLNClient() instead
-func (svc *service) StopApp() {
-	if svc.appCancelFn != nil {
-		svc.appCancelFn()
-		svc.wg.Wait()
+func (svc *service) launchLNBackend(ctx context.Context, encryptionKey string) error {
+	err := svc.StopLNClient()
+	if err != nil {
+		return err
 	}
-}
 
-func (svc *service) Shutdown() {
-	svc.StopLNClient()
+	lnBackend, _ := svc.cfg.Get("LNBackendType", "")
+	if lnBackend == "" {
+		return errors.New("no LNBackendType specified")
+	}
+
+	logger.Logger.Infof("Launching LN Backend: %s", lnBackend)
+	var lnClient lnclient.LNClient
+	switch lnBackend {
+	case config.LNDBackendType:
+		LNDAddress, _ := svc.cfg.Get("LNDAddress", encryptionKey)
+		LNDCertHex, _ := svc.cfg.Get("LNDCertHex", encryptionKey)
+		LNDMacaroonHex, _ := svc.cfg.Get("LNDMacaroonHex", encryptionKey)
+		lnClient, err = lnd.NewLNDService(ctx, LNDAddress, LNDCertHex, LNDMacaroonHex)
+	case config.LDKBackendType:
+		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
+		LDKWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "ldk")
+
+		lnClient, err = ldk.NewLDKService(ctx, svc.cfg, svc.eventPublisher, Mnemonic, LDKWorkdir, svc.cfg.GetEnv().LDKNetwork, svc.cfg.GetEnv().LDKEsploraServer, svc.cfg.GetEnv().LDKGossipSource)
+	case config.GreenlightBackendType:
+		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
+		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
+		GreenlightWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "greenlight")
+
+		lnClient, err = greenlight.NewGreenlightService(svc.cfg, Mnemonic, GreenlightInviteCode, GreenlightWorkdir, encryptionKey)
+	case config.BreezBackendType:
+		Mnemonic, _ := svc.cfg.Get("Mnemonic", encryptionKey)
+		BreezAPIKey, _ := svc.cfg.Get("BreezAPIKey", encryptionKey)
+		GreenlightInviteCode, _ := svc.cfg.Get("GreenlightInviteCode", encryptionKey)
+		BreezWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "breez")
+
+		lnClient, err = breez.NewBreezService(Mnemonic, BreezAPIKey, GreenlightInviteCode, BreezWorkdir)
+	case config.PhoenixBackendType:
+		PhoenixdAddress, _ := svc.cfg.Get("PhoenixdAddress", encryptionKey)
+		PhoenixdAuthorization, _ := svc.cfg.Get("PhoenixdAuthorization", encryptionKey)
+
+		lnClient, err = phoenixd.NewPhoenixService(PhoenixdAddress, PhoenixdAuthorization)
+	case config.CashuBackendType:
+		cashuMintUrl, _ := svc.cfg.Get("CashuMintUrl", encryptionKey)
+		cashuWorkdir := path.Join(svc.cfg.GetEnv().Workdir, "cashu")
+
+		lnClient, err = cashu.NewCashuService(cashuWorkdir, cashuMintUrl)
+	default:
+		logger.Logger.Fatalf("Unsupported LNBackendType: %v", lnBackend)
+	}
+	if err != nil {
+		logger.Logger.WithError(err).Error("Failed to launch LN backend")
+		return err
+	}
+
+	info, err := lnClient.GetInfo(ctx)
+	if err != nil {
+		logger.Logger.WithError(err).Error("Failed to fetch node info")
+	}
+	if info != nil && info.Pubkey != "" {
+		svc.eventPublisher.SetGlobalProperty("node_id", info.Pubkey)
+	}
+
 	svc.eventPublisher.Publish(&events.Event{
-		Event: "nwc_stopped",
+		Event: "nwc_node_started",
+		Properties: map[string]interface{}{
+			"node_type": lnBackend,
+		},
 	})
-	// wait for any remaining events
-	time.Sleep(1 * time.Second)
+	svc.lnClient = lnClient
+	return nil
 }
