@@ -64,7 +64,7 @@ export default function Channels() {
   const { data: balances } = useBalances();
   const { data: albyBalance } = useAlbyBalance();
   const [nodes, setNodes] = React.useState<Node[]>([]);
-  const { data: info, mutate: reloadInfo } = useInfo();
+  const { mutate: reloadInfo } = useInfo();
   const { data: csrf } = useCSRF();
   const redeemOnchainFunds = useRedeemOnchainFunds();
 
@@ -238,8 +238,11 @@ export default function Channels() {
                 <DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
-                    <Link to="/channels/onchain/new-address" className="w-full">
-                      On-Chain Address
+                    <Link
+                      to="/channels/onchain/deposit-bitcoin"
+                      className="w-full"
+                    >
+                      Deposit Bitcoin
                     </Link>
                   </DropdownMenuItem>
                   {(balances?.onchain.spendable || 0) > ONCHAIN_DUST_SATS && (
@@ -253,30 +256,26 @@ export default function Channels() {
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuGroup>
-                {info?.backendType === "LDK" && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel>Management</DropdownMenuLabel>
-                      <DropdownMenuItem>
-                        <Link className="w-full" to="/peers">
-                          Connected Peers
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Link className="w-full" to="/wallet/sign-message">
-                          Sign Message
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="w-full cursor-pointer"
-                        onClick={resetRouter}
-                      >
-                        Clear Routing Data
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </>
-                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>Management</DropdownMenuLabel>
+                  <DropdownMenuItem>
+                    <Link className="w-full" to="/peers">
+                      Connected Peers
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link className="w-full" to="/wallet/sign-message">
+                      Sign Message
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="w-full cursor-pointer"
+                    onClick={resetRouter}
+                  >
+                    Clear Routing Data
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
             <Link to="/channels/new">
@@ -336,8 +335,11 @@ export default function Channels() {
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex justify-end">
-            <Link to="onchain/new-address">
+          <CardFooter className="flex justify-end space-x-1">
+            <Link to="onchain/buy-bitcoin">
+              <Button variant="outline">Buy</Button>
+            </Link>
+            <Link to="onchain/deposit-bitcoin">
               <Button variant="outline">Deposit</Button>
             </Link>
           </CardFooter>

@@ -1,8 +1,8 @@
-import { ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ExternalLinkIcon } from "lucide-react";
 import AlbyHead from "src/assets/images/alby-head.svg";
 import AppHeader from "src/components/AppHeader";
 import BreezRedeem from "src/components/BreezRedeem";
+import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
 import { Button } from "src/components/ui/button";
 import {
@@ -14,6 +14,7 @@ import {
 } from "src/components/ui/card";
 import { useBalances } from "src/hooks/useBalances";
 import { useInfo } from "src/hooks/useInfo";
+import OnboardingChecklist from "src/screens/wallet/OnboardingChecklist";
 
 function Wallet() {
   const { data: info } = useInfo();
@@ -29,7 +30,6 @@ function Wallet() {
   return (
     <>
       <AppHeader title="Wallet" description="Send and receive transactions" />
-
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5">
         <div className="text-5xl font-semibold">
           {new Intl.NumberFormat().format(
@@ -40,7 +40,7 @@ function Wallet() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <Link to={`https://www.getalby.com/dashboard`} target="_blank">
+        <ExternalLink to="https://www.getalby.com/dashboard">
           <Card>
             <CardHeader>
               <div className="flex flex-row items-center">
@@ -63,13 +63,13 @@ function Wallet() {
             <CardContent className="text-right">
               <Button variant="outline">
                 Open Alby Web
-                <ExternalLink className="w-4 h-4 ml-2" />
+                <ExternalLinkIcon className="w-4 h-4 ml-2" />
               </Button>
             </CardContent>
           </Card>
-        </Link>
+        </ExternalLink>
         {!extensionInstalled && (
-          <Link to={`https://www.getalby.com`} target="_blank">
+          <ExternalLink to="https://www.getalby.com">
             <Card>
               <CardHeader>
                 <div className="flex flex-row items-center">
@@ -93,13 +93,15 @@ function Wallet() {
               <CardContent className="text-right">
                 <Button variant="outline">
                   Install Alby Extension
-                  <ExternalLink className="w-4 h-4 ml-2" />
+                  <ExternalLinkIcon className="w-4 h-4 ml-2" />
                 </Button>
               </CardContent>
             </Card>
-          </Link>
+          </ExternalLink>
         )}
       </div>
+
+      <OnboardingChecklist />
 
       <BreezRedeem />
     </>

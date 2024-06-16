@@ -17,6 +17,8 @@ import (
 
 	"github.com/getAlby/ldk-node-go/ldk_node"
 	// "github.com/getAlby/nostr-wallet-connect/ldk_node"
+	b64 "encoding/base64"
+
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
 
@@ -68,17 +70,24 @@ func NewLDKService(ctx context.Context, logger *logrus.Logger, cfg config.Config
 		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
+		lsp.MegalithLSP().Pubkey,
+
+		// Mutinynet
 		lsp.AlbyMutinynetPlebsLSP().Pubkey,
 		lsp.OlympusMutinynetFlowLSP().Pubkey,
+		lsp.MegalithMutinynetLSP().Pubkey,
 	}
 	config.AnchorChannelsConfig.TrustedPeersNoReserve = []string{
 		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
-		lsp.OlympusMutinynetLSPS1LSP().Pubkey,
-		lsp.OlympusMutinynetFlowLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
-		lsp.AlbyMutinynetPlebsLSP().Pubkey,
+		lsp.MegalithLSP().Pubkey,
 		"0296b2db342fcf87ea94d981757fdf4d3e545bd5cef4919f58b5d38dfdd73bf5c9", // blocktank
+
+		// Mutinynet
+		lsp.AlbyMutinynetPlebsLSP().Pubkey,
+		lsp.OlympusMutinynetFlowLSP().Pubkey,
+		lsp.MegalithMutinynetLSP().Pubkey,
 	}
 
 	config.ListeningAddresses = &listeningAddresses
@@ -957,6 +966,7 @@ func (ls *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) 
 	var settledAt *int64
 	preimage := ""
 	paymentHash := ""
+	metadata := map[string]interface{}{}
 
 	bolt11PaymentKind, isBolt11PaymentKind := payment.Kind.(ldk_node.PaymentKindBolt11)
 
@@ -991,10 +1001,8 @@ func (ls *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) 
 	spontaneousPaymentKind, isSpontaneousPaymentKind := payment.Kind.(ldk_node.PaymentKindSpontaneous)
 	if isSpontaneousPaymentKind {
 		// keysend payment
-		// currently no access to created at or the TLVs to get the description
-		// TODO: store these in NWC database
 		lastUpdate := int64(payment.LastUpdate)
-		// TODO: use proper created at time
+		// TODO: use proper created at time (currently no access to created time for keysend payments)
 		createdAt = lastUpdate
 		if payment.Status == ldk_node.PaymentStatusSucceeded {
 			settledAt = &lastUpdate
@@ -1003,6 +1011,11 @@ func (ls *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) 
 		if spontaneousPaymentKind.Preimage != nil {
 			preimage = *spontaneousPaymentKind.Preimage
 		}
+		customRecords := map[string]string{}
+		for _, tlv := range spontaneousPaymentKind.CustomTlvs {
+			customRecords[strconv.FormatUint(tlv.Type, 10)] = b64.StdEncoding.EncodeToString(tlv.Value)
+		}
+		metadata["custom_records"] = customRecords
 	}
 
 	var amount uint64 = 0
@@ -1027,6 +1040,7 @@ func (ls *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) 
 		Description:     description,
 		DescriptionHash: descriptionHash,
 		ExpiresAt:       expiresAt,
+		Metadata:        metadata,
 	}, nil
 }
 
@@ -1177,17 +1191,20 @@ func (ls *LDKService) publishChannelsBackupEvent() {
 	ldkChannels := ls.node.ListChannels()
 	channels := make([]events.ChannelBackupInfo, 0, len(ldkChannels))
 	for _, ldkChannel := range ldkChannels {
-		var fundingTx string
+		var fundingTxId string
+		var fundingTxVout uint32
 		if ldkChannel.FundingTxo != nil {
-			fundingTx = ldkChannel.FundingTxo.Txid
+			fundingTxId = ldkChannel.FundingTxo.Txid
+			fundingTxVout = ldkChannel.FundingTxo.Vout
 		}
 
 		channels = append(channels, events.ChannelBackupInfo{
-			ChannelID:   ldkChannel.ChannelId,
-			NodeID:      ls.node.NodeId(),
-			PeerID:      ldkChannel.CounterpartyNodeId,
-			ChannelSize: ldkChannel.ChannelValueSats,
-			FundingTxID: fundingTx,
+			ChannelID:     ldkChannel.ChannelId,
+			NodeID:        ls.node.NodeId(),
+			PeerID:        ldkChannel.CounterpartyNodeId,
+			ChannelSize:   ldkChannel.ChannelValueSats,
+			FundingTxID:   fundingTxId,
+			FundingTxVout: fundingTxVout,
 		})
 	}
 

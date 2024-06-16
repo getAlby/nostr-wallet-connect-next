@@ -14,22 +14,22 @@ import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useChannels } from "src/hooks/useChannels";
 import { useInfo } from "src/hooks/useInfo";
 import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo";
-import { backendTypeHasMnemonic } from "src/lib/utils";
 import useChannelOrderStore from "src/state/ChannelOrderStore";
 
 function SidebarHint() {
   const { data: channels } = useChannels();
   const { data: albyBalance } = useAlbyBalance();
-  const { data: info } = useInfo();
+  const { data: info, hasChannelManagement, hasMnemonic } = useInfo();
   const { data: albyMe } = useAlbyMe();
   const { order } = useChannelOrderStore();
   const location = useLocation();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
 
-  // Don't distract with hints while opening a channel
+  // Don't distract with hints while opening a channel or on the settings page
   if (
     location.pathname.endsWith("/channels/order") ||
-    location.pathname.endsWith("/channels/new")
+    location.pathname.endsWith("/channels/new") ||
+    location.pathname.startsWith("/settings")
   ) {
     return null;
   }
@@ -49,7 +49,7 @@ function SidebarHint() {
 
   // User has funds to migrate
   if (
-    info?.backendType === "LDK" &&
+    hasChannelManagement &&
     albyBalance &&
     albyBalance.sats * (1 - ALBY_SERVICE_FEE) >
       ALBY_MIN_BALANCE + 50000 /* accomodate for onchain fees */
@@ -66,10 +66,7 @@ function SidebarHint() {
   }
 
   // User has no channels yet
-  if (
-    (info?.backendType === "LDK" || info?.backendType === "GREENLIGHT") &&
-    channels?.length === 0
-  ) {
+  if (hasChannelManagement && channels?.length === 0) {
     return (
       <SidebarHintCard
         icon={Zap}
@@ -93,14 +90,14 @@ function SidebarHint() {
         title="Link your Hub"
         description="Finish the setup by linking your Alby Account to this hub."
         buttonText="Link Hub"
-        buttonLink="/settings"
+        buttonLink="/apps"
       />
     );
   }
 
   if (
+    hasMnemonic &&
     info &&
-    backendTypeHasMnemonic(info.backendType) &&
     (!info.nextBackupReminder ||
       new Date(info.nextBackupReminder).getTime() < new Date().getTime())
   ) {

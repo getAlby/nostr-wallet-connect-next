@@ -23,10 +23,11 @@ type lspService struct {
 	logger *logrus.Logger
 }
 
-type lspConnectionInfo struct {
-	Pubkey  string
-	Address string
-	Port    uint16
+type lspInfo struct {
+	Pubkey                 string
+	Address                string
+	Port                   uint16
+	MaxChannelExpiryBlocks uint64
 }
 
 func NewLSPService(svc service.Service, logger *logrus.Logger) *lspService {
@@ -51,6 +52,10 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *New
 		selectedLsp = AlbyPlebsLSP()
 	case "ALBY_MUTINYNET":
 		selectedLsp = AlbyMutinynetPlebsLSP()
+	case "MEGALITH":
+		selectedLsp = MegalithLSP()
+	case "MEGALITH_MUTINYNET":
+		selectedLsp = MegalithMutinynetLSP()
 	default:
 		return nil, errors.New("unknown LSP")
 	}
@@ -59,9 +64,13 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *New
 		return nil, errors.New("LNClient not started")
 	}
 
+	if selectedLsp.LspType != LSP_TYPE_LSPS1 && request.Public {
+		return nil, errors.New("This LSP option does not support public channels")
+	}
+
 	ls.logger.Infoln("Requesting LSP info")
 
-	var lspInfo *lspConnectionInfo
+	var lspInfo *lspInfo
 	var err error
 	switch selectedLsp.LspType {
 	case LSP_TYPE_FLOW_2_0:
@@ -112,7 +121,7 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *New
 	case LSP_TYPE_PMLSP:
 		invoice, fee, err = ls.requestPMLSPInvoice(&selectedLsp, request.Amount, nodeInfo.Pubkey)
 	case LSP_TYPE_LSPS1:
-		invoice, fee, err = ls.requestLSPS1Invoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey)
+		invoice, fee, err = ls.requestLSPS1Invoice(ctx, &selectedLsp, request.Amount, nodeInfo.Pubkey, request.Public, lspInfo.MaxChannelExpiryBlocks)
 
 	default:
 		return nil, fmt.Errorf("unsupported LSP type: %v", selectedLsp.LspType)
@@ -134,13 +143,16 @@ func (ls *lspService) NewInstantChannelInvoice(ctx context.Context, request *New
 	return newChannelResponse, nil
 }
 
-func (ls *lspService) getLSPS1LSPInfo(url string) (*lspConnectionInfo, error) {
-	type LSPS1LSPInfo struct {
-		// TODO: implement options
-		Options interface{} `json:"options"`
-		URIs    []string    `json:"uris"`
+func (ls *lspService) getLSPS1LSPInfo(url string) (*lspInfo, error) {
+
+	type lsps1LSPInfoOptions struct {
+		MaxChannelExpiryBlocks uint64 `json:"max_channel_expiry_blocks"`
 	}
-	var lsps1LspInfo LSPS1LSPInfo
+	type lsps1LSPInfo struct {
+		Options lsps1LSPInfoOptions `json:"options"`
+		URIs    []string            `json:"uris"`
+	}
+	var lsps1LspInfo lsps1LSPInfo
 	client := http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -196,13 +208,14 @@ func (ls *lspService) getLSPS1LSPInfo(url string) (*lspConnectionInfo, error) {
 		return nil, err
 	}
 
-	return &lspConnectionInfo{
-		Pubkey:  parts[1],
-		Address: parts[2],
-		Port:    uint16(port),
+	return &lspInfo{
+		Pubkey:                 parts[1],
+		Address:                parts[2],
+		Port:                   uint16(port),
+		MaxChannelExpiryBlocks: lsps1LspInfo.Options.MaxChannelExpiryBlocks,
 	}, nil
 }
-func (ls *lspService) getFlowLSPInfo(url string) (*lspConnectionInfo, error) {
+func (ls *lspService) getFlowLSPInfo(url string) (*lspInfo, error) {
 	type FlowLSPConnectionMethod struct {
 		Address string `json:"address"`
 		Port    uint16 `json:"port"`
@@ -263,7 +276,7 @@ func (ls *lspService) getFlowLSPInfo(url string) (*lspConnectionInfo, error) {
 		return nil, errors.New("unexpected LSP connection method")
 	}
 
-	return &lspConnectionInfo{
+	return &lspInfo{
 		Pubkey:  flowLspInfo.Pubkey,
 		Address: flowLspInfo.ConnectionMethods[ipIndex].Address,
 		Port:    flowLspInfo.ConnectionMethods[ipIndex].Port,
@@ -512,7 +525,7 @@ func (ls *lspService) requestPMLSPInvoice(selectedLsp *LSP, amount uint64, pubke
 	return invoice, fee, nil
 }
 
-func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP, amount uint64, pubkey string) (invoice string, fee uint64, err error) {
+func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP, amount uint64, pubkey string, public bool, channelExpiryBlocks uint64) (invoice string, fee uint64, err error) {
 	client := http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -535,16 +548,24 @@ func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP,
 		return "", 0, err
 	}
 
+	var requiredChannelConfirmations uint64 = 0
+
+	if public {
+		// as per BOLT-7 6 confirmations are required for the channel to be gossiped
+		// https://github.com/lightning/bolts/blob/master/07-routing-gossip.md#requirements
+		requiredChannelConfirmations = 6
+	}
+
 	newLSPS1ChannelRequest := NewLSPS1ChannelRequest{
 		PublicKey:                    pubkey,
 		LSPBalanceSat:                strconv.FormatUint(amount, 10),
 		ClientBalanceSat:             "0",
-		RequiredChannelConfirmations: 0,
+		RequiredChannelConfirmations: requiredChannelConfirmations,
 		FundingConfirmsWithinBlocks:  6,
-		ChannelExpiryBlocks:          13000, // TODO: this should be customizable
+		ChannelExpiryBlocks:          channelExpiryBlocks,
 		Token:                        "",
 		RefundOnchainAddress:         refundAddress,
-		AnnounceChannel:              false, // TODO: this should be customizable
+		AnnounceChannel:              public,
 	}
 
 	payloadBytes, err := json.Marshal(newLSPS1ChannelRequest)
@@ -591,8 +612,8 @@ func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP,
 	}
 
 	type NewLSPS1ChannelPayment struct {
-		LightningInvoice string `json:"lightning_invoice"`
-		FeeTotalSat      string `json:"fee_total_sat"`
+		Bolt11Invoice string `json:"bolt11_invoice"`
+		FeeTotalSat   string `json:"fee_total_sat"`
 	}
 	type NewLSPS1ChannelResponse struct {
 		Payment NewLSPS1ChannelPayment `json:"payment"`
@@ -608,7 +629,7 @@ func (ls *lspService) requestLSPS1Invoice(ctx context.Context, selectedLsp *LSP,
 		return "", 0, fmt.Errorf("failed to deserialize json %s %s", selectedLsp.Url, string(body))
 	}
 
-	invoice = newChannelResponse.Payment.LightningInvoice
+	invoice = newChannelResponse.Payment.Bolt11Invoice
 	fee, err = strconv.ParseUint(newChannelResponse.Payment.FeeTotalSat, 10, 64)
 	if err != nil {
 		ls.logger.WithError(err).WithFields(logrus.Fields{

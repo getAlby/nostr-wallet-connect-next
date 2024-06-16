@@ -4,14 +4,6 @@ import { Link, useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "src/components/ui/breadcrumb";
 import { Button } from "src/components/ui/button";
 import { Checkbox } from "src/components/ui/checkbox";
 import { Input } from "src/components/ui/input";
@@ -51,7 +43,7 @@ export default function NewChannel() {
 }
 
 function NewChannelInternal({ network }: { network: Network }) {
-  const { data: channelPeerSuggestions } = useChannelPeerSuggestions();
+  const { data: _channelPeerSuggestions } = useChannelPeerSuggestions();
   const navigate = useNavigate();
 
   const [order, setOrder] = React.useState<Partial<NewChannelOrder>>({
@@ -63,11 +55,33 @@ function NewChannelInternal({ network }: { network: Network }) {
     RecommendedChannelPeer | undefined
   >();
 
+  const channelPeerSuggestions = React.useMemo(() => {
+    const customOption: RecommendedChannelPeer = {
+      name: "Custom",
+      network,
+      paymentMethod: "onchain",
+      minimumChannelSize: 0,
+      pubkey: "",
+      host: "",
+      image: "",
+    };
+    return _channelPeerSuggestions
+      ? [..._channelPeerSuggestions, customOption]
+      : undefined;
+  }, [_channelPeerSuggestions, network]);
+
   function setPaymentMethod(paymentMethod: "onchain" | "lightning") {
-    setOrder({
-      ...order,
+    setOrder((current) => ({
+      ...current,
       paymentMethod,
-    });
+    }));
+  }
+
+  function setPublic(isPublic: boolean) {
+    setOrder((current) => ({
+      ...current,
+      isPublic,
+    }));
   }
 
   const setAmount = React.useCallback((amount: string) => {
@@ -129,19 +143,6 @@ function NewChannelInternal({ network }: { network: Network }) {
 
   return (
     <>
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/channels">Liquidity</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Open Channel</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
       <AppHeader
         title="Open a channel"
         description="Funds used to open a channel minus fees will be added to your spending balance"
@@ -257,12 +258,12 @@ function NewChannelInternal({ network }: { network: Network }) {
                           value={getPeerKey(peer)}
                           key={getPeerKey(peer)}
                         >
-                          <div className="flex items-center space-between gap-3 w-full">
+                          <div className="flex items-center gap-3">
                             <div className="flex items-center gap-3">
                               {peer.name !== "Custom" && (
                                 <img
                                   src={peer.image}
-                                  className="w-12 h-12 object-contain"
+                                  className="w-8 h-8 object-contain"
                                 />
                               )}
                               <div>
@@ -301,6 +302,24 @@ function NewChannelInternal({ network }: { network: Network }) {
         {order.paymentMethod === "lightning" && (
           <NewChannelLightning order={order} setOrder={setOrder} />
         )}
+
+        <div className="mt-2 flex items-top space-x-2">
+          <Checkbox
+            id="public-channel"
+            defaultChecked={order.isPublic}
+            onCheckedChange={() => setPublic(!order.isPublic)}
+            className="mr-2"
+          />
+          <div className="grid gap-1.5 leading-none">
+            <Label htmlFor="public-channel" className="flex items-center gap-2">
+              Public Channel
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Enable if you want to receive keysend payments. (e.g. podcasting)
+            </p>
+          </div>
+        </div>
+
         <Button size="lg">Next</Button>
       </form>
     </>
@@ -332,7 +351,7 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
   if (props.order.paymentMethod !== "onchain") {
     throw new Error("unexpected payment method");
   }
-  const { pubkey, host, isPublic } = props.order;
+  const { pubkey, host } = props.order;
   const { setOrder } = props;
   const isAlreadyPeered =
     pubkey && peers?.some((peer) => peer.nodeId === pubkey);
@@ -354,13 +373,6 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
     },
     [setOrder]
   );
-  function setPublic(isPublic: boolean) {
-    props.setOrder((current) => ({
-      ...current,
-      paymentMethod: "onchain",
-      isPublic,
-    }));
-  }
 
   const fetchNodeDetails = React.useCallback(async () => {
     if (!pubkey) {
@@ -437,23 +449,6 @@ function NewChannelOnchain(props: NewChannelOnchainProps) {
             )}
           </>
         )}
-
-        <div className="mt-2 flex items-top space-x-2">
-          <Checkbox
-            id="public-channel"
-            defaultChecked={isPublic}
-            onCheckedChange={() => setPublic(!isPublic)}
-            className="mr-2"
-          />
-          <div className="grid gap-1.5 leading-none">
-            <Label htmlFor="public-channel" className="flex items-center gap-2">
-              Public Channel
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Enable if you want to receive keysend payments. (e.g. podcasting)
-            </p>
-          </div>
-        </div>
       </div>
     </>
   );
