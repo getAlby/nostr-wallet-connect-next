@@ -2,8 +2,8 @@ name: Build package for Raspberry Pi
 
 on:
   push:
-  release:
-    types: [published]
+
+  workflow_call:
 
 jobs:
   build:

@@ -3,6 +3,19 @@ name: Wails build - all platforms
 on:
   push:
 
+  workflow_call:
+    secrets:
+      APPLE_DEVELOPER_CERTIFICATE_P12_BASE64:
+        required: true
+      APPLE_DEVELOPER_CERTIFICATE_PASSWORD:
+        required: true
+      APPLE_PASSWORD:
+        required: true
+      APPLE_TEAM_ID:
+        required: true
+      APPLE_USERNAME:
+        required: true
+
 jobs:
   build:
     strategy:
@@ -227,27 +240,3 @@ jobs:
           path: |
             ./build/bin/albyhub-${{runner.os}}.zip
           if-no-files-found: error
-
-  release_draft:
-    needs: build
-    # if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          merge-multiple: true
-
-      - name: Create release draft
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # tag: ${{ github.ref_name }}
-          tag: ${{ github.sha }} # FIXME: for testing only.
-        run: |
-          gh release create "$tag" \
-            --repo="$GITHUB_REPOSITORY" \
-            --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
-            --generate-notes \
-            --draft \
-            ./artifacts/*
