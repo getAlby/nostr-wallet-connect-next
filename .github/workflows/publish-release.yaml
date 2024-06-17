@@ -14,7 +14,7 @@ jobs:
       - name: Download Raspberry Pi archive
         uses: actions/download-artifact@v4
         with:
-          name: nostr-wallet-connect.zip
+          name: nostr-wallet-connect.tar.bz2
           path: artifacts
 
       - name: Download Linux desktop archive
