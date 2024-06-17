@@ -77,29 +77,29 @@ type WailsLogger struct {
 }
 
 func (wailsLogger WailsLogger) Print(message string) {
-	logger.Logger.Print(message)
+	logger.Logger.WithField("wails", true).Print(message)
 }
 
 func (wailsLogger WailsLogger) Trace(message string) {
-	logger.Logger.Trace(message)
+	logger.Logger.WithField("wails", true).Trace(message)
 }
 
 func (wailsLogger WailsLogger) Debug(message string) {
-	logger.Logger.Debug(message)
+	logger.Logger.WithField("wails", true).Debug(message)
 }
 
 func (wailsLogger WailsLogger) Info(message string) {
-	logger.Logger.Info(message)
+	logger.Logger.WithField("wails", true).Info(message)
 }
 
 func (wailsLogger WailsLogger) Warning(message string) {
-	logger.Logger.Warning(message)
+	logger.Logger.WithField("wails", true).Warning(message)
 }
 
 func (wailsLogger WailsLogger) Error(message string) {
-	logger.Logger.Error(message)
+	logger.Logger.WithField("wails", true).Error(message)
 }
 
 func (wailsLogger WailsLogger) Fatal(message string) {
-	logger.Logger.Fatal(message)
+	logger.Logger.WithField("wails", true).Fatal(message)
 }
