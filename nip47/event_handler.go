@@ -279,6 +279,7 @@ func (svc *nip47Service) HandleEvent(ctx context.Context, sub *nostr.Subscriptio
 		"params":              nip47Request.Params,
 	}).Info("Handling NIP-47 request")
 
+	// TODO: controllers should share a common interface
 	switch nip47Request.Method {
 	case models.MULTI_PAY_INVOICE_METHOD:
 		controllers.

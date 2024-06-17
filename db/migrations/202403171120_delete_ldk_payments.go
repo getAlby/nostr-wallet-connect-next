@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// TODO: delete the whole migration
 // Delete LDK payments that were not migrated to the new LDK format (PaymentKind)
 // this has now been removed as it only affects old test builds that should have been updated by now
 // in case someone encounters it, they can run the commands on their DB to fix the issue.

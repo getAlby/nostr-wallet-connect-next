@@ -30,6 +30,7 @@ func NewGetBalanceController(lnClient lnclient.LNClient) *getBalanceController {
 	}
 }
 
+// TODO: remove checkPermission - can it be a middleware?
 func (controller *getBalanceController) HandleGetBalanceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
 	// basic permissions check
 	resp := checkPermission(0)

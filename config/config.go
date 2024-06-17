@@ -201,6 +201,7 @@ func (cfg *config) CheckUnlockPassword(encryptionKey string) bool {
 	return err == nil && (decryptedValue == "" || decryptedValue == unlockPasswordCheck)
 }
 
+// TODO: rename
 func (cfg *config) Setup(encryptionKey string) {
 	cfg.SetUpdate("UnlockPasswordCheck", unlockPasswordCheck, encryptionKey)
 }
