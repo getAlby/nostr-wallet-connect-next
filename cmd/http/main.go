@@ -1,8 +1,3 @@
-//go:build !wails || http
-// +build !wails http
-
-// (http tag above is simply to fix go language server issue and is not needed to build the app)
-
 package main
 
 import (
@@ -22,8 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ignore this warning: we use build tags
-// this function will only be executed if no wails tag is set
 func main() {
 	log.Info("NWC Starting in HTTP mode")
 	ctx, _ := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, os.Kill)

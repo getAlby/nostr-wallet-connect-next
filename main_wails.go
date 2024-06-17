@@ -19,8 +19,6 @@ var assets embed.FS
 //go:embed appicon.png
 var appIcon []byte
 
-// ignore this warning: we use build tags
-// this function will only be executed if the wails tag is set
 func main() {
 	log.Info("NWC Starting in WAILS mode")
 	ctx, cancel := context.WithCancel(context.Background())
