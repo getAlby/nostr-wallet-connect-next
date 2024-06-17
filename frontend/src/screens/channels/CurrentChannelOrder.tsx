@@ -629,7 +629,7 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium p-3">
-                      Amount to pay
+                      Channel size
                     </TableCell>
                     <TableCell className="font-semibold text-right p-3">
                       {new Intl.NumberFormat().format(parseInt(order.amount))}{" "}
