@@ -1,10 +1,12 @@
 import {
   CheckCircle2,
   CircleX,
+  EditIcon,
   ExternalLinkIcon,
   Link2Icon,
   ZapIcon,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
 import UserAvatar from "src/components/UserAvatar";
@@ -42,14 +44,14 @@ function AlbyConnectionCard({ connection }: { connection?: App }) {
         </CardDescription>
       </CardHeader>
       <Separator />
-      <CardContent>
-        <div className="grid grid-cols-1 xl:grid-cols-2 mt-5 gap-3 items-center">
+      <CardContent className="group">
+        <div className="grid grid-cols-1 xl:grid-cols-2 mt-5 gap-3 items-center relative">
           <div className="flex flex-col gap-4">
             <div className="flex flex-row gap-4 ">
               <UserAvatar className="h-14 w-14" />
               <div className="flex flex-col">
                 <div className="text-xl font-semibold">{albyMe?.name}</div>
-                <div className="flex flex-row items-center gap-1 text-sm">
+                <div className="flex flex-row items-center gap-1 text-sm text-muted-foreground">
                   <ZapIcon className="w-4 h-4" />
                   {albyMe?.lightning_address}
                 </div>
@@ -91,6 +93,12 @@ function AlbyConnectionCard({ connection }: { connection?: App }) {
             </div>
           </div>
           <div>
+            <Link
+              to={`/apps/${connection?.nostrPubkey}`}
+              className="absolute top-0 right-0"
+            >
+              <EditIcon className="w-4 h-4 hidden group-hover:inline text-muted-foreground hover:text-card-foreground" />
+            </Link>
             {connection && <AppCardConnectionInfo connection={connection} />}
           </div>
         </div>

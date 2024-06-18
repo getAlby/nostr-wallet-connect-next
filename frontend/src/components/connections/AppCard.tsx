@@ -23,7 +23,7 @@ export default function AppCard({ app }: Props) {
   return (
     <>
       <Link className="h-full" to={`/apps/${app.nostrPubkey}`}>
-        <Card className="h-full flex flex-col">
+        <Card className="h-full flex flex-col group">
           <CardHeader>
             <CardTitle className="relative">
               <AppCardNotice app={app} />

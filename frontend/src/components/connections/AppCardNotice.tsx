@@ -1,7 +1,8 @@
-import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import dayjs from "dayjs";
+import isBetween from "dayjs/plugin/isBetween"; // Add this line
+import { CalendarClock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Button } from "src/components/ui/button";
+import { Badge } from "src/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -10,47 +11,47 @@ import {
 } from "src/components/ui/tooltip";
 import { App } from "src/types";
 
+dayjs.extend(isBetween); // Extend dayjs with the isBetween plugin
+
 type AppCardNoticeProps = {
   app: App;
 };
 
-const ONE_WEEK_IN_SECONDS = 8 * 24 * 60 * 60 * 1000;
-
 export function AppCardNotice({ app }: AppCardNoticeProps) {
+  const now = dayjs();
+  const expiresAt = dayjs(app.expiresAt);
+  const isExpired = expiresAt.isBefore(now);
+  const expiresSoon = expiresAt.isBetween(now, now.add(7, "days"));
+
   return (
     <div className="absolute top-0 right-0">
       {app.expiresAt ? (
-        new Date(app.expiresAt).getTime() < new Date().getTime() ? (
+        isExpired ? (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link to={`/apps/${app.nostrPubkey}`}>
-                  <Button variant="destructive">
-                    <ExclamationTriangleIcon className="w-4 h-4" />
-                    &nbsp; Expired
-                  </Button>
+                  <Badge variant="destructive">
+                    <CalendarClock className="w-3 h-3 mr-2" />
+                    Expired
+                  </Badge>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent>
-                Expired {dayjs(app.expiresAt).fromNow()}
-              </TooltipContent>
+              <TooltipContent>Expired {expiresAt.fromNow()}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-        ) : new Date(app.expiresAt).getTime() - ONE_WEEK_IN_SECONDS <
-          new Date().getTime() ? (
+        ) : expiresSoon ? (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link to={`/apps/${app.nostrPubkey}`}>
-                  <Button variant="outline" size="sm">
-                    <ExclamationTriangleIcon className="w-4 h-4" />
-                    &nbsp; Expires Soon
-                  </Button>
+                  <Badge variant="outline">
+                    <CalendarClock className="w-3 h-3 mr-2" />
+                    Expires Soon
+                  </Badge>
                 </Link>
               </TooltipTrigger>
-              <TooltipContent>
-                Expires {dayjs(app.expiresAt).fromNow()}
-              </TooltipContent>
+              <TooltipContent>Expires {expiresAt.fromNow()}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         ) : null
