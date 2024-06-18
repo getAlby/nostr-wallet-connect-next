@@ -7,31 +7,15 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
-	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/nbd-wtf/go-nostr"
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 type payInvoiceParams struct {
 	Invoice string `json:"invoice"`
-}
-
-type payInvoiceController struct {
-	lnClient       lnclient.LNClient
-	db             *gorm.DB
-	eventPublisher events.EventPublisher
-}
-
-func NewPayInvoiceController(lnClient lnclient.LNClient, db *gorm.DB, eventPublisher events.EventPublisher) *payInvoiceController {
-	return &payInvoiceController{
-		lnClient:       lnClient,
-		db:             db,
-		eventPublisher: eventPublisher,
-	}
 }
 
 func (svc *controllersService) HandlePayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
