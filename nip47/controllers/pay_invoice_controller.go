@@ -18,11 +18,16 @@ type payInvoiceParams struct {
 	Invoice string `json:"invoice"`
 }
 
-func (svc *controllersService) HandlePayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
+func (svc *controllersService) HandlePayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, respChan models.ResponseChannel) {
+	tags := nostr.Tags{}
 	payParams := &payInvoiceParams{}
 	resp := decodeRequest(nip47Request, payParams)
 	if resp != nil {
-		publishResponse(resp, tags)
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &tags,
+		}
+		close(respChan)
 		return
 	}
 
@@ -37,36 +42,46 @@ func (svc *controllersService) HandlePayInvoiceEvent(ctx context.Context, nip47R
 			"bolt11":           bolt11,
 		}).WithError(err).Error("Failed to decode bolt11 invoice")
 
-		publishResponse(&models.Response{
-			ResultType: nip47Request.Method,
-			Error: &models.Error{
-				Code:    models.ERROR_INTERNAL,
-				Message: fmt.Sprintf("Failed to decode bolt11 invoice: %s", err.Error()),
+		respChan <- &models.ControllerResponse{
+			Response: &models.Response{
+				ResultType: nip47Request.Method,
+				Error: &models.Error{
+					Code:    models.ERROR_INTERNAL,
+					Message: fmt.Sprintf("Failed to decode bolt11 invoice: %s", err.Error()),
+				},
 			},
-		}, tags)
+			Tags: &tags,
+		}
+		close(respChan)
 		return
 	}
 
-	svc.pay(ctx, bolt11, &paymentRequest, nip47Request, requestEventId, app, checkPermission, publishResponse, tags)
+	svc.pay(ctx, bolt11, &paymentRequest, nip47Request, requestEventId, app, checkPermission, respChan, tags)
 }
 
-func (svc *controllersService) pay(ctx context.Context, bolt11 string, paymentRequest *decodepay.Bolt11, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
+func (svc *controllersService) pay(ctx context.Context, bolt11 string, paymentRequest *decodepay.Bolt11, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, respChan models.ResponseChannel, tags nostr.Tags) {
 	resp := checkPermission(uint64(paymentRequest.MSatoshi))
 	if resp != nil {
-		publishResponse(resp, tags)
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &tags,
+		}
 		return
 	}
 
 	payment := db.Payment{App: *app, RequestEventId: requestEventId, PaymentRequest: bolt11, Amount: uint(paymentRequest.MSatoshi / 1000)}
 	err := svc.db.Create(&payment).Error
 	if err != nil {
-		publishResponse(&models.Response{
-			ResultType: nip47Request.Method,
-			Error: &models.Error{
-				Code:    models.ERROR_INTERNAL,
-				Message: err.Error(),
+		respChan <- &models.ControllerResponse{
+			Response: &models.Response{
+				ResultType: nip47Request.Method,
+				Error: &models.Error{
+					Code:    models.ERROR_INTERNAL,
+					Message: err.Error(),
+				},
 			},
-		}, tags)
+			Tags: &tags,
+		}
 		return
 	}
 
@@ -91,13 +106,16 @@ func (svc *controllersService) pay(ctx context.Context, bolt11 string, paymentRe
 				"amount":  paymentRequest.MSatoshi / 1000,
 			},
 		})
-		publishResponse(&models.Response{
-			ResultType: nip47Request.Method,
-			Error: &models.Error{
-				Code:    models.ERROR_INTERNAL,
-				Message: err.Error(),
+		respChan <- &models.ControllerResponse{
+			Response: &models.Response{
+				ResultType: nip47Request.Method,
+				Error: &models.Error{
+					Code:    models.ERROR_INTERNAL,
+					Message: err.Error(),
+				},
 			},
-		}, tags)
+			Tags: &tags,
+		}
 		return
 	}
 	payment.Preimage = &response.Preimage
@@ -112,11 +130,14 @@ func (svc *controllersService) pay(ctx context.Context, bolt11 string, paymentRe
 		},
 	})
 
-	publishResponse(&models.Response{
-		ResultType: nip47Request.Method,
-		Result: PayResponse{
-			Preimage: response.Preimage,
-			FeesPaid: response.Fee,
+	respChan <- &models.ControllerResponse{
+		Response: &models.Response{
+			ResultType: nip47Request.Method,
+			Result: PayResponse{
+				Preimage: response.Preimage,
+				FeesPaid: response.Fee,
+			},
 		},
-	}, tags)
+		Tags: &tags,
+	}
 }

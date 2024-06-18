@@ -19,33 +19,44 @@ type payKeysendParams struct {
 	TLVRecords []lnclient.TLVRecord `json:"tlv_records"`
 }
 
-func (svc *controllersService) HandlePayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
+func (svc *controllersService) HandlePayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, respChan models.ResponseChannel) {
+	tags := nostr.Tags{}
 	payKeysendParams := &payKeysendParams{}
 	resp := decodeRequest(nip47Request, payKeysendParams)
 	if resp != nil {
-		publishResponse(resp, tags)
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &tags,
+		}
+		close(respChan)
 		return
 	}
-	svc.payKeysend(ctx, payKeysendParams, nip47Request, requestEventId, app, checkPermission, publishResponse, tags)
+	svc.payKeysend(ctx, payKeysendParams, nip47Request, requestEventId, app, checkPermission, respChan, tags)
 }
 
-func (svc *controllersService) payKeysend(ctx context.Context, payKeysendParams *payKeysendParams, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
+func (svc *controllersService) payKeysend(ctx context.Context, payKeysendParams *payKeysendParams, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, respChan models.ResponseChannel, tags nostr.Tags) {
 	resp := checkPermission(payKeysendParams.Amount)
 	if resp != nil {
-		publishResponse(resp, tags)
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &tags,
+		}
 		return
 	}
 
 	payment := db.Payment{App: *app, RequestEventId: requestEventId, Amount: uint(payKeysendParams.Amount / 1000)}
 	err := svc.db.Create(&payment).Error
 	if err != nil {
-		publishResponse(&models.Response{
-			ResultType: nip47Request.Method,
-			Error: &models.Error{
-				Code:    models.ERROR_INTERNAL,
-				Message: err.Error(),
+		respChan <- &models.ControllerResponse{
+			Response: &models.Response{
+				ResultType: nip47Request.Method,
+				Error: &models.Error{
+					Code:    models.ERROR_INTERNAL,
+					Message: err.Error(),
+				},
 			},
-		}, tags)
+			Tags: &tags,
+		}
 		return
 	}
 
@@ -70,13 +81,16 @@ func (svc *controllersService) payKeysend(ctx context.Context, payKeysendParams 
 				"amount":  payKeysendParams.Amount / 1000,
 			},
 		})
-		publishResponse(&models.Response{
-			ResultType: nip47Request.Method,
-			Error: &models.Error{
-				Code:    models.ERROR_INTERNAL,
-				Message: err.Error(),
+		respChan <- &models.ControllerResponse{
+			Response: &models.Response{
+				ResultType: nip47Request.Method,
+				Error: &models.Error{
+					Code:    models.ERROR_INTERNAL,
+					Message: err.Error(),
+				},
 			},
-		}, tags)
+			Tags: &tags,
+		}
 		return
 	}
 	payment.Preimage = &preimage
@@ -88,10 +102,13 @@ func (svc *controllersService) payKeysend(ctx context.Context, payKeysendParams 
 			"amount":  payKeysendParams.Amount / 1000,
 		},
 	})
-	publishResponse(&models.Response{
-		ResultType: nip47Request.Method,
-		Result: PayResponse{
-			Preimage: preimage,
+	respChan <- &models.ControllerResponse{
+		Response: &models.Response{
+			ResultType: nip47Request.Method,
+			Result: PayResponse{
+				Preimage: preimage,
+			},
 		},
-	}, tags)
+		Tags: &tags,
+	}
 }

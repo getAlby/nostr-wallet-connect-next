@@ -18,18 +18,26 @@ type signMessageResponse struct {
 	Signature string `json:"signature"`
 }
 
-func (svc *controllersService) HandleSignMessageEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleSignMessageEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, respChan models.ResponseChannel) {
 	// basic permissions check
 	resp := checkPermission(0)
 	if resp != nil {
-		publishResponse(resp, nostr.Tags{})
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &nostr.Tags{},
+		}
+		close(respChan)
 		return
 	}
 
 	signParams := &signMessageParams{}
 	resp = decodeRequest(nip47Request, signParams)
 	if resp != nil {
-		publishResponse(resp, nostr.Tags{})
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &nostr.Tags{},
+		}
+		close(respChan)
 		return
 	}
 
@@ -42,13 +50,17 @@ func (svc *controllersService) HandleSignMessageEvent(ctx context.Context, nip47
 		logger.Logger.WithFields(logrus.Fields{
 			"request_event_id": requestEventId,
 		}).WithError(err).Error("Failed to sign message")
-		publishResponse(&models.Response{
-			ResultType: nip47Request.Method,
-			Error: &models.Error{
-				Code:    models.ERROR_INTERNAL,
-				Message: err.Error(),
+		respChan <- &models.ControllerResponse{
+			Response: &models.Response{
+				ResultType: nip47Request.Method,
+				Error: &models.Error{
+					Code:    models.ERROR_INTERNAL,
+					Message: err.Error(),
+				},
 			},
-		}, nostr.Tags{})
+			Tags: &nostr.Tags{},
+		}
+		close(respChan)
 		return
 	}
 
@@ -57,8 +69,12 @@ func (svc *controllersService) HandleSignMessageEvent(ctx context.Context, nip47
 		Signature: signature,
 	}
 
-	publishResponse(&models.Response{
-		ResultType: nip47Request.Method,
-		Result:     responsePayload,
-	}, nostr.Tags{})
+	respChan <- &models.ControllerResponse{
+		Response: &models.Response{
+			ResultType: nip47Request.Method,
+			Result:     responsePayload,
+		},
+		Tags: &nostr.Tags{},
+	}
+	close(respChan)
 }

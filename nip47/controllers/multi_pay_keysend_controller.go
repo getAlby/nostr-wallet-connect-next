@@ -18,11 +18,15 @@ type multiPayKeysendElement struct {
 	Id string `json:"id"`
 }
 
-func (svc *controllersService) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleMultiPayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, respChan models.ResponseChannel) {
 	multiPayParams := &multiPayKeysendParams{}
 	resp := decodeRequest(nip47Request, multiPayParams)
 	if resp != nil {
-		publishResponse(resp, nostr.Tags{})
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &nostr.Tags{},
+		}
+		close(respChan)
 		return
 	}
 
@@ -38,9 +42,10 @@ func (svc *controllersService) HandleMultiPayKeysendEvent(ctx context.Context, n
 			}
 			dTag := []string{"d", keysendDTagValue}
 
-			svc.payKeysend(ctx, &keysendInfo.payKeysendParams, nip47Request, requestEventId, app, checkPermission, publishResponse, nostr.Tags{dTag})
+			svc.payKeysend(ctx, &keysendInfo.payKeysendParams, nip47Request, requestEventId, app, checkPermission, respChan, nostr.Tags{dTag})
 		}(keysendInfo)
 	}
 
 	wg.Wait()
+	close(respChan)
 }

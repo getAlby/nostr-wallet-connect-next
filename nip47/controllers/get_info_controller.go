@@ -20,11 +20,15 @@ type GetInfoResponse struct {
 	Methods     []string `json:"methods"`
 }
 
-func (svc *controllersService) HandleGetInfoEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleGetInfoEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, respChan models.ResponseChannel) {
 	// basic permissions check
 	resp := checkPermission(0)
 	if resp != nil {
-		publishResponse(resp, nostr.Tags{})
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &nostr.Tags{},
+		}
+		close(respChan)
 		return
 	}
 
@@ -38,13 +42,17 @@ func (svc *controllersService) HandleGetInfoEvent(ctx context.Context, nip47Requ
 			"request_event_id": requestEventId,
 		}).Infof("Failed to fetch node info: %v", err)
 
-		publishResponse(&models.Response{
-			ResultType: nip47Request.Method,
-			Error: &models.Error{
-				Code:    models.ERROR_INTERNAL,
-				Message: err.Error(),
+		respChan <- &models.ControllerResponse{
+			Response: &models.Response{
+				ResultType: nip47Request.Method,
+				Error: &models.Error{
+					Code:    models.ERROR_INTERNAL,
+					Message: err.Error(),
+				},
 			},
-		}, nostr.Tags{})
+			Tags: &nostr.Tags{},
+		}
+		close(respChan)
 		return
 	}
 
@@ -64,8 +72,12 @@ func (svc *controllersService) HandleGetInfoEvent(ctx context.Context, nip47Requ
 		Methods:     svc.GetPermittedMethods(app),
 	}
 
-	publishResponse(&models.Response{
-		ResultType: nip47Request.Method,
-		Result:     responsePayload,
-	}, nostr.Tags{})
+	respChan <- &models.ControllerResponse{
+		Response: &models.Response{
+			ResultType: nip47Request.Method,
+			Result:     responsePayload,
+		},
+		Tags: &nostr.Tags{},
+	}
+	close(respChan)
 }

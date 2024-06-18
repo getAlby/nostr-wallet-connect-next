@@ -21,18 +21,26 @@ type LookupInvoiceResponse struct {
 	models.Transaction
 }
 
-func (svc *controllersService) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, respChan models.ResponseChannel) {
 	// basic permissions check
 	resp := checkPermission(0)
 	if resp != nil {
-		publishResponse(resp, nostr.Tags{})
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &nostr.Tags{},
+		}
+		close(respChan)
 		return
 	}
 
 	lookupInvoiceParams := &lookupInvoiceParams{}
 	resp = decodeRequest(nip47Request, lookupInvoiceParams)
 	if resp != nil {
-		publishResponse(resp, nostr.Tags{})
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &nostr.Tags{},
+		}
+		close(respChan)
 		return
 	}
 
@@ -52,13 +60,17 @@ func (svc *controllersService) HandleLookupInvoiceEvent(ctx context.Context, nip
 				"invoice":          lookupInvoiceParams.Invoice,
 			}).WithError(err).Error("Failed to decode bolt11 invoice")
 
-			publishResponse(&models.Response{
-				ResultType: nip47Request.Method,
-				Error: &models.Error{
-					Code:    models.ERROR_INTERNAL,
-					Message: fmt.Sprintf("Failed to decode bolt11 invoice: %s", err.Error()),
+			respChan <- &models.ControllerResponse{
+				Response: &models.Response{
+					ResultType: nip47Request.Method,
+					Error: &models.Error{
+						Code:    models.ERROR_INTERNAL,
+						Message: fmt.Sprintf("Failed to decode bolt11 invoice: %s", err.Error()),
+					},
 				},
-			}, nostr.Tags{})
+				Tags: &nostr.Tags{},
+			}
+			close(respChan)
 			return
 		}
 		paymentHash = paymentRequest.PaymentHash
@@ -72,13 +84,17 @@ func (svc *controllersService) HandleLookupInvoiceEvent(ctx context.Context, nip
 			"payment_hash":     paymentHash,
 		}).Infof("Failed to lookup invoice: %v", err)
 
-		publishResponse(&models.Response{
-			ResultType: nip47Request.Method,
-			Error: &models.Error{
-				Code:    models.ERROR_INTERNAL,
-				Message: err.Error(),
+		respChan <- &models.ControllerResponse{
+			Response: &models.Response{
+				ResultType: nip47Request.Method,
+				Error: &models.Error{
+					Code:    models.ERROR_INTERNAL,
+					Message: err.Error(),
+				},
 			},
-		}, nostr.Tags{})
+			Tags: &nostr.Tags{},
+		}
+		close(respChan)
 		return
 	}
 
@@ -86,8 +102,12 @@ func (svc *controllersService) HandleLookupInvoiceEvent(ctx context.Context, nip
 		Transaction: *transaction,
 	}
 
-	publishResponse(&models.Response{
-		ResultType: nip47Request.Method,
-		Result:     responsePayload,
-	}, nostr.Tags{})
+	respChan <- &models.ControllerResponse{
+		Response: &models.Response{
+			ResultType: nip47Request.Method,
+			Result:     responsePayload,
+		},
+		Tags: &nostr.Tags{},
+	}
+	close(respChan)
 }

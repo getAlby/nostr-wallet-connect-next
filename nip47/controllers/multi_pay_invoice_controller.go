@@ -23,11 +23,15 @@ type multiPayInvoiceParams struct {
 	Invoices []multiPayInvoiceElement `json:"invoices"`
 }
 
-func (svc *controllersService) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, respChan models.ResponseChannel) {
 	multiPayParams := &multiPayInvoiceParams{}
 	resp := decodeRequest(nip47Request, multiPayParams)
 	if resp != nil {
-		publishResponse(resp, nostr.Tags{})
+		respChan <- &models.ControllerResponse{
+			Response: resp,
+			Tags:     &nostr.Tags{},
+		}
+		close(respChan)
 		return
 	}
 
@@ -49,13 +53,16 @@ func (svc *controllersService) HandleMultiPayInvoiceEvent(ctx context.Context, n
 
 				// TODO: Decide what to do if id is empty
 				dTag := []string{"d", invoiceInfo.Id}
-				publishResponse(&models.Response{
-					ResultType: nip47Request.Method,
-					Error: &models.Error{
-						Code:    models.ERROR_INTERNAL,
-						Message: fmt.Sprintf("Failed to decode bolt11 invoice: %s", err.Error()),
+				respChan <- &models.ControllerResponse{
+					Response: &models.Response{
+						ResultType: nip47Request.Method,
+						Error: &models.Error{
+							Code:    models.ERROR_INTERNAL,
+							Message: fmt.Sprintf("Failed to decode bolt11 invoice: %s", err.Error()),
+						},
 					},
-				}, nostr.Tags{dTag})
+					Tags: &nostr.Tags{dTag},
+				}
 				return
 			}
 
@@ -65,9 +72,10 @@ func (svc *controllersService) HandleMultiPayInvoiceEvent(ctx context.Context, n
 			}
 			dTag := []string{"d", invoiceDTagValue}
 
-			svc.pay(ctx, bolt11, &paymentRequest, nip47Request, requestEventId, app, checkPermission, publishResponse, nostr.Tags{dTag})
+			svc.pay(ctx, bolt11, &paymentRequest, nip47Request, requestEventId, app, checkPermission, respChan, nostr.Tags{dTag})
 		}(invoiceInfo)
 	}
 
 	wg.Wait()
+	close(respChan)
 }

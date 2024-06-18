@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
+	"github.com/nbd-wtf/go-nostr"
 )
 
 const (
@@ -40,6 +41,13 @@ const (
 	BUDGET_RENEWAL_YEARLY  = "yearly"
 	BUDGET_RENEWAL_NEVER   = "never"
 )
+
+type ResponseChannel chan *ControllerResponse
+
+type ControllerResponse struct {
+	Response *Response
+	Tags     *nostr.Tags
+}
 
 type Transaction = lnclient.Transaction
 

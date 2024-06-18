@@ -32,16 +32,16 @@ type ControllersService interface {
 	GetBudgetUsage(appPermission *db.AppPermission) uint64
 	GetPermittedMethods(app *db.App) []string
 
-	HandleGetBalanceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission func(amountMsat uint64) *models.Response, publishResponse func(*models.Response, nostr.Tags))
-	HandleGetInfoEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission func(amountMsat uint64) *models.Response, publishResponse func(*models.Response, nostr.Tags))
-	HandleListTransactionsEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission func(amountMsat uint64) *models.Response, publishResponse func(*models.Response, nostr.Tags))
-	HandleLookupInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission func(amountMsat uint64) *models.Response, publishResponse func(*models.Response, nostr.Tags))
-	HandleMakeInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission func(amountMsat uint64) *models.Response, publishResponse func(*models.Response, nostr.Tags))
-	HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission func(amountMsat uint64) *models.Response, publishResponse func(*models.Response, nostr.Tags))
-	HandleMultiPayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission func(amountMsat uint64) *models.Response, publishResponse func(*models.Response, nostr.Tags))
-	HandlePayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission func(amountMsat uint64) *models.Response, publishResponse func(*models.Response, nostr.Tags), tags nostr.Tags)
-	HandlePayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission func(amountMsat uint64) *models.Response, publishResponse func(*models.Response, nostr.Tags), tags nostr.Tags)
-	HandleSignMessageEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission func(amountMsat uint64) *models.Response, publishResponse func(*models.Response, nostr.Tags))
+	HandleGetBalanceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission func(amountMsat uint64) *models.Response, respChan models.ResponseChannel)
+	HandleGetInfoEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission func(amountMsat uint64) *models.Response, respChan models.ResponseChannel)
+	HandleListTransactionsEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission func(amountMsat uint64) *models.Response, respChan models.ResponseChannel)
+	HandleLookupInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission func(amountMsat uint64) *models.Response, respChan models.ResponseChannel)
+	HandleMakeInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission func(amountMsat uint64) *models.Response, respChan models.ResponseChannel)
+	HandleMultiPayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission func(amountMsat uint64) *models.Response, respChan models.ResponseChannel)
+	HandleMultiPayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission func(amountMsat uint64) *models.Response, respChan models.ResponseChannel)
+	HandlePayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission func(amountMsat uint64) *models.Response, respChan models.ResponseChannel)
+	HandlePayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission func(amountMsat uint64) *models.Response, respChan models.ResponseChannel)
+	HandleSignMessageEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission func(amountMsat uint64) *models.Response, respChan models.ResponseChannel)
 }
 
 func NewControllersService(db *gorm.DB, eventPublisher events.EventPublisher, lnClient lnclient.LNClient) *controllersService {

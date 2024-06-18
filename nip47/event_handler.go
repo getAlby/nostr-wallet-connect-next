@@ -205,42 +205,7 @@ func (svc *nip47Service) HandleEvent(ctx context.Context, sub *nostr.Subscriptio
 	requestEvent.ContentData = payload
 	svc.db.Save(&requestEvent) // we ignore potential DB errors here as this only saves the method and content data
 
-	// TODO: replace with a channel
-	// TODO: update all previous occurences of svc.publishResponseEvent to also use the channel
-	publishResponse := func(nip47Response *models.Response, tags nostr.Tags) {
-		resp, err := svc.CreateResponse(event, nip47Response, tags, ss)
-		if err != nil {
-			logger.Logger.WithFields(logrus.Fields{
-				"requestEventNostrId": event.ID,
-				"eventKind":           event.Kind,
-				"appId":               app.ID,
-			}).WithError(err).Error("Failed to create response")
-			requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
-		} else {
-			err = svc.publishResponseEvent(ctx, sub, &requestEvent, resp, &app)
-			if err != nil {
-				logger.Logger.WithFields(logrus.Fields{
-					"requestEventNostrId": event.ID,
-					"eventKind":           event.Kind,
-					"appId":               app.ID,
-				}).WithError(err).Error("Failed to publish event")
-				requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
-			} else {
-				requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_EXECUTED
-				logger.Logger.WithFields(logrus.Fields{
-					"requestEventNostrId": event.ID,
-					"eventKind":           event.Kind,
-					"appId":               app.ID,
-				}).Info("Published response")
-			}
-		}
-		err = svc.db.Save(&requestEvent).Error
-		if err != nil {
-			logger.Logger.WithFields(logrus.Fields{
-				"nostrPubkey": event.PubKey,
-			}).WithError(err).Error("Failed to save state to nostr event")
-		}
-	}
+	responseChan := make(models.ResponseChannel)
 
 	checkPermission := func(amountMsat uint64) *models.Response {
 		hasPermission, code, message := svc.controllersService.HasPermission(&app, nip47Request.Method, amountMsat)
@@ -282,46 +247,88 @@ func (svc *nip47Service) HandleEvent(ctx context.Context, sub *nostr.Subscriptio
 		"params":              nip47Request.Params,
 	}).Info("Handling NIP-47 request")
 
-	// TODO: controllers should share a common interface
-	switch nip47Request.Method {
-	case models.MULTI_PAY_INVOICE_METHOD:
-		svc.controllersService.
-			HandleMultiPayInvoiceEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, publishResponse)
-	case models.MULTI_PAY_KEYSEND_METHOD:
-		svc.controllersService.
-			HandleMultiPayKeysendEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, publishResponse)
-	case models.PAY_INVOICE_METHOD:
-		svc.controllersService.
-			HandlePayInvoiceEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, publishResponse, nostr.Tags{})
-	case models.PAY_KEYSEND_METHOD:
-		svc.controllersService.
-			HandlePayKeysendEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, publishResponse, nostr.Tags{})
-	case models.GET_BALANCE_METHOD:
-		svc.controllersService.
-			HandleGetBalanceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
-	case models.MAKE_INVOICE_METHOD:
-		svc.controllersService.
-			HandleMakeInvoiceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
-	case models.LOOKUP_INVOICE_METHOD:
-		svc.controllersService.
-			HandleLookupInvoiceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
-	case models.LIST_TRANSACTIONS_METHOD:
-		svc.controllersService.
-			HandleListTransactionsEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
-	case models.GET_INFO_METHOD:
-		svc.controllersService.
-			HandleGetInfoEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, publishResponse)
-	case models.SIGN_MESSAGE_METHOD:
-		svc.controllersService.
-			HandleSignMessageEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
-	default:
-		publishResponse(&models.Response{
-			ResultType: nip47Request.Method,
-			Error: &models.Error{
-				Code:    models.ERROR_NOT_IMPLEMENTED,
-				Message: fmt.Sprintf("Unknown method: %s", nip47Request.Method),
-			},
-		}, nostr.Tags{})
+	go func() {
+		// TODO: controllers should share a common interface
+		switch nip47Request.Method {
+		case models.MULTI_PAY_INVOICE_METHOD:
+			svc.controllersService.
+				HandleMultiPayInvoiceEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, responseChan)
+		case models.MULTI_PAY_KEYSEND_METHOD:
+			svc.controllersService.
+				HandleMultiPayKeysendEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, responseChan)
+		case models.PAY_INVOICE_METHOD:
+			svc.controllersService.
+				HandlePayInvoiceEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, responseChan)
+		case models.PAY_KEYSEND_METHOD:
+			svc.controllersService.
+				HandlePayKeysendEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, responseChan)
+		case models.GET_BALANCE_METHOD:
+			svc.controllersService.
+				HandleGetBalanceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, responseChan)
+		case models.MAKE_INVOICE_METHOD:
+			svc.controllersService.
+				HandleMakeInvoiceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, responseChan)
+		case models.LOOKUP_INVOICE_METHOD:
+			svc.controllersService.
+				HandleLookupInvoiceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, responseChan)
+		case models.LIST_TRANSACTIONS_METHOD:
+			svc.controllersService.
+				HandleListTransactionsEvent(ctx, nip47Request, requestEvent.ID, checkPermission, responseChan)
+		case models.GET_INFO_METHOD:
+			svc.controllersService.
+				HandleGetInfoEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, responseChan)
+		case models.SIGN_MESSAGE_METHOD:
+			svc.controllersService.
+				HandleSignMessageEvent(ctx, nip47Request, requestEvent.ID, checkPermission, responseChan)
+		default:
+			responseChan <- &models.ControllerResponse{
+				Response: &models.Response{
+					ResultType: nip47Request.Method,
+					Error: &models.Error{
+						Code:    models.ERROR_NOT_IMPLEMENTED,
+						Message: fmt.Sprintf("Unknown method: %s", nip47Request.Method),
+					},
+				},
+				Tags: &nostr.Tags{},
+			}
+			close(responseChan)
+		}
+	}()
+
+	// Wait for the response(s) and publish
+	for response := range responseChan {
+		resp, err := svc.CreateResponse(event, response.Response, *response.Tags, ss)
+		if err != nil {
+			logger.Logger.WithFields(logrus.Fields{
+				"requestEventNostrId": event.ID,
+				"eventKind":           event.Kind,
+				"appId":               app.ID,
+			}).WithError(err).Error("Failed to create response")
+			requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
+		} else {
+			err = svc.publishResponseEvent(ctx, sub, &requestEvent, resp, &app)
+			if err != nil {
+				logger.Logger.WithFields(logrus.Fields{
+					"requestEventNostrId": event.ID,
+					"eventKind":           event.Kind,
+					"appId":               app.ID,
+				}).WithError(err).Error("Failed to publish event")
+				requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_ERROR
+			} else {
+				requestEvent.State = db.REQUEST_EVENT_STATE_HANDLER_EXECUTED
+				logger.Logger.WithFields(logrus.Fields{
+					"requestEventNostrId": event.ID,
+					"eventKind":           event.Kind,
+					"appId":               app.ID,
+				}).Info("Published response")
+			}
+		}
+		err = svc.db.Save(&requestEvent).Error
+		if err != nil {
+			logger.Logger.WithFields(logrus.Fields{
+				"nostrPubkey": event.PubKey,
+			}).WithError(err).Error("Failed to save state to nostr event")
+		}
 	}
 }
 
