@@ -496,6 +496,8 @@ func (svc *LNDService) OpenChannel(ctx context.Context, openChannelRequest *lncl
 		NodePubkey:         nodePub,
 		Private:            !openChannelRequest.Public,
 		LocalFundingAmount: openChannelRequest.Amount,
+		// set a super-high forwarding fee of 100K sats by default to disable unwanted routing
+		BaseFee: 100_000_000,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open channel with %s: %s", foundPeer.NodeId, err)
