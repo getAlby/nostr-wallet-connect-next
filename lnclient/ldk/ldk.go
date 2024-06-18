@@ -862,8 +862,8 @@ func (ls *LDKService) OpenChannel(ctx context.Context, openChannelRequest *lncli
 
 	channelConfig := ldk_node.NewChannelConfig()
 
-	// TODO: consider setting a super-high forwarding fee by default to disable unwanted routing
-	// channelConfig.SetForwardingFeeBaseMsat(100_000_000)
+	// set a super-high forwarding fee of 100K sats by default to disable unwanted routing
+	channelConfig.SetForwardingFeeBaseMsat(100_000_000)
 
 	logger.Logger.WithField("peer_id", foundPeer.NodeId).Info("Opening channel")
 	userChannelId, err := ls.node.ConnectOpenChannel(foundPeer.NodeId, foundPeer.Address, uint64(openChannelRequest.Amount), nil, &channelConfig, openChannelRequest.Public)
