@@ -42,7 +42,7 @@ export function AppCardNotice({ app }: AppCardNoticeProps) {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link to={`/apps/${app.nostrPubkey}`}>
-                  <Button variant="outline">
+                  <Button variant="outline" size="sm">
                     <ExclamationTriangleIcon className="w-4 h-4" />
                     &nbsp; Expires Soon
                   </Button>
