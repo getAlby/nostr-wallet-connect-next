@@ -10,7 +10,6 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 type payKeysendParams struct {
@@ -18,20 +17,6 @@ type payKeysendParams struct {
 	Pubkey     string               `json:"pubkey"`
 	Preimage   string               `json:"preimage"`
 	TLVRecords []lnclient.TLVRecord `json:"tlv_records"`
-}
-
-type payKeysendController struct {
-	lnClient       lnclient.LNClient
-	db             *gorm.DB
-	eventPublisher events.EventPublisher
-}
-
-func NewPayKeysendController(lnClient lnclient.LNClient, db *gorm.DB, eventPublisher events.EventPublisher) *payKeysendController {
-	return &payKeysendController{
-		lnClient:       lnClient,
-		db:             db,
-		eventPublisher: eventPublisher,
-	}
 }
 
 func (svc *controllersService) HandlePayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
