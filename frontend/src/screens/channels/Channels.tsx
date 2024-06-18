@@ -416,8 +416,8 @@ export default function Channels() {
                 <TableHead className="w-[80px]">Status</TableHead>
                 <TableHead>Node</TableHead>
                 <TableHead className="w-[150px]">Capacity</TableHead>
-                <TableHead className="w-[150px]">Inbound</TableHead>
                 <TableHead className="w-[150px]">Outbound</TableHead>
+                <TableHead className="w-[150px]">Inbound</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -458,10 +458,10 @@ export default function Channels() {
                         </TableCell>
                         <TableCell>{formatAmount(capacity)} sats</TableCell>
                         <TableCell>
-                          {formatAmount(channel.remoteBalance)} sats
+                          {formatAmount(channel.localBalance)} sats
                         </TableCell>
                         <TableCell>
-                          {formatAmount(channel.localBalance)} sats
+                          {formatAmount(channel.remoteBalance)} sats
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
