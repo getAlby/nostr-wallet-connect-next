@@ -1,15 +1,15 @@
 import {
   CheckCircle2,
   CircleX,
-  Edit,
   ExternalLinkIcon,
   Link2Icon,
   ZapIcon,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
 import UserAvatar from "src/components/UserAvatar";
+import { AppCardConnectionInfo } from "src/components/connections/AppCardConnectionInfo";
+import { AppCardNotice } from "src/components/connections/AppCardNotice";
 import { Button } from "src/components/ui/button";
 import {
   Card,
@@ -19,7 +19,6 @@ import {
   CardTitle,
 } from "src/components/ui/card";
 import { LoadingButton } from "src/components/ui/loading-button";
-import { Progress } from "src/components/ui/progress";
 import { Separator } from "src/components/ui/separator";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { LinkStatus, useLinkAccount } from "src/hooks/useLinkAccount";
@@ -33,7 +32,10 @@ function AlbyConnectionCard({ connection }: { connection?: App }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Alby Account</CardTitle>
+        <CardTitle className="relative">
+          Alby Account
+          {connection && <AppCardNotice app={connection} />}
+        </CardTitle>
         <CardDescription>
           Link Your Alby Account to use your lightning address with Alby Hub and
           use apps that you connected to your Alby Account.
@@ -89,63 +91,7 @@ function AlbyConnectionCard({ connection }: { connection?: App }) {
             </div>
           </div>
           <div>
-            {connection && (
-              <>
-                {connection.maxAmount > 0 && (
-                  <>
-                    <div className="flex flex-row justify-between">
-                      <div className="mb-2">
-                        <p className="text-xs text-secondary-foreground font-medium">
-                          You've spent
-                        </p>
-                        <p className="text-xl font-medium">
-                          {new Intl.NumberFormat().format(
-                            connection.budgetUsage
-                          )}{" "}
-                          sats
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        {" "}
-                        <p className="text-xs text-secondary-foreground font-medium">
-                          Left in budget
-                        </p>
-                        <p className="text-xl font-medium text-muted-foreground">
-                          {new Intl.NumberFormat().format(
-                            connection.maxAmount - connection.budgetUsage
-                          )}{" "}
-                          sats
-                        </p>
-                      </div>
-                    </div>
-                    <Progress
-                      className="h-4"
-                      value={
-                        (connection.budgetUsage * 100) / connection.maxAmount
-                      }
-                    />
-                    <div className="flex flex-row justify-between text-xs items-center mt-2">
-                      {connection.maxAmount > 0 ? (
-                        <>
-                          {new Intl.NumberFormat().format(connection.maxAmount)}{" "}
-                          sats / {connection.budgetRenewal}
-                        </>
-                      ) : (
-                        "Not set"
-                      )}
-                      <div>
-                        <Link to={`/apps/${connection.nostrPubkey}`}>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
+            {connection && <AppCardConnectionInfo connection={connection} />}
           </div>
         </div>
       </CardContent>
