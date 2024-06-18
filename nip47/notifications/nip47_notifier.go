@@ -10,8 +10,8 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
+	"github.com/getAlby/nostr-wallet-connect/nip47/controllers"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
-	"github.com/getAlby/nostr-wallet-connect/nip47/permissions"
 	"github.com/getAlby/nostr-wallet-connect/service/keys"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
@@ -29,16 +29,16 @@ type Nip47Notifier struct {
 	keys           keys.Keys
 	lnClient       lnclient.LNClient
 	db             *gorm.DB
-	permissionsSvc permissions.PermissionsService
+	controllersSvc controllers.ControllersService
 }
 
-func NewNip47Notifier(relay Relay, db *gorm.DB, cfg config.Config, keys keys.Keys, permissionsSvc permissions.PermissionsService, lnClient lnclient.LNClient) *Nip47Notifier {
+func NewNip47Notifier(relay Relay, db *gorm.DB, cfg config.Config, keys keys.Keys, controllersSvc controllers.ControllersService, lnClient lnclient.LNClient) *Nip47Notifier {
 	return &Nip47Notifier{
 		relay:          relay,
 		cfg:            cfg,
 		db:             db,
 		lnClient:       lnClient,
-		permissionsSvc: permissionsSvc,
+		controllersSvc: controllersSvc,
 		keys:           keys,
 	}
 }
@@ -77,7 +77,7 @@ func (notifier *Nip47Notifier) notifySubscribers(ctx context.Context, notificati
 	notifier.db.Find(&apps)
 
 	for _, app := range apps {
-		hasPermission, _, _ := notifier.permissionsSvc.HasPermission(&app, permissions.NOTIFICATIONS_PERMISSION, 0)
+		hasPermission, _, _ := notifier.controllersSvc.HasPermission(&app, controllers.NOTIFICATIONS_PERMISSION, 0)
 		if !hasPermission {
 			continue
 		}

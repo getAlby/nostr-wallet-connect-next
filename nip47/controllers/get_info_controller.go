@@ -4,15 +4,13 @@ import (
 	"context"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
-	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
-	permissions "github.com/getAlby/nostr-wallet-connect/nip47/permissions"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/sirupsen/logrus"
 )
 
-type getInfoResponse struct {
+type GetInfoResponse struct {
 	Alias       string   `json:"alias"`
 	Color       string   `json:"color"`
 	Pubkey      string   `json:"pubkey"`
@@ -22,19 +20,7 @@ type getInfoResponse struct {
 	Methods     []string `json:"methods"`
 }
 
-type getInfoController struct {
-	lnClient           lnclient.LNClient
-	permissionsService permissions.PermissionsService
-}
-
-func NewGetInfoController(permissionsService permissions.PermissionsService, lnClient lnclient.LNClient) *getInfoController {
-	return &getInfoController{
-		permissionsService: permissionsService,
-		lnClient:           lnClient,
-	}
-}
-
-func (controller *getInfoController) HandleGetInfoEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleGetInfoEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc) {
 	// basic permissions check
 	resp := checkPermission(0)
 	if resp != nil {
@@ -46,7 +32,7 @@ func (controller *getInfoController) HandleGetInfoEvent(ctx context.Context, nip
 		"request_event_id": requestEventId,
 	}).Info("Getting info")
 
-	info, err := controller.lnClient.GetInfo(ctx)
+	info, err := svc.lnClient.GetInfo(ctx)
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"request_event_id": requestEventId,
@@ -68,14 +54,14 @@ func (controller *getInfoController) HandleGetInfoEvent(ctx context.Context, nip
 		network = "mainnet"
 	}
 
-	responsePayload := &getInfoResponse{
+	responsePayload := &GetInfoResponse{
 		Alias:       info.Alias,
 		Color:       info.Color,
 		Pubkey:      info.Pubkey,
 		Network:     network,
 		BlockHeight: info.BlockHeight,
 		BlockHash:   info.BlockHash,
-		Methods:     controller.permissionsService.GetPermittedMethods(app),
+		Methods:     svc.GetPermittedMethods(app),
 	}
 
 	publishResponse(&models.Response{

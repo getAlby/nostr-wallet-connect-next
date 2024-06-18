@@ -21,31 +21,28 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	nip47 "github.com/getAlby/nostr-wallet-connect/nip47/models"
-	permissions "github.com/getAlby/nostr-wallet-connect/nip47/permissions"
 	"github.com/getAlby/nostr-wallet-connect/service"
 	"github.com/getAlby/nostr-wallet-connect/service/keys"
 	"github.com/getAlby/nostr-wallet-connect/utils"
 )
 
 type api struct {
-	db             *gorm.DB
-	dbSvc          db.DBService
-	cfg            config.Config
-	svc            service.Service
-	permissionsSvc permissions.PermissionsService
-	keys           keys.Keys
-	albyOAuthSvc   alby.AlbyOAuthService
+	db           *gorm.DB
+	dbSvc        db.DBService
+	cfg          config.Config
+	svc          service.Service
+	keys         keys.Keys
+	albyOAuthSvc alby.AlbyOAuthService
 }
 
 func NewAPI(svc service.Service, gormDB *gorm.DB, config config.Config, keys keys.Keys, albyOAuthSvc alby.AlbyOAuthService, eventsPublisher events.EventPublisher) *api {
 	return &api{
-		db:             gormDB,
-		dbSvc:          db.NewDBService(gormDB),
-		cfg:            config,
-		svc:            svc,
-		permissionsSvc: permissions.NewPermissionsService(gormDB, eventsPublisher),
-		keys:           keys,
-		albyOAuthSvc:   albyOAuthSvc,
+		db:           gormDB,
+		dbSvc:        db.NewDBService(gormDB),
+		cfg:          config,
+		svc:          svc,
+		keys:         keys,
+		albyOAuthSvc: albyOAuthSvc,
 	}
 }
 
@@ -199,7 +196,7 @@ func (api *api) GetApp(userApp *db.App) *App {
 	budgetUsage := uint64(0)
 	maxAmount := uint64(paySpecificPermission.MaxAmount)
 	if maxAmount > 0 {
-		budgetUsage = api.permissionsSvc.GetBudgetUsage(&paySpecificPermission)
+		budgetUsage = api.getBudgetUsage(&paySpecificPermission)
 	}
 
 	response := App{
@@ -254,7 +251,7 @@ func (api *api) ListApps() ([]App, error) {
 				apiApp.BudgetRenewal = permission.BudgetRenewal
 				apiApp.MaxAmount = uint64(permission.MaxAmount)
 				if apiApp.MaxAmount > 0 {
-					apiApp.BudgetUsage = api.permissionsSvc.GetBudgetUsage(&permission)
+					apiApp.BudgetUsage = api.getBudgetUsage(&permission)
 				}
 			}
 		}
@@ -710,4 +707,13 @@ func (api *api) parseExpiresAt(expiresAtString string) (*time.Time, error) {
 		expiresAt = &expiresAtValue
 	}
 	return expiresAt, nil
+}
+
+func (api *api) getBudgetUsage(appPermission *db.AppPermission) uint64 {
+	var result struct {
+		Sum uint64
+	}
+	// TODO: discard failed payments from this check instead of checking payments that have a preimage
+	api.db.Table("payments").Select("SUM(amount) as sum").Where("app_id = ? AND preimage IS NOT NULL AND created_at > ?", appPermission.AppId, utils.GetStartOfBudget(appPermission.BudgetRenewal)).Scan(&result)
+	return result.Sum
 }

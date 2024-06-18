@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 
-	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/nbd-wtf/go-nostr"
@@ -16,21 +15,11 @@ type makeInvoiceParams struct {
 	DescriptionHash string `json:"description_hash"`
 	Expiry          int64  `json:"expiry"`
 }
-type makeInvoiceResponse struct {
+type MakeInvoiceResponse struct {
 	models.Transaction
 }
 
-type makeInvoiceController struct {
-	lnClient lnclient.LNClient
-}
-
-func NewMakeInvoiceController(lnClient lnclient.LNClient) *makeInvoiceController {
-	return &makeInvoiceController{
-		lnClient: lnClient,
-	}
-}
-
-func (controller *makeInvoiceController) HandleMakeInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleMakeInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
 	// basic permissions check
 	resp := checkPermission(0)
 	if resp != nil {
@@ -58,7 +47,7 @@ func (controller *makeInvoiceController) HandleMakeInvoiceEvent(ctx context.Cont
 		expiry = 86400
 	}
 
-	transaction, err := controller.lnClient.MakeInvoice(ctx, makeInvoiceParams.Amount, makeInvoiceParams.Description, makeInvoiceParams.DescriptionHash, expiry)
+	transaction, err := svc.lnClient.MakeInvoice(ctx, makeInvoiceParams.Amount, makeInvoiceParams.Description, makeInvoiceParams.DescriptionHash, expiry)
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"request_event_id": requestEventId,
@@ -78,7 +67,7 @@ func (controller *makeInvoiceController) HandleMakeInvoiceEvent(ctx context.Cont
 		return
 	}
 
-	responsePayload := &makeInvoiceResponse{
+	responsePayload := &MakeInvoiceResponse{
 		Transaction: *transaction,
 	}
 

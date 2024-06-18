@@ -1,4 +1,4 @@
-package controllers
+package controller_tests
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/nip47/controllers"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/getAlby/nostr-wallet-connect/tests"
 )
@@ -63,8 +64,9 @@ func TestHandlePayInvoiceEvent_NoPermission(t *testing.T) {
 		publishedResponse = response
 	}
 
-	NewPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
-		HandlePayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse, nostr.Tags{})
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandlePayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse, nostr.Tags{})
 
 	assert.Equal(t, models.ERROR_RESTRICTED, publishedResponse.Error.Code)
 
@@ -97,10 +99,11 @@ func TestHandlePayInvoiceEvent_WithPermission(t *testing.T) {
 		publishedResponse = response
 	}
 
-	NewPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
-		HandlePayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse, nostr.Tags{})
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
 
-	assert.Equal(t, "123preimage", publishedResponse.Result.(payResponse).Preimage)
+	controllersSvc.HandlePayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse, nostr.Tags{})
+
+	assert.Equal(t, "123preimage", publishedResponse.Result.(controllers.PayResponse).Preimage)
 }
 
 func TestHandlePayInvoiceEvent_MalformedInvoice(t *testing.T) {
@@ -130,8 +133,9 @@ func TestHandlePayInvoiceEvent_MalformedInvoice(t *testing.T) {
 		publishedResponse = response
 	}
 
-	NewPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
-		HandlePayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse, nostr.Tags{})
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandlePayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse, nostr.Tags{})
 
 	assert.Nil(t, publishedResponse.Result)
 	assert.Equal(t, models.ERROR_INTERNAL, publishedResponse.Error.Code)

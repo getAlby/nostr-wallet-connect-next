@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 
-	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/nbd-wtf/go-nostr"
@@ -19,21 +18,11 @@ type listTransactionsParams struct {
 	Type   string `json:"type,omitempty"`
 }
 
-type listTransactionsResponse struct {
+type ListTransactionsResponse struct {
 	Transactions []models.Transaction `json:"transactions"`
 }
 
-type listTransactionsController struct {
-	lnClient lnclient.LNClient
-}
-
-func NewListTransactionsController(lnClient lnclient.LNClient) *listTransactionsController {
-	return &listTransactionsController{
-		lnClient: lnClient,
-	}
-}
-
-func (controller *listTransactionsController) HandleListTransactionsEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleListTransactionsEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
 	// basic permissions check
 	resp := checkPermission(0)
 	if resp != nil {
@@ -59,7 +48,7 @@ func (controller *listTransactionsController) HandleListTransactionsEvent(ctx co
 		// make sure a sensible limit is passed
 		limit = maxLimit
 	}
-	transactions, err := controller.lnClient.ListTransactions(ctx, listParams.From, listParams.Until, limit, listParams.Offset, listParams.Unpaid, listParams.Type)
+	transactions, err := svc.lnClient.ListTransactions(ctx, listParams.From, listParams.Until, limit, listParams.Offset, listParams.Unpaid, listParams.Type)
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"params":           listParams,
@@ -76,7 +65,7 @@ func (controller *listTransactionsController) HandleListTransactionsEvent(ctx co
 		return
 	}
 
-	responsePayload := &listTransactionsResponse{
+	responsePayload := &ListTransactionsResponse{
 		Transactions: transactions,
 	}
 

@@ -1,4 +1,4 @@
-package controllers
+package controller_tests
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/nip47/controllers"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/getAlby/nostr-wallet-connect/tests"
 )
@@ -51,8 +52,9 @@ func TestHandleLookupInvoiceEvent_NoPermission(t *testing.T) {
 		publishedResponse = response
 	}
 
-	NewLookupInvoiceController(svc.LNClient).
-		HandleLookupInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, checkPermission, publishResponse)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandleLookupInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, checkPermission, publishResponse)
 
 	assert.Nil(t, publishedResponse.Result)
 	assert.Equal(t, models.ERROR_RESTRICTED, publishedResponse.Error.Code)
@@ -82,11 +84,12 @@ func TestHandleLookupInvoiceEvent_WithPermission(t *testing.T) {
 		publishedResponse = response
 	}
 
-	NewLookupInvoiceController(svc.LNClient).
-		HandleLookupInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, checkPermission, publishResponse)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandleLookupInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, checkPermission, publishResponse)
 
 	assert.Nil(t, publishedResponse.Error)
-	transaction := publishedResponse.Result.(*lookupInvoiceResponse)
+	transaction := publishedResponse.Result.(*controllers.LookupInvoiceResponse)
 	assert.Equal(t, tests.MockTransaction.Type, transaction.Type)
 	assert.Equal(t, tests.MockTransaction.Invoice, transaction.Invoice)
 	assert.Equal(t, tests.MockTransaction.Description, transaction.Description)

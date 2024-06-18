@@ -11,7 +11,6 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
-	controllers "github.com/getAlby/nostr-wallet-connect/nip47/controllers"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
@@ -20,6 +19,10 @@ import (
 )
 
 func (svc *nip47Service) HandleEvent(ctx context.Context, sub *nostr.Subscription, event *nostr.Event, lnClient lnclient.LNClient) {
+	if !svc.controllersService.HasLNClient() {
+		svc.controllersService.SetLNClient(lnClient)
+	}
+
 	var nip47Response *models.Response
 	logger.Logger.WithFields(logrus.Fields{
 		"requestEventNostrId": event.ID,
@@ -240,7 +243,7 @@ func (svc *nip47Service) HandleEvent(ctx context.Context, sub *nostr.Subscriptio
 	}
 
 	checkPermission := func(amountMsat uint64) *models.Response {
-		hasPermission, code, message := svc.permissionsService.HasPermission(&app, nip47Request.Method, amountMsat)
+		hasPermission, code, message := svc.controllersService.HasPermission(&app, nip47Request.Method, amountMsat)
 		if !hasPermission {
 			logger.Logger.WithFields(logrus.Fields{
 				"request_event_id": requestEvent.ID,
@@ -282,44 +285,34 @@ func (svc *nip47Service) HandleEvent(ctx context.Context, sub *nostr.Subscriptio
 	// TODO: controllers should share a common interface
 	switch nip47Request.Method {
 	case models.MULTI_PAY_INVOICE_METHOD:
-		controllers.
-			NewMultiPayInvoiceController(lnClient, svc.db, svc.eventPublisher).
+		svc.controllersService.
 			HandleMultiPayInvoiceEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, publishResponse)
 	case models.MULTI_PAY_KEYSEND_METHOD:
-		controllers.
-			NewMultiPayKeysendController(lnClient, svc.db, svc.eventPublisher).
+		svc.controllersService.
 			HandleMultiPayKeysendEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, publishResponse)
 	case models.PAY_INVOICE_METHOD:
-		controllers.
-			NewPayInvoiceController(lnClient, svc.db, svc.eventPublisher).
+		svc.controllersService.
 			HandlePayInvoiceEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, publishResponse, nostr.Tags{})
 	case models.PAY_KEYSEND_METHOD:
-		controllers.
-			NewPayKeysendController(lnClient, svc.db, svc.eventPublisher).
+		svc.controllersService.
 			HandlePayKeysendEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, publishResponse, nostr.Tags{})
 	case models.GET_BALANCE_METHOD:
-		controllers.
-			NewGetBalanceController(lnClient).
+		svc.controllersService.
 			HandleGetBalanceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
 	case models.MAKE_INVOICE_METHOD:
-		controllers.
-			NewMakeInvoiceController(lnClient).
+		svc.controllersService.
 			HandleMakeInvoiceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
 	case models.LOOKUP_INVOICE_METHOD:
-		controllers.
-			NewLookupInvoiceController(lnClient).
+		svc.controllersService.
 			HandleLookupInvoiceEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
 	case models.LIST_TRANSACTIONS_METHOD:
-		controllers.
-			NewListTransactionsController(lnClient).
+		svc.controllersService.
 			HandleListTransactionsEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
 	case models.GET_INFO_METHOD:
-		controllers.
-			NewGetInfoController(svc.permissionsService, lnClient).
+		svc.controllersService.
 			HandleGetInfoEvent(ctx, nip47Request, requestEvent.ID, &app, checkPermission, publishResponse)
 	case models.SIGN_MESSAGE_METHOD:
-		controllers.
-			NewSignMessageController(lnClient).
+		svc.controllersService.
 			HandleSignMessageEvent(ctx, nip47Request, requestEvent.ID, checkPermission, publishResponse)
 	default:
 		publishResponse(&models.Response{

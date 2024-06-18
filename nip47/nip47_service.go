@@ -6,20 +6,20 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/config"
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
+	"github.com/getAlby/nostr-wallet-connect/nip47/controllers"
 	"github.com/getAlby/nostr-wallet-connect/nip47/notifications"
-	permissions "github.com/getAlby/nostr-wallet-connect/nip47/permissions"
 	"github.com/getAlby/nostr-wallet-connect/service/keys"
 	"github.com/nbd-wtf/go-nostr"
 	"gorm.io/gorm"
 )
 
 type nip47Service struct {
-	permissionsService     permissions.PermissionsService
 	nip47NotificationQueue notifications.Nip47NotificationQueue
 	cfg                    config.Config
 	keys                   keys.Keys
 	db                     *gorm.DB
 	eventPublisher         events.EventPublisher
+	controllersService     controllers.ControllersService
 }
 
 type Nip47Service interface {
@@ -36,14 +36,14 @@ func NewNip47Service(db *gorm.DB, cfg config.Config, keys keys.Keys, eventPublis
 		nip47NotificationQueue: nip47NotificationQueue,
 		cfg:                    cfg,
 		db:                     db,
-		permissionsService:     permissions.NewPermissionsService(db, eventPublisher),
+		controllersService:     controllers.NewControllersService(db, eventPublisher, nil),
 		eventPublisher:         eventPublisher,
 		keys:                   keys,
 	}
 }
 
 func (svc *nip47Service) StartNotifier(ctx context.Context, relay *nostr.Relay, lnClient lnclient.LNClient) {
-	nip47Notifier := notifications.NewNip47Notifier(relay, svc.db, svc.cfg, svc.keys, svc.permissionsService, lnClient)
+	nip47Notifier := notifications.NewNip47Notifier(relay, svc.db, svc.cfg, svc.keys, svc.controllersService, lnClient)
 	go func() {
 		for {
 			select {

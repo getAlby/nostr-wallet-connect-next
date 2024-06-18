@@ -34,17 +34,17 @@ func NewPayKeysendController(lnClient lnclient.LNClient, db *gorm.DB, eventPubli
 	}
 }
 
-func (controller *payKeysendController) HandlePayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
+func (svc *controllersService) HandlePayKeysendEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
 	payKeysendParams := &payKeysendParams{}
 	resp := decodeRequest(nip47Request, payKeysendParams)
 	if resp != nil {
 		publishResponse(resp, tags)
 		return
 	}
-	controller.pay(ctx, payKeysendParams, nip47Request, requestEventId, app, checkPermission, publishResponse, tags)
+	svc.payKeysend(ctx, payKeysendParams, nip47Request, requestEventId, app, checkPermission, publishResponse, tags)
 }
 
-func (controller *payKeysendController) pay(ctx context.Context, payKeysendParams *payKeysendParams, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
+func (svc *controllersService) payKeysend(ctx context.Context, payKeysendParams *payKeysendParams, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
 	resp := checkPermission(payKeysendParams.Amount)
 	if resp != nil {
 		publishResponse(resp, tags)
@@ -52,7 +52,7 @@ func (controller *payKeysendController) pay(ctx context.Context, payKeysendParam
 	}
 
 	payment := db.Payment{App: *app, RequestEventId: requestEventId, Amount: uint(payKeysendParams.Amount / 1000)}
-	err := controller.db.Create(&payment).Error
+	err := svc.db.Create(&payment).Error
 	if err != nil {
 		publishResponse(&models.Response{
 			ResultType: nip47Request.Method,
@@ -70,14 +70,14 @@ func (controller *payKeysendController) pay(ctx context.Context, payKeysendParam
 		"senderPubkey":     payKeysendParams.Pubkey,
 	}).Info("Sending keysend payment")
 
-	preimage, err := controller.lnClient.SendKeysend(ctx, payKeysendParams.Amount, payKeysendParams.Pubkey, payKeysendParams.Preimage, payKeysendParams.TLVRecords)
+	preimage, err := svc.lnClient.SendKeysend(ctx, payKeysendParams.Amount, payKeysendParams.Pubkey, payKeysendParams.Preimage, payKeysendParams.TLVRecords)
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"request_event_id": requestEventId,
 			"appId":            app.ID,
 			"recipientPubkey":  payKeysendParams.Pubkey,
 		}).Infof("Failed to send keysend payment: %v", err)
-		controller.eventPublisher.Publish(&events.Event{
+		svc.eventPublisher.Publish(&events.Event{
 			Event: "nwc_payment_failed",
 			Properties: map[string]interface{}{
 				"error":   err.Error(),
@@ -95,8 +95,8 @@ func (controller *payKeysendController) pay(ctx context.Context, payKeysendParam
 		return
 	}
 	payment.Preimage = &preimage
-	controller.db.Save(&payment)
-	controller.eventPublisher.Publish(&events.Event{
+	svc.db.Save(&payment)
+	svc.eventPublisher.Publish(&events.Event{
 		Event: "nwc_payment_succeeded",
 		Properties: map[string]interface{}{
 			"keysend": true,
@@ -105,7 +105,7 @@ func (controller *payKeysendController) pay(ctx context.Context, payKeysendParam
 	})
 	publishResponse(&models.Response{
 		ResultType: nip47Request.Method,
-		Result: payResponse{
+		Result: PayResponse{
 			Preimage: preimage,
 		},
 	}, tags)

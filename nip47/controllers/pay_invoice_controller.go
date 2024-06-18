@@ -34,7 +34,7 @@ func NewPayInvoiceController(lnClient lnclient.LNClient, db *gorm.DB, eventPubli
 	}
 }
 
-func (controller *payInvoiceController) HandlePayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
+func (svc *controllersService) HandlePayInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
 	payParams := &payInvoiceParams{}
 	resp := decodeRequest(nip47Request, payParams)
 	if resp != nil {
@@ -63,10 +63,10 @@ func (controller *payInvoiceController) HandlePayInvoiceEvent(ctx context.Contex
 		return
 	}
 
-	controller.pay(ctx, bolt11, &paymentRequest, nip47Request, requestEventId, app, checkPermission, publishResponse, tags)
+	svc.pay(ctx, bolt11, &paymentRequest, nip47Request, requestEventId, app, checkPermission, publishResponse, tags)
 }
 
-func (controller *payInvoiceController) pay(ctx context.Context, bolt11 string, paymentRequest *decodepay.Bolt11, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
+func (svc *controllersService) pay(ctx context.Context, bolt11 string, paymentRequest *decodepay.Bolt11, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc, tags nostr.Tags) {
 	resp := checkPermission(uint64(paymentRequest.MSatoshi))
 	if resp != nil {
 		publishResponse(resp, tags)
@@ -74,7 +74,7 @@ func (controller *payInvoiceController) pay(ctx context.Context, bolt11 string, 
 	}
 
 	payment := db.Payment{App: *app, RequestEventId: requestEventId, PaymentRequest: bolt11, Amount: uint(paymentRequest.MSatoshi / 1000)}
-	err := controller.db.Create(&payment).Error
+	err := svc.db.Create(&payment).Error
 	if err != nil {
 		publishResponse(&models.Response{
 			ResultType: nip47Request.Method,
@@ -92,14 +92,14 @@ func (controller *payInvoiceController) pay(ctx context.Context, bolt11 string, 
 		"bolt11":           bolt11,
 	}).Info("Sending payment")
 
-	response, err := controller.lnClient.SendPaymentSync(ctx, bolt11)
+	response, err := svc.lnClient.SendPaymentSync(ctx, bolt11)
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"request_event_id": requestEventId,
 			"app_id":           app.ID,
 			"bolt11":           bolt11,
 		}).Infof("Failed to send payment: %v", err)
-		controller.eventPublisher.Publish(&events.Event{
+		svc.eventPublisher.Publish(&events.Event{
 			Event: "nwc_payment_failed",
 			Properties: map[string]interface{}{
 				"error":   err.Error(),
@@ -118,9 +118,9 @@ func (controller *payInvoiceController) pay(ctx context.Context, bolt11 string, 
 	}
 	payment.Preimage = &response.Preimage
 	// TODO: save payment fee
-	controller.db.Save(&payment)
+	svc.db.Save(&payment)
 
-	controller.eventPublisher.Publish(&events.Event{
+	svc.eventPublisher.Publish(&events.Event{
 		Event: "nwc_payment_succeeded",
 		Properties: map[string]interface{}{
 			"bolt11": bolt11,
@@ -130,7 +130,7 @@ func (controller *payInvoiceController) pay(ctx context.Context, bolt11 string, 
 
 	publishResponse(&models.Response{
 		ResultType: nip47Request.Method,
-		Result: payResponse{
+		Result: PayResponse{
 			Preimage: response.Preimage,
 			FeesPaid: response.Fee,
 		},

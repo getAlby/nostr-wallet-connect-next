@@ -1,4 +1,4 @@
-package controllers
+package controller_tests
 
 import (
 	"context"
@@ -9,19 +9,26 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/nip47/controllers"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
-	"github.com/getAlby/nostr-wallet-connect/nip47/permissions"
 	"github.com/getAlby/nostr-wallet-connect/tests"
 )
 
-const nip47GetInfoJson = `
+const nip47KeysendJson = `
 {
-	"method": "get_info"
+	"method": "pay_keysend",
+	"params": {
+		"amount": 123000,
+		"pubkey": "123pubkey",
+		"tlv_records": [{
+			"type": 5482373484,
+			"value": "fajsn341414fq"
+		}]
+	}
 }
 `
 
-// TODO: info event should always return something
-func TestHandleGetInfoEvent_NoPermission(t *testing.T) {
+func TestHandlePayKeysendEvent_NoPermission(t *testing.T) {
 	ctx := context.TODO()
 	defer tests.RemoveTestService()
 	svc, err := tests.CreateTestService()
@@ -31,7 +38,7 @@ func TestHandleGetInfoEvent_NoPermission(t *testing.T) {
 	assert.NoError(t, err)
 
 	nip47Request := &models.Request{}
-	err = json.Unmarshal([]byte(nip47GetInfoJson), nip47Request)
+	err = json.Unmarshal([]byte(nip47KeysendJson), nip47Request)
 	assert.NoError(t, err)
 
 	dbRequestEvent := &db.RequestEvent{}
@@ -53,16 +60,15 @@ func TestHandleGetInfoEvent_NoPermission(t *testing.T) {
 		publishedResponse = response
 	}
 
-	permissionsSvc := permissions.NewPermissionsService(svc.DB, svc.EventPublisher)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
 
-	NewGetInfoController(permissionsSvc, svc.LNClient).
-		HandleGetInfoEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
+	controllersSvc.HandlePayKeysendEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse, nostr.Tags{})
 
 	assert.Nil(t, publishedResponse.Result)
 	assert.Equal(t, models.ERROR_RESTRICTED, publishedResponse.Error.Code)
 }
 
-func TestHandleGetInfoEvent_WithPermission(t *testing.T) {
+func TestHandlePayKeysendEvent_WithPermission(t *testing.T) {
 	ctx := context.TODO()
 	defer tests.RemoveTestService()
 	svc, err := tests.CreateTestService()
@@ -72,19 +78,12 @@ func TestHandleGetInfoEvent_WithPermission(t *testing.T) {
 	assert.NoError(t, err)
 
 	nip47Request := &models.Request{}
-	err = json.Unmarshal([]byte(nip47GetInfoJson), nip47Request)
+	err = json.Unmarshal([]byte(nip47KeysendJson), nip47Request)
 	assert.NoError(t, err)
 
 	dbRequestEvent := &db.RequestEvent{}
-	err = svc.DB.Create(&dbRequestEvent).Error
-	assert.NoError(t, err)
 
-	appPermission := &db.AppPermission{
-		AppId:         app.ID,
-		RequestMethod: models.GET_INFO_METHOD,
-		ExpiresAt:     nil,
-	}
-	err = svc.DB.Create(appPermission).Error
+	err = svc.DB.Create(&dbRequestEvent).Error
 	assert.NoError(t, err)
 
 	checkPermission := func(amountMsat uint64) *models.Response {
@@ -97,18 +96,10 @@ func TestHandleGetInfoEvent_WithPermission(t *testing.T) {
 		publishedResponse = response
 	}
 
-	permissionsSvc := permissions.NewPermissionsService(svc.DB, svc.EventPublisher)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
 
-	NewGetInfoController(permissionsSvc, svc.LNClient).
-		HandleGetInfoEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
+	controllersSvc.HandlePayKeysendEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse, nostr.Tags{})
 
 	assert.Nil(t, publishedResponse.Error)
-	nodeInfo := publishedResponse.Result.(*getInfoResponse)
-	assert.Equal(t, tests.MockNodeInfo.Alias, nodeInfo.Alias)
-	assert.Equal(t, tests.MockNodeInfo.Color, nodeInfo.Color)
-	assert.Equal(t, tests.MockNodeInfo.Pubkey, nodeInfo.Pubkey)
-	assert.Equal(t, tests.MockNodeInfo.Network, nodeInfo.Network)
-	assert.Equal(t, tests.MockNodeInfo.BlockHeight, nodeInfo.BlockHeight)
-	assert.Equal(t, tests.MockNodeInfo.BlockHash, nodeInfo.BlockHash)
-	assert.Equal(t, []string{"get_info"}, nodeInfo.Methods)
+	assert.Equal(t, "12345preimage", publishedResponse.Result.(controllers.PayResponse).Preimage)
 }

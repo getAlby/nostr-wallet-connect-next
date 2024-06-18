@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/nbd-wtf/go-nostr"
@@ -18,21 +17,11 @@ type lookupInvoiceParams struct {
 	PaymentHash string `json:"payment_hash"`
 }
 
-type lookupInvoiceResponse struct {
+type LookupInvoiceResponse struct {
 	models.Transaction
 }
 
-type lookupInvoiceController struct {
-	lnClient lnclient.LNClient
-}
-
-func NewLookupInvoiceController(lnClient lnclient.LNClient) *lookupInvoiceController {
-	return &lookupInvoiceController{
-		lnClient: lnClient,
-	}
-}
-
-func (controller *lookupInvoiceController) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleLookupInvoiceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
 	// basic permissions check
 	resp := checkPermission(0)
 	if resp != nil {
@@ -75,7 +64,7 @@ func (controller *lookupInvoiceController) HandleLookupInvoiceEvent(ctx context.
 		paymentHash = paymentRequest.PaymentHash
 	}
 
-	transaction, err := controller.lnClient.LookupInvoice(ctx, paymentHash)
+	transaction, err := svc.lnClient.LookupInvoice(ctx, paymentHash)
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"request_event_id": requestEventId,
@@ -93,7 +82,7 @@ func (controller *lookupInvoiceController) HandleLookupInvoiceEvent(ctx context.
 		return
 	}
 
-	responsePayload := &lookupInvoiceResponse{
+	responsePayload := &LookupInvoiceResponse{
 		Transaction: *transaction,
 	}
 

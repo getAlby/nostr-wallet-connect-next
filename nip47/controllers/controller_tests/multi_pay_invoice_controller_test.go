@@ -1,4 +1,4 @@
-package controllers
+package controller_tests
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/nip47/controllers"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/getAlby/nostr-wallet-connect/tests"
 )
@@ -94,8 +95,9 @@ func TestHandleMultiPayInvoiceEvent_NoPermission(t *testing.T) {
 		dTags = append(dTags, tags)
 	}
 
-	NewMultiPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
-		HandleMultiPayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandleMultiPayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
 
 	assert.Equal(t, 2, len(responses))
 	assert.Equal(t, 2, len(dTags))
@@ -135,12 +137,13 @@ func TestHandleMultiPayInvoiceEvent_WithPermission(t *testing.T) {
 	err = svc.DB.Create(&dbRequestEvent).Error
 	assert.NoError(t, err)
 
-	NewMultiPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
-		HandleMultiPayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandleMultiPayInvoiceEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
 
 	assert.Equal(t, 2, len(responses))
 	for i := 0; i < len(responses); i++ {
-		assert.Equal(t, "123preimage", responses[i].Result.(payResponse).Preimage)
+		assert.Equal(t, "123preimage", responses[i].Result.(controllers.PayResponse).Preimage)
 		assert.Equal(t, tests.MockPaymentHash, dTags[i].GetFirst([]string{"d"}).Value())
 		assert.Nil(t, responses[i].Error)
 	}
@@ -175,8 +178,9 @@ func TestHandleMultiPayInvoiceEvent_OneMalformedInvoice(t *testing.T) {
 	requestEvent := &db.RequestEvent{}
 	svc.DB.Save(requestEvent)
 
-	NewMultiPayInvoiceController(svc.LNClient, svc.DB, svc.EventPublisher).
-		HandleMultiPayInvoiceEvent(ctx, nip47Request, requestEvent.ID, app, checkPermission, publishResponse)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandleMultiPayInvoiceEvent(ctx, nip47Request, requestEvent.ID, app, checkPermission, publishResponse)
 
 	assert.Equal(t, 2, len(responses))
 	assert.Equal(t, "invoiceId123", dTags[0].GetFirst([]string{"d"}).Value())
@@ -184,7 +188,7 @@ func TestHandleMultiPayInvoiceEvent_OneMalformedInvoice(t *testing.T) {
 	assert.Nil(t, responses[0].Result)
 
 	assert.Equal(t, tests.MockPaymentHash, dTags[1].GetFirst([]string{"d"}).Value())
-	assert.Equal(t, "123preimage", responses[1].Result.(payResponse).Preimage)
+	assert.Equal(t, "123preimage", responses[1].Result.(controllers.PayResponse).Preimage)
 	assert.Nil(t, responses[1].Error)
 
 }

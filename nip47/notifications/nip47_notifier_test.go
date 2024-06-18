@@ -8,7 +8,7 @@ import (
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
-	"github.com/getAlby/nostr-wallet-connect/nip47/permissions"
+	"github.com/getAlby/nostr-wallet-connect/nip47/controllers"
 	"github.com/getAlby/nostr-wallet-connect/tests"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
@@ -32,7 +32,7 @@ func TestSendNotification(t *testing.T) {
 	appPermission := &db.AppPermission{
 		AppId:         app.ID,
 		App:           *app,
-		RequestMethod: permissions.NOTIFICATIONS_PERMISSION,
+		RequestMethod: controllers.NOTIFICATIONS_PERMISSION,
 	}
 	err = svc.DB.Create(appPermission).Error
 	assert.NoError(t, err)
@@ -56,9 +56,9 @@ func TestSendNotification(t *testing.T) {
 
 	relay := NewMockRelay()
 
-	permissionsSvc := permissions.NewPermissionsService(svc.DB, svc.EventPublisher)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
 
-	notifier := NewNip47Notifier(relay, svc.DB, svc.Cfg, svc.Keys, permissionsSvc, svc.LNClient)
+	notifier := NewNip47Notifier(relay, svc.DB, svc.Cfg, svc.Keys, controllersSvc, svc.LNClient)
 	notifier.ConsumeEvent(ctx, receivedEvent)
 
 	assert.NotNil(t, relay.publishedEvent)
@@ -113,9 +113,9 @@ func TestSendNotificationNoPermission(t *testing.T) {
 
 	relay := NewMockRelay()
 
-	permissionsSvc := permissions.NewPermissionsService(svc.DB, svc.EventPublisher)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
 
-	notifier := NewNip47Notifier(relay, svc.DB, svc.Cfg, svc.Keys, permissionsSvc, svc.LNClient)
+	notifier := NewNip47Notifier(relay, svc.DB, svc.Cfg, svc.Keys, controllersSvc, svc.LNClient)
 	notifier.ConsumeEvent(ctx, receivedEvent)
 
 	assert.Nil(t, relay.publishedEvent)

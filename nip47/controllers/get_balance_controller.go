@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 
-	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/nbd-wtf/go-nostr"
@@ -14,24 +13,14 @@ const (
 	MSAT_PER_SAT = 1000
 )
 
-type getBalanceResponse struct {
+type GetBalanceResponse struct {
 	Balance int64 `json:"balance"`
 	// MaxAmount     int    `json:"max_amount"`
 	// BudgetRenewal string `json:"budget_renewal"`
 }
 
-type getBalanceController struct {
-	lnClient lnclient.LNClient
-}
-
-func NewGetBalanceController(lnClient lnclient.LNClient) *getBalanceController {
-	return &getBalanceController{
-		lnClient: lnClient,
-	}
-}
-
 // TODO: remove checkPermission - can it be a middleware?
-func (controller *getBalanceController) HandleGetBalanceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleGetBalanceEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
 	// basic permissions check
 	resp := checkPermission(0)
 	if resp != nil {
@@ -43,7 +32,7 @@ func (controller *getBalanceController) HandleGetBalanceEvent(ctx context.Contex
 		"request_event_id": requestEventId,
 	}).Info("Getting balance")
 
-	balance, err := controller.lnClient.GetBalance(ctx)
+	balance, err := svc.lnClient.GetBalance(ctx)
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"request_event_id": requestEventId,
@@ -58,7 +47,7 @@ func (controller *getBalanceController) HandleGetBalanceEvent(ctx context.Contex
 		return
 	}
 
-	responsePayload := &getBalanceResponse{
+	responsePayload := &GetBalanceResponse{
 		Balance: balance,
 	}
 

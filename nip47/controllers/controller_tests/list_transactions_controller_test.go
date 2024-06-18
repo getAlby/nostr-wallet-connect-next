@@ -1,4 +1,4 @@
-package controllers
+package controller_tests
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/nip47/controllers"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/getAlby/nostr-wallet-connect/tests"
 )
@@ -55,8 +56,9 @@ func TestHandleListTransactionsEvent_NoPermission(t *testing.T) {
 		publishedResponse = response
 	}
 
-	NewListTransactionsController(svc.LNClient).
-		HandleListTransactionsEvent(ctx, nip47Request, dbRequestEvent.ID, checkPermission, publishResponse)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandleListTransactionsEvent(ctx, nip47Request, dbRequestEvent.ID, checkPermission, publishResponse)
 
 	assert.Nil(t, publishedResponse.Result)
 	assert.Equal(t, models.ERROR_RESTRICTED, publishedResponse.Error.Code)
@@ -86,13 +88,14 @@ func TestHandleListTransactionsEvent_WithPermission(t *testing.T) {
 		publishedResponse = response
 	}
 
-	NewListTransactionsController(svc.LNClient).
-		HandleListTransactionsEvent(ctx, nip47Request, dbRequestEvent.ID, checkPermission, publishResponse)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandleListTransactionsEvent(ctx, nip47Request, dbRequestEvent.ID, checkPermission, publishResponse)
 
 	assert.Nil(t, publishedResponse.Error)
 
-	assert.Equal(t, 2, len(publishedResponse.Result.(*listTransactionsResponse).Transactions))
-	transaction := publishedResponse.Result.(*listTransactionsResponse).Transactions[0]
+	assert.Equal(t, 2, len(publishedResponse.Result.(*controllers.ListTransactionsResponse).Transactions))
+	transaction := publishedResponse.Result.(*controllers.ListTransactionsResponse).Transactions[0]
 	assert.Equal(t, tests.MockTransactions[0].Type, transaction.Type)
 	assert.Equal(t, tests.MockTransactions[0].Invoice, transaction.Invoice)
 	assert.Equal(t, tests.MockTransactions[0].Description, transaction.Description)

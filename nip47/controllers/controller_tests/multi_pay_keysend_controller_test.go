@@ -1,4 +1,4 @@
-package controllers
+package controller_tests
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
+	"github.com/getAlby/nostr-wallet-connect/nip47/controllers"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/getAlby/nostr-wallet-connect/tests"
 )
@@ -98,8 +99,9 @@ func TestHandleMultiPayKeysendEvent_NoPermission(t *testing.T) {
 		dTags = append(dTags, tags)
 	}
 
-	NewMultiPayKeysendController(svc.LNClient, svc.DB, svc.EventPublisher).
-		HandleMultiPayKeysendEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandleMultiPayKeysendEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
 
 	assert.Equal(t, 2, len(responses))
 	for i := 0; i < len(responses); i++ {
@@ -138,12 +140,13 @@ func TestHandleMultiPayKeysendEvent_WithPermission(t *testing.T) {
 		dTags = append(dTags, tags)
 	}
 
-	NewMultiPayKeysendController(svc.LNClient, svc.DB, svc.EventPublisher).
-		HandleMultiPayKeysendEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
+	controllersSvc := controllers.NewControllersService(svc.DB, svc.EventPublisher, svc.LNClient)
+
+	controllersSvc.HandleMultiPayKeysendEvent(ctx, nip47Request, dbRequestEvent.ID, app, checkPermission, publishResponse)
 
 	assert.Equal(t, 2, len(responses))
 	for i := 0; i < len(responses); i++ {
-		assert.Equal(t, "12345preimage", responses[i].Result.(payResponse).Preimage)
+		assert.Equal(t, "12345preimage", responses[i].Result.(controllers.PayResponse).Preimage)
 		assert.Nil(t, responses[i].Error)
 		assert.Equal(t, "123pubkey", dTags[i].GetFirst([]string{"d"}).Value())
 	}

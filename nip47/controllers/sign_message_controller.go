@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 
-	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
 	"github.com/nbd-wtf/go-nostr"
@@ -19,17 +18,7 @@ type signMessageResponse struct {
 	Signature string `json:"signature"`
 }
 
-type signMessageController struct {
-	lnClient lnclient.LNClient
-}
-
-func NewSignMessageController(lnClient lnclient.LNClient) *signMessageController {
-	return &signMessageController{
-		lnClient: lnClient,
-	}
-}
-
-func (controller *signMessageController) HandleSignMessageEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
+func (svc *controllersService) HandleSignMessageEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, checkPermission checkPermissionFunc, publishResponse publishFunc) {
 	// basic permissions check
 	resp := checkPermission(0)
 	if resp != nil {
@@ -48,7 +37,7 @@ func (controller *signMessageController) HandleSignMessageEvent(ctx context.Cont
 		"request_event_id": requestEventId,
 	}).Info("Signing message")
 
-	signature, err := controller.lnClient.SignMessage(ctx, signParams.Message)
+	signature, err := svc.lnClient.SignMessage(ctx, signParams.Message)
 	if err != nil {
 		logger.Logger.WithFields(logrus.Fields{
 			"request_event_id": requestEventId,
