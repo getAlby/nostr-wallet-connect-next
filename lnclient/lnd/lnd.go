@@ -727,6 +727,10 @@ func (svc *LNDService) GetNetworkGraph(nodeIds []string) (lnclient.NetworkGraphR
 
 func (svc *LNDService) UpdateLastWalletSyncRequest() {}
 
+func (svc *LNDService) UpdateChannel(ctx context.Context, updateChannelRequest *lnclient.UpdateChannelRequest) error {
+	return nil
+}
+
 func (svc *LNDService) DisconnectPeer(ctx context.Context, peerId string) error {
 	return nil
 }
