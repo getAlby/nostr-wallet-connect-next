@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { Progress } from "src/components/ui/progress";
 import { formatAmount } from "src/lib/utils";
 import { App } from "src/types";
@@ -43,6 +44,14 @@ export function AppCardConnectionInfo({
                 )}
             </div>
           </div>
+          {connection.lastEventAt && (
+            <div className="flex flex-row justify-between text-xs items-center text-muted-foreground">
+              <div className="flex flex-row justify-between">
+                <div>Last used:&nbsp;</div>
+                <div>{dayjs(connection.lastEventAt).fromNow()}</div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </>
