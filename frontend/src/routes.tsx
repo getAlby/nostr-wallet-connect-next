@@ -47,6 +47,8 @@ import { LNDForm } from "src/screens/setup/node/LNDForm";
 import { PhoenixdForm } from "src/screens/setup/node/PhoenixdForm";
 import { PresetNodeForm } from "src/screens/setup/node/PresetNodeForm";
 import Wallet from "src/screens/wallet";
+import Receive from "src/screens/wallet/Receive";
+import Send from "src/screens/wallet/Send";
 import SignMessage from "src/screens/wallet/SignMessage";
 
 const routes = [
@@ -67,6 +69,16 @@ const routes = [
           {
             index: true,
             element: <Wallet />,
+          },
+          {
+            path: "receive",
+            element: <Receive />,
+            handle: { crumb: () => "Receive" },
+          },
+          {
+            path: "send",
+            element: <Send />,
+            handle: { crumb: () => "Send" },
           },
           {
             path: "sign-message",

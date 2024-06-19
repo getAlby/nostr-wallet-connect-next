@@ -491,6 +491,39 @@ func (api *api) GetBalances(ctx context.Context) (*BalancesResponse, error) {
 	return balances, nil
 }
 
+func (api *api) GetTransactions(ctx context.Context) (*TransactionsResponse, error) {
+	if api.svc.GetLNClient() == nil {
+		return nil, errors.New("LNClient not started")
+	}
+	transactions, err := api.svc.GetLNClient().ListTransactions(ctx, 0, 100000000000, 1000, 0, false, "")
+	if err != nil {
+		return nil, err
+	}
+	return &transactions, nil
+}
+
+func (api *api) SendPayment(ctx context.Context, invoice string) (*SendPaymentResponse, error) {
+	if api.svc.GetLNClient() == nil {
+		return nil, errors.New("LNClient not started")
+	}
+	resp, err := api.svc.GetLNClient().SendPaymentSync(ctx, invoice)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (api *api) CreateInvoice(ctx context.Context, amount int64, description string) (*CreateInvoiceResponse, error) {
+	if api.svc.GetLNClient() == nil {
+		return nil, errors.New("LNClient not started")
+	}
+	invoice, err := api.svc.GetLNClient().MakeInvoice(ctx, amount, description, "", 0)
+	if err != nil {
+		return nil, err
+	}
+	return invoice, nil
+}
+
 // TODO: remove dependency on this endpoint
 func (api *api) RequestMempoolApi(endpoint string) (interface{}, error) {
 	url := api.cfg.GetEnv().MempoolApi + endpoint
