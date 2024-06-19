@@ -1,8 +1,11 @@
 name: Release
 
 on:
-  # TODO: use release event instead of push
   push:
+    branches:
+      - master
+    tags:
+      - v*
 
   workflow_dispatch:
 

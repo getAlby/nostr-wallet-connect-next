@@ -7,8 +7,7 @@ on:
         required: true
 
 jobs:
-  release_draft:
-    # if: startsWith(github.ref, 'refs/tags/')
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Download Raspberry Pi archive
@@ -36,14 +35,27 @@ jobs:
           path: artifacts
 
       - name: Create release draft
+        if: github.ref_type != 'tag'
         env:
           GH_TOKEN: ${{ secrets.repo-token }}
-          # tag: ${{ github.ref_name }}
-          tag: ${{ github.sha }} # FIXME: for testing only.
+          tag: ${{ github.sha }}
         run: |
-          gh release create "$tag" \
-            --repo="$GITHUB_REPOSITORY" \
+          gh release create                            \
+            --repo="$GITHUB_REPOSITORY"                \
             --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
-            --generate-notes \
-            --draft \
+            --generate-notes                           \
+            --draft                                    \
+            ./artifacts/*
+
+      - name: Create release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.repo-token }}
+          tag: ${{ github.ref_name }}
+        run: |
+          gh release create                            \
+            --repo="$GITHUB_REPOSITORY"                \
+            --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+            --generate-notes                           \
+            --verify-tag                               \
             ./artifacts/*
