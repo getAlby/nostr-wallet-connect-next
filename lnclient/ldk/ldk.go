@@ -1224,27 +1224,10 @@ func (ls *LDKService) handleLdkEvent(event *ldk_node.Event) {
 			},
 		})
 	case ldk_node.EventPaymentSuccessful:
-		var duration *uint64 = nil
-		if eventType.PaymentId != nil {
-			payment := ls.node.Payment(*eventType.PaymentId)
-			if payment != nil {
-				bolt11PaymentKind, ok := payment.Kind.(ldk_node.PaymentKindBolt11)
-
-				if ok {
-					paymentRequest, err := decodepay.Decodepay(*bolt11PaymentKind.Bolt11Invoice)
-					if err == nil {
-						durationDiff := payment.LastUpdate - uint64(paymentRequest.CreatedAt)
-						duration = &durationDiff
-					}
-				}
-			}
-		}
-
 		ls.eventPublisher.Publish(&events.Event{
 			Event: "nwc_payment_sent",
 			Properties: &events.PaymentSentEventProperties{
 				PaymentHash: eventType.PaymentHash,
-				Duration:    duration,
 			},
 		})
 	}
