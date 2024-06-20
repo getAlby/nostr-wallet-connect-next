@@ -44,12 +44,6 @@ func NewNip47Notifier(relay Relay, db *gorm.DB, cfg config.Config, keys keys.Key
 }
 
 func (notifier *Nip47Notifier) ConsumeEvent(ctx context.Context, event *events.Event) error {
-	if event.Event != "nwc_payment_received" && event.Event != "nwc_payment_sent" {
-		return nil
-	}
-
-	var transaction interface{}
-	var notificationType string
 	switch event.Event {
 	case "nwc_payment_received":
 		paymentReceivedEventProperties, ok := event.Properties.(*events.PaymentReceivedEventProperties)
@@ -58,8 +52,7 @@ func (notifier *Nip47Notifier) ConsumeEvent(ctx context.Context, event *events.E
 			return errors.New("failed to cast event")
 		}
 
-		var err error
-		transaction, err = notifier.lnClient.LookupInvoice(ctx, paymentReceivedEventProperties.PaymentHash)
+		transaction, err := notifier.lnClient.LookupInvoice(ctx, paymentReceivedEventProperties.PaymentHash)
 		if err != nil {
 			logger.Logger.
 				WithField("paymentHash", paymentReceivedEventProperties.PaymentHash).
@@ -67,7 +60,15 @@ func (notifier *Nip47Notifier) ConsumeEvent(ctx context.Context, event *events.E
 				Error("Failed to lookup invoice by payment hash")
 			return err
 		}
-		notificationType = PAYMENT_RECEIVED_NOTIFICATION
+		notification := PaymentReceivedNotification{
+			Transaction: *transaction,
+		}
+
+		notifier.notifySubscribers(ctx, &Notification{
+			Notification:     notification,
+			NotificationType: PAYMENT_RECEIVED_NOTIFICATION,
+		}, nostr.Tags{})
+
 	case "nwc_payment_sent":
 		paymentSentEventProperties, ok := event.Properties.(*events.PaymentSentEventProperties)
 		if !ok {
@@ -75,8 +76,7 @@ func (notifier *Nip47Notifier) ConsumeEvent(ctx context.Context, event *events.E
 			return errors.New("failed to cast event")
 		}
 
-		var err error
-		transaction, err = notifier.lnClient.LookupInvoice(ctx, paymentSentEventProperties.PaymentHash)
+		transaction, err := notifier.lnClient.LookupInvoice(ctx, paymentSentEventProperties.PaymentHash)
 		if err != nil {
 			logger.Logger.
 				WithField("paymentHash", paymentSentEventProperties.PaymentHash).
@@ -84,15 +84,16 @@ func (notifier *Nip47Notifier) ConsumeEvent(ctx context.Context, event *events.E
 				Error("Failed to lookup invoice by payment hash")
 			return err
 		}
-		notificationType = PAYMENT_SENT_NOTIFICATION
-	default:
-		logger.Logger.Fatalf("Unsupported notification type: %v", event.Event)
+		notification := PaymentSentNotification{
+			Transaction: *transaction,
+		}
+
+		notifier.notifySubscribers(ctx, &Notification{
+			Notification:     notification,
+			NotificationType: PAYMENT_SENT_NOTIFICATION,
+		}, nostr.Tags{})
 	}
 
-	notifier.notifySubscribers(ctx, &Notification{
-		Notification:     transaction,
-		NotificationType: notificationType,
-	}, nostr.Tags{})
 	return nil
 }
 
