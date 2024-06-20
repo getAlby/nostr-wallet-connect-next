@@ -1225,18 +1225,13 @@ func (ls *LDKService) handleLdkEvent(event *ldk_node.Event) {
 			Event: "nwc_payment_received",
 			Properties: &events.PaymentReceivedEventProperties{
 				PaymentHash: eventType.PaymentHash,
-				Amount:      eventType.AmountMsat / 1000,
-				NodeType:    config.LDKBackendType,
 			},
 		})
 	case ldk_node.EventPaymentSuccessful:
 		ls.eventPublisher.Publish(&events.Event{
 			Event: "nwc_payment_sent",
 			Properties: &events.PaymentSentEventProperties{
-				PaymentId:   *eventType.PaymentId,
 				PaymentHash: eventType.PaymentHash,
-				Amount:      *eventType.FeePaidMsat / 1000,
-				NodeType:    config.LDKBackendType,
 			},
 		})
 	}

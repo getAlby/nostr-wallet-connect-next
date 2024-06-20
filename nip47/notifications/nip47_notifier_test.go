@@ -44,8 +44,6 @@ func TestSendNotification(t *testing.T) {
 		Event: "nwc_payment_received",
 		Properties: &events.PaymentReceivedEventProperties{
 			PaymentHash: tests.MockPaymentHash,
-			Amount:      uint64(tests.MockTransaction.Amount),
-			NodeType:    "LDK",
 		},
 	}
 
@@ -88,10 +86,7 @@ func TestSendNotification(t *testing.T) {
 	testEvent = &events.Event{
 		Event: "nwc_payment_sent",
 		Properties: &events.PaymentSentEventProperties{
-			PaymentId:   tests.MockPaymentId,
 			PaymentHash: tests.MockPaymentHash,
-			Amount:      uint64(tests.MockTransaction.Amount),
-			NodeType:    "LDK",
 		},
 	}
 
@@ -121,8 +116,6 @@ func TestSendNotificationNoPermission(t *testing.T) {
 		Event: "nwc_payment_received",
 		Properties: &events.PaymentReceivedEventProperties{
 			PaymentHash: tests.MockPaymentHash,
-			Amount:      uint64(tests.MockTransaction.Amount),
-			NodeType:    "LDK",
 		},
 	}
 
