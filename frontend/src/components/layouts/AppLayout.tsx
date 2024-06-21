@@ -179,7 +179,7 @@ export default function AppLayout() {
                       to="https://getalby.com/hub_deployment/edit" // TODO: link to general update page
                       className="font-semibold text-xl"
                     >
-                      <span className="text-xs flex items-center">
+                      <span className="text-xs flex items-center text-muted-foreground">
                         {info?.version}&nbsp;
                         {info?.upToDate ? (
                           <ShieldCheckIcon className="w-4 h-4" />

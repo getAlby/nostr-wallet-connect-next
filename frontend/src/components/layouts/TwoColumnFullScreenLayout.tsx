@@ -66,7 +66,7 @@ export default function TwoColumnFullScreenLayout() {
           <div className="flex flex-row justify-between items-center">
             <h1 className="text-lg font-medium">Alby Hub</h1>
             {info?.version && (
-              <p className="text-sm text-muted">{info.version}</p>
+              <p className="text-sm text-muted-foreground">{info.version}</p>
             )}
             {/* <ModeToggle /> */}
           </div>
