@@ -3,6 +3,7 @@ import {
   EllipsisVertical,
   ExternalLinkIcon,
   FlaskRound,
+  HandHeart,
   Lock,
   Menu,
   MessageCircleQuestion,
@@ -138,6 +139,18 @@ export default function AppLayout() {
         <MenuItem to="/settings">
           <Settings className="h-4 w-4" />
           Settings
+        </MenuItem>
+        <MenuItem
+          to="/"
+          onClick={(e) => {
+            openLink(
+              "https://feedback.getalby.com/-alby-hub-request-a-feature"
+            );
+            e.preventDefault();
+          }}
+        >
+          <HandHeart className="h-4 w-4" />
+          Feedback
         </MenuItem>
         <MenuItem
           to="/"
