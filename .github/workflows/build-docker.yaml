@@ -8,6 +8,7 @@ jobs:
     env:
       REGISTRY: ghcr.io
       IMAGENAME: ${{ github.event.repository.name }}
+      TAG: ${{ github.ref_name }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -30,4 +31,4 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
           addLatest: ${{ github.ref == 'refs/heads/master' }}
-          buildArgs: TAG=0.5
+          buildArgs: TAG=${{ env.TAG }}
