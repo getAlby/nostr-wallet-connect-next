@@ -70,5 +70,5 @@ jobs:
         with:
           name: albyhub-${{runner.os}}-x86_64
           path: |
-            ./build/out
+            ./build/bin/albyhub-${{runner.os}}-x86_64
           if-no-files-found: error
