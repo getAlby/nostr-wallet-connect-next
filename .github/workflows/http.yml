@@ -66,14 +66,9 @@ jobs:
           chmod +x build/bin/albyhub-${{runner.os}}-x86_64/bin/albyhub-x86_64
         shell: bash
 
-      - name: Make output tar archive
-        run: |
-          mkdir -p ./build/out
-          tar -cjf ./build/out/albyhub-${{runner.os}}-x86_64.tar.bz2 -C ./build/bin/albyhub-${{runner.os}}-x86_64 .
-
       - uses: actions/upload-artifact@v4
         with:
-          name: albyhub-${{runner.os}}-x86_64.tar.bz2
+          name: albyhub-${{runner.os}}-x86_64
           path: |
-            ./build/out/albyhub-${{runner.os}}-x86_64.tar.bz2
+            ./build/out
           if-no-files-found: error
