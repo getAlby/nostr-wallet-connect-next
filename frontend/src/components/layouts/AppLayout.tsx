@@ -3,8 +3,8 @@ import {
   EllipsisVertical,
   ExternalLinkIcon,
   FlaskRound,
-  HandHeart,
   Lock,
+  Megaphone,
   Menu,
   MessageCircleQuestion,
   Settings,
@@ -149,7 +149,7 @@ export default function AppLayout() {
             e.preventDefault();
           }}
         >
-          <HandHeart className="h-4 w-4" />
+          <Megaphone className="h-4 w-4" />
           Feedback
         </MenuItem>
         <MenuItem
