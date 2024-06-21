@@ -1,0 +1,101 @@
+name: Linux-amd64 Docker build & push
+on:
+  push:
+  workflow_call:
+  release:
+    types: [published]
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+        name: Check out code
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y patchelf gcc
+          wget -nv https://github.com/getAlby/gcc-arm-linux-gnueabihf/releases/download/v1.0.0/armv6-unknown-linux-gnueabihf.tar.bz2
+          tar -xf armv6-unknown-linux-gnueabihf.tar.bz2
+
+      - name: Setup GoLang
+        uses: actions/setup-go@v5
+        with:
+          check-latest: true
+          go-version: 1.21
+
+      - name: Get dependencies
+        run: go get -v -t -d ./...
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Run tests
+        run: mkdir frontend/dist && touch frontend/dist/tmp && go test ./...
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          yarn install
+          yarn build:http
+        shell: bash
+
+      - name: Create build directory
+        run: |
+          mkdir -p ./build/bin/albyhub-${{runner.os}}-x86_64/lib
+          mkdir -p ./build/bin/albyhub-${{runner.os}}-arm_v6/lib
+
+      - name: Build Binary for linux amd64
+        run: CGO_ENABLED=1 go build -o build/bin/albyhub-${{runner.os}}-x86_64/bin/albyhub-x86_64 cmd/http/main.go
+
+      - name: Build Binary for linux arm v7
+        env:
+          GOOS: linux
+          GOARCH: arm
+          GOARM: 6
+          CGO_ENABLED: 1
+          CC: ${{ github.workspace }}/armv6-unknown-linux-gnueabihf/bin/armv6-unknown-linux-gnueabihf-gcc
+        run: go build -o build/bin/albyhub-${{runner.os}}-arm_v6/bin/albyhub-arm_v6 cmd/http/main.go
+
+      - name: Copy shared libraries to the output directory
+        run: |
+          mkdir -p ./build/bin/albyhub-${{runner.os}}/lib
+          cp `go list -m -f "{{.Dir}}" github.com/breez/breez-sdk-go`/breez_sdk/lib/linux-amd64/libbreez_sdk_bindings.so ./build/bin/albyhub-${{runner.os}}/lib/
+          cp `go list -m -f "{{.Dir}}" github.com/getAlby/glalby-go`/glalby/x86_64-unknown-linux-gnu/libglalby_bindings.so ./build/bin/albyhub-${{runner.os}}/lib/
+          cp `go list -m -f "{{.Dir}}" github.com/getAlby/ldk-node-go`/ldk_node/x86_64-unknown-linux-gnu/libldk_node.so ./build/bin/albyhub-${{runner.os}}/lib/
+        shell: bash
+
+      - name: Patch executable RPATH
+        run: |
+          patchelf --force-rpath --set-rpath '$ORIGIN/../lib' ./build/bin/albyhub-${{runner.os}}-x86_64/bin/albyhub-x86_64
+          patchelf --force-rpath --set-rpath '$ORIGIN/../lib' ./build/bin/albyhub-${{runner.os}}-arm_v6/bin/albyhub-arm_v6
+
+      - name: Add Linux perms
+        run: |
+          chmod +x build/bin/albyhub-${{runner.os}}-x86_64/bin/albyhub-x86_64
+          chmod +x build/bin/albyhub-${{runner.os}}-arm_v6/bin/albyhub-arm_v6
+        shell: bash
+
+      - name: Make output tar archive
+        run: |
+          mkdir -p ./build/out
+          tar -cjf ./build/out/albyhub-${{runner.os}}-x86_64.tar.bz2 -C ./build/bin/albyhub-${{runner.os}}-x86_64 .
+          tar -cjf ./build/out/albyhub-${{runner.os}}-arm_v6.tar.bz2 -C ./build/bin/albyhub-${{runner.os}}-arm_v6 .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: albyhub-${{runner.os}}-x86_64/bin/albyhub-x86_64
+          path: |
+            ./build/out/albyhub-${{runner.os}}-x86_64.tar.bz2
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: albyhub-${{runner.os}}-arm_v6/bin/albyhub-arm_v6
+          path: |
+            ./build/out/albyhub-${{runner.os}}-arm_v6.tar.bz2
+          if-no-files-found: error
