@@ -30,3 +30,4 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
           addLatest: ${{ github.ref == 'refs/heads/master' }}
+          buildArgs: TAG=0.5
