@@ -148,6 +148,8 @@ type InfoResponse struct {
 	NextBackupReminder   string `json:"nextBackupReminder"`
 	AlbyUserIdentifier   string `json:"albyUserIdentifier"`
 	AlbyAccountConnected bool   `json:"albyAccountConnected"`
+	Version              string `json:"version"`
+	UpToDate             bool   `json:"upToDate"`
 	Network              string `json:"network"`
 }
 

@@ -7,6 +7,8 @@ import {
   Menu,
   MessageCircleQuestion,
   Settings,
+  ShieldAlertIcon,
+  ShieldCheckIcon,
   Store,
   Wallet,
 } from "lucide-react";
@@ -44,7 +46,7 @@ import ExternalLink from "../ExternalLink";
 export default function AppLayout() {
   const { data: albyMe } = useAlbyMe();
   const { data: csrf } = useCSRF();
-  const { mutate: refetchInfo } = useInfo();
+  const { data: info, mutate: refetchInfo } = useInfo();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const location = useLocation();
@@ -168,10 +170,24 @@ export default function AppLayout() {
             <div className="flex h-full max-h-screen flex-col gap-2 sticky top-0">
               <div className="flex-1">
                 <nav className="grid items-start px-2 py-2 text-sm font-medium lg:px-4">
-                  <div className="p-3 ">
+                  <div className="p-3 flex justify-between items-center">
                     <Link to="/" className="font-semibold text-xl">
                       <span className="">Alby Hub</span>
                     </Link>
+
+                    <ExternalLink
+                      to="https://getalby.com/hub_deployment/edit" // TODO: link to general update page
+                      className="font-semibold text-xl"
+                    >
+                      <span className="text-xs flex items-center">
+                        {info?.version}&nbsp;
+                        {info?.upToDate ? (
+                          <ShieldCheckIcon className="w-4 h-4" />
+                        ) : (
+                          <ShieldAlertIcon className="w-4 h-4" />
+                        )}
+                      </span>
+                    </ExternalLink>
                   </div>
                   <MainMenuContent />
                 </nav>
