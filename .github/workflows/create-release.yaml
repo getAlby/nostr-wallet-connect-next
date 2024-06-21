@@ -34,7 +34,7 @@ jobs:
           name: albyhub-Windows
           path: artifacts
 
-      - name: Create release draft
+      - name: Create release without tag
         if: github.ref_type != 'tag'
         env:
           GH_TOKEN: ${{ secrets.repo-token }}
@@ -47,7 +47,7 @@ jobs:
             --draft                                    \
             ./artifacts/*
 
-      - name: Create release
+      - name: Create release with tag
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ secrets.repo-token }}
