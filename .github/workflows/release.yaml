@@ -22,6 +22,6 @@ jobs:
     needs:
       - build-raspberry-pi
       - build-wails
-    uses: ./.github/workflows/publish-release.yaml
+    uses: ./.github/workflows/create-release.yaml
     secrets:
       repo-token: ${{ secrets.GITHUB_TOKEN }}
