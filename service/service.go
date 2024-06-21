@@ -110,6 +110,9 @@ func NewService(ctx context.Context) (*service, error) {
 
 	eventPublisher.Publish(&events.Event{
 		Event: "nwc_started",
+		Properties: map[string]interface{}{
+			"version": version.Tag,
+		},
 	})
 
 	if appConfig.GoProfilerAddr != "" {
