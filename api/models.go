@@ -149,7 +149,7 @@ type InfoResponse struct {
 	AlbyUserIdentifier   string `json:"albyUserIdentifier"`
 	AlbyAccountConnected bool   `json:"albyAccountConnected"`
 	Version              string `json:"version"`
-	UpToDate             bool   `json:"upToDate"`
+	LatestVersion        string `json:"latestVersion"`
 	Network              string `json:"network"`
 }
 

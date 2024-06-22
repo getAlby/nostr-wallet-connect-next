@@ -33,6 +33,12 @@ import {
   DropdownMenuTrigger,
 } from "src/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "src/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "src/components/ui/tooltip";
 import { useToast } from "src/components/ui/use-toast";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useCSRF } from "src/hooks/useCSRF";
@@ -162,6 +168,8 @@ export default function AppLayout() {
     );
   }
 
+  const upToDate = info?.version && info.version === info.latestVersion;
+
   return (
     <>
       <div className="font-sans min-h-screen w-full flex flex-col">
@@ -175,19 +183,32 @@ export default function AppLayout() {
                       <span className="">Alby Hub</span>
                     </Link>
 
-                    <ExternalLink
-                      to="https://getalby.com/hub_deployment/edit" // TODO: link to general update page
-                      className="font-semibold text-xl"
-                    >
-                      <span className="text-xs flex items-center text-muted-foreground">
-                        {info?.version}&nbsp;
-                        {info?.upToDate ? (
-                          <ShieldCheckIcon className="w-4 h-4" />
-                        ) : (
-                          <ShieldAlertIcon className="w-4 h-4" />
-                        )}
-                      </span>
-                    </ExternalLink>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <ExternalLink
+                            to="https://getalby.com/hub_deployment/edit" // TODO: link to general update page
+                            className="font-semibold text-xl"
+                          >
+                            <span className="text-xs flex items-center text-muted-foreground">
+                              {info?.version}&nbsp;
+                              {upToDate ? (
+                                <ShieldCheckIcon className="w-4 h-4" />
+                              ) : (
+                                <ShieldAlertIcon className="w-4 h-4" />
+                              )}
+                            </span>
+                          </ExternalLink>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {upToDate ? (
+                            <p>Alby Hub is up to date!</p>
+                          ) : (
+                            <p>Alby Hub {info?.latestVersion} available!</p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   <MainMenuContent />
                 </nav>
