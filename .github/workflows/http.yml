@@ -76,7 +76,7 @@ jobs:
           echo "GOARCH=arm" >> $GITHUB_ENV
           echo "GOARM=6" >> $GITHUB_ENV
           echo "CC=$GITHUB_WORKSPACE/armv6-unknown-linux-gnueabihf/bin/armv6-unknown-linux-gnueabihf-gcc" >> $GITHUB_ENV
-          echo "GOTAGS=skip_breez,netgo" >> $GITHUB_ENV
+          echo "GOTAGS=-tags skip_breez,netgo" >> $GITHUB_ENV
 
       - name: Install ARM64 cross-compiler
         if: matrix.build.arch == 'aarch64'
@@ -85,12 +85,12 @@ jobs:
           echo "GOOS=linux" >> $GITHUB_ENV
           echo "GOARCH=arm64" >> $GITHUB_ENV
           echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-          echo "GOTAGS=netgo" >> $GITHUB_ENV
+          echo "GOTAGS=-tags netgo" >> $GITHUB_ENV
 
       - name: Build Binary for linux
         env:
           CGO_ENABLED: 1
-        run: go build -tags ${{env.GOTAGS}} -o build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}}/bin/albyhub-${{matrix.build.arch}} cmd/http/main.go
+        run: go build ${{env.GOTAGS}} -o build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}}/bin/albyhub-${{matrix.build.arch}} cmd/http/main.go
 
       - name: Copy shared libraries to the output directory
         run: |
