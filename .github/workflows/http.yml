@@ -30,6 +30,11 @@ jobs:
           ]
 
     steps:
+      - name: Setup
+        run: |
+          echo "EXEC_NAME=albyhub" >> $GITHUB_ENV
+          echo "PACKAGE_NAME=$EXEC_NAME-Server-Linux-${{ matrix.build.arch }}" >> $GITHUB_ENV
+
       - uses: actions/checkout@v4
         name: Check out code
         with:
@@ -66,7 +71,7 @@ jobs:
 
       - name: Create build directory
         run: |
-          mkdir -p ./build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}}/lib
+          mkdir -p ./build/bin/${{ env.PACKAGE_NAME }}/lib
 
       - name: Install ARM6 cross-compiler
         if: matrix.build.arch == 'armv6'
@@ -91,35 +96,35 @@ jobs:
       - name: Build Binary for linux
         env:
           CGO_ENABLED: 1
-        run: go build ${{env.GOTAGS}} -o build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}}/bin/albyhub-${{matrix.build.arch}} cmd/http/main.go
+        run: go build ${{ env.GOTAGS }} -o build/bin/${{ env.PACKAGE_NAME }}/bin/${{ env.EXEC_NAME }} cmd/http/main.go
 
       - name: Copy shared libraries to the output directory
         run: |
-          mkdir -p ./build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}}/lib
-          if [ "${{matrix.build.breez_arch}}" != "" ]; then
-            cp `go list -m -f "{{.Dir}}" github.com/breez/breez-sdk-go`/breez_sdk/lib/${{matrix.build.breez_arch}}/libbreez_sdk_bindings.so ./build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}}/lib/
+          mkdir -p ./build/bin/${{ env.PACKAGE_NAME }}/lib
+          if [ "${{ matrix.build.breez_arch }}" != "" ]; then
+            cp `go list -m -f "{{.Dir}}" github.com/breez/breez-sdk-go`/breez_sdk/lib/${{ matrix.build.breez_arch }}/libbreez_sdk_bindings.so ./build/bin/${{ env.PACKAGE_NAME }}/lib/
           fi
-          cp `go list -m -f "{{.Dir}}" github.com/getAlby/glalby-go`/glalby/${{matrix.build.alby_arch}}/libglalby_bindings.so ./build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}}/lib/
-          cp `go list -m -f "{{.Dir}}" github.com/getAlby/ldk-node-go`/ldk_node/${{matrix.build.alby_arch}}/libldk_node.so ./build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}}/lib/
+          cp `go list -m -f "{{.Dir}}" github.com/getAlby/glalby-go`/glalby/${{ matrix.build.alby_arch }}/libglalby_bindings.so ./build/bin/${{ env.PACKAGE_NAME }}/lib/
+          cp `go list -m -f "{{.Dir}}" github.com/getAlby/ldk-node-go`/ldk_node/${{ matrix.build.alby_arch }}/libldk_node.so ./build/bin/${{ env.PACKAGE_NAME }}/lib/
         shell: bash
 
       - name: Patch executable RPATH
         run: |
-          patchelf --force-rpath --set-rpath '$ORIGIN/../lib' ./build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}}/bin/albyhub-${{matrix.build.arch}}
+          patchelf --force-rpath --set-rpath '$ORIGIN/../lib' ./build/bin/${{ env.PACKAGE_NAME }}/bin/${{ env.EXEC_NAME }}
 
       - name: Add Linux perms
         run: |
-          chmod +x build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}}/bin/albyhub-${{matrix.build.arch}}
+          chmod +x build/bin/${{ env.PACKAGE_NAME }}/bin/${{ env.EXEC_NAME }}
         shell: bash
 
       - name: Make output tar archive to keep file permissions
         run: |
           mkdir -p ./build/out
-          tar czf ./build/out/albyhub-${{runner.os}}-${{matrix.build.arch}}.tar.gz -C ./build/bin/albyhub-${{runner.os}}-${{matrix.build.arch}} .
+          tar czf ./build/out/${{ env.PACKAGE_NAME }}.tar.gz -C ./build/bin/${{ env.PACKAGE_NAME }} .
 
       - uses: actions/upload-artifact@v4
         with:
-          name: albyhub-${{runner.os}}-${{matrix.build.arch}}.tar.gz
+          name: ${{ env.PACKAGE_NAME }}.tar.gz
           path: |
-            ./build/out/albyhub-${{runner.os}}-${{matrix.build.arch}}.tar.gz
+            ./build/out/${{ env.PACKAGE_NAME }}.tar.gz
           if-no-files-found: error
