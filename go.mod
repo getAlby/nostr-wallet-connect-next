@@ -9,13 +9,13 @@ require (
 	github.com/breez/breez-sdk-go v0.3.4
 	github.com/davrux/echo-logrus/v4 v4.0.3
 	github.com/elnosh/gonuts v0.1.1-0.20240602162005-49da741613e4
-	github.com/getAlby/glalby-go v0.0.0-20240416174357-e6e2faa2fbd8
-	github.com/getAlby/ldk-node-go v0.0.0-20240613043419-a3ae86f6a26d
+	github.com/getAlby/glalby-go v0.0.0-20240616134525-322750d01f8d
+	github.com/getAlby/ldk-node-go v0.0.0-20240616134337-9740e8149bc0
 	github.com/go-gormigrate/gormigrate/v2 v2.1.1
 	github.com/gorilla/sessions v1.2.2
 	github.com/labstack/echo-contrib v0.14.1
 	github.com/labstack/echo/v4 v4.12.0
-	github.com/nbd-wtf/go-nostr v0.30.2
+	github.com/nbd-wtf/go-nostr v0.32.0
 	github.com/nbd-wtf/ln-decodepay v1.12.1
 	github.com/orandin/lumberjackrus v1.0.1
 	github.com/stretchr/testify v1.9.0
@@ -23,7 +23,7 @@ require (
 	golang.org/x/crypto v0.23.0
 	golang.org/x/oauth2 v0.20.0
 	google.golang.org/grpc v1.64.0
-	gopkg.in/DataDog/dd-trace-go.v1 v1.64.0
+	gopkg.in/DataDog/dd-trace-go.v1 v1.65.0
 	gopkg.in/macaroon.v2 v2.1.0
 	gorm.io/gorm v1.25.10
 )
@@ -157,7 +157,7 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/puzpuzpuz/xsync/v3 v3.0.2 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/richardartoul/molecule v1.0.1-0.20221107223329-32cfee06a052 // indirect
+	github.com/richardartoul/molecule v1.0.1-0.20240531184615-7ca0df43c0b3 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/rogpeppe/fastuuid v1.2.0 // indirect
 	github.com/samber/lo v1.38.1 // indirect

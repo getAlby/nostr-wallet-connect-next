@@ -7,6 +7,8 @@ import {
   Menu,
   MessageCircleQuestion,
   Settings,
+  ShieldAlertIcon,
+  ShieldCheckIcon,
   Store,
   Wallet,
 } from "lucide-react";
@@ -20,7 +22,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import SidebarHint from "src/components/SidebarHint";
-import { Avatar, AvatarFallback, AvatarImage } from "src/components/ui/avatar";
+import UserAvatar from "src/components/UserAvatar";
 import { Button } from "src/components/ui/button";
 import {
   DropdownMenu,
@@ -31,6 +33,12 @@ import {
   DropdownMenuTrigger,
 } from "src/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "src/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "src/components/ui/tooltip";
 import { useToast } from "src/components/ui/use-toast";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useCSRF } from "src/hooks/useCSRF";
@@ -44,7 +52,7 @@ import ExternalLink from "../ExternalLink";
 export default function AppLayout() {
   const { data: albyMe } = useAlbyMe();
   const { data: csrf } = useCSRF();
-  const { mutate: refetchInfo } = useInfo();
+  const { data: info, mutate: refetchInfo } = useInfo();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const location = useLocation();
@@ -73,6 +81,8 @@ export default function AppLayout() {
     toast({ title: "You are now logged out." });
   }, [csrf, navigate, refetchInfo, toast]);
 
+  const isHttpMode = window.location.protocol.startsWith("http");
+
   function UserMenuContent() {
     return (
       <DropdownMenuContent align="end">
@@ -88,13 +98,15 @@ export default function AppLayout() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={logout}
-          className="w-full flex flex-row items-center gap-2"
-        >
-          <Lock className="w-4 h-4" />
-          <p>Lock Alby Hub</p>
-        </DropdownMenuItem>
+        {isHttpMode && (
+          <DropdownMenuItem
+            onClick={logout}
+            className="w-full flex flex-row items-center gap-2"
+          >
+            <Lock className="w-4 h-4" />
+            <p>Lock Alby Hub</p>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     );
   }
@@ -156,6 +168,8 @@ export default function AppLayout() {
     );
   }
 
+  const upToDate = info?.version && info.version === info.latestVersion;
+
   return (
     <>
       <div className="font-sans min-h-screen w-full flex flex-col">
@@ -164,10 +178,37 @@ export default function AppLayout() {
             <div className="flex h-full max-h-screen flex-col gap-2 sticky top-0">
               <div className="flex-1">
                 <nav className="grid items-start px-2 py-2 text-sm font-medium lg:px-4">
-                  <div className="p-3 ">
+                  <div className="p-3 flex justify-between items-center">
                     <Link to="/" className="font-semibold text-xl">
                       <span className="">Alby Hub</span>
                     </Link>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <ExternalLink
+                            to="https://getalby.com/hub_deployment/edit" // TODO: link to general update page
+                            className="font-semibold text-xl"
+                          >
+                            <span className="text-xs flex items-center text-muted-foreground">
+                              {info?.version}&nbsp;
+                              {upToDate ? (
+                                <ShieldCheckIcon className="w-4 h-4" />
+                              ) : (
+                                <ShieldAlertIcon className="w-4 h-4" />
+                              )}
+                            </span>
+                          </ExternalLink>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {upToDate ? (
+                            <p>Alby Hub is up to date!</p>
+                          ) : (
+                            <p>Alby Hub {info?.latestVersion} available!</p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   <MainMenuContent />
                 </nav>
@@ -177,14 +218,7 @@ export default function AppLayout() {
                 <MainNavSecondary />
                 <div className="flex h-14 items-center px-4 lg:h-[60px] lg:px-6 gap-3 border-t border-border justify-between">
                   <div className="grid grid-flow-col gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={albyMe?.avatar} alt="Avatar" />
-                      <AvatarFallback>
-                        {(albyMe?.name || albyMe?.email || "SN")
-                          .substring(0, 2)
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar className="h-8 w-8" />
                     <Link
                       to="#"
                       className="font-semibold text-lg whitespace-nowrap overflow-hidden text-ellipsis"
@@ -240,10 +274,7 @@ export default function AppLayout() {
                       to="#"
                       className="grid grid-flow-col gap-2 font-semibold text-lg whitespace-nowrap overflow-hidden text-ellipsis"
                     >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={albyMe?.avatar} alt="@satoshi" />
-                        <AvatarFallback>SN</AvatarFallback>
-                      </Avatar>
+                      <UserAvatar className="h-8 w-8" />
                     </Link>
                   </DropdownMenuTrigger>
                   <UserMenuContent />

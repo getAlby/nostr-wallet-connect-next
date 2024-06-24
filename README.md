@@ -34,10 +34,6 @@ As data storage SQLite is used.
     # edit the config for your needs
     vim .env
 
-#### Optional Requirements
-
-See [Greenlight](./README_GREENLIGHT.md)
-
 ## Development
 
 ### Required Software
@@ -53,7 +49,7 @@ See [Greenlight](./README_GREENLIGHT.md)
 
 2. Compile the frontend or run `touch frontend/dist/tmp` to ensure there are embeddable files available.
 
-3. `go run .`
+3. `go run cmd/http/main.go`
 
 ### React Frontend (HTTP mode)
 
@@ -77,7 +73,7 @@ _If you get a blank screen, try running in your normal terminal (outside of vsco
 ### Build and run locally (HTTP mode)
 
     $ mkdir tmp
-    $ go build -o main
+    $ go build -o main cmd/http/main.go
     $ cp main tmp
     $ cp .env tmp
     $ cd tmp
@@ -90,7 +86,11 @@ _If you get a blank screen, try running in your normal terminal (outside of vsco
 
 ### Testing
 
-    $ go test
+    $ go test ./...
+
+#### Test matching regular expression
+
+    $ go test ./... -run TestHandleGetInfoEvent
 
 ### Profiling
 
@@ -120,6 +120,10 @@ For more information refer to:
 
 - [DataDog Profiler documentation](https://docs.datadoghq.com/profiler/enabling/go/)
 - [DataDog Profiler Go library](https://pkg.go.dev/gopkg.in/DataDog/dd-trace-go.v1/profiler)
+
+### Versioning
+
+    $ go run -ldflags="-X 'github.com/getAlby/nostr-wallet-connect/version.Tag=v0.6.0'" cmd/http/main.go
 
 ### Windows
 
@@ -363,8 +367,9 @@ LDK logs:
 - install nvm (curl script)
 - with nvm, choose node lts
 - install yarn (via npm)
-- then run yarn build
-- go run .
+- run `(cd frontend && yarn install`
+- run `(cd frontend && yarn build:http)`
+- run `go run cmd/http/main.go`
 
 ### Docker
 

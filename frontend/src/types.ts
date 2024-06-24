@@ -146,6 +146,8 @@ export interface InfoResponse {
   nextBackupReminder: string;
   albyUserIdentifier: string;
   network?: Network;
+  version: string;
+  latestVersion: string;
 }
 
 export type Network = "bitcoin" | "testnet" | "signet";
@@ -172,6 +174,11 @@ export type Channel = {
   public: boolean;
   confirmations?: number;
   confirmationsRequired?: number;
+  forwardingFeeBaseMsat: number;
+};
+
+export type UpdateChannelRequest = {
+  forwardingFeeBaseMsat: number;
 };
 
 export type Peer = {
@@ -287,6 +294,9 @@ export type NewInstantChannelInvoiceRequest = {
 export type NewInstantChannelInvoiceResponse = {
   invoice: string;
   fee: number;
+  invoiceAmount: number;
+  incomingLiquidity: number;
+  outgoingLiquidity: number;
 };
 
 export type RedeemOnchainFundsResponse = {
