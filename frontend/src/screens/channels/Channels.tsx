@@ -35,6 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "src/components/ui/dropdown-menu.tsx";
+import { Progress } from "src/components/ui/progress.tsx";
 import {
   Table,
   TableBody,
@@ -464,8 +465,9 @@ export default function Channels() {
                 <TableHead className="w-[80px]">Status</TableHead>
                 <TableHead>Node</TableHead>
                 <TableHead className="w-[150px]">Capacity</TableHead>
-                <TableHead className="w-[150px]">Inbound</TableHead>
-                <TableHead className="w-[150px]">Outbound</TableHead>
+                <TableHead className="w-[300px]">
+                  Channel Visualization
+                </TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -484,7 +486,7 @@ export default function Channels() {
                       <TableRow key={channel.id}>
                         <TableCell>
                           {channel.active ? (
-                            <Badge>Online</Badge>
+                            <Badge variant="positive">Online</Badge>
                           ) : (
                             <Badge variant="outline">Offline</Badge>
                           )}{" "}
@@ -506,10 +508,20 @@ export default function Channels() {
                         </TableCell>
                         <TableCell>{formatAmount(capacity)} sats</TableCell>
                         <TableCell>
-                          {formatAmount(channel.remoteBalance)} sats
-                        </TableCell>
-                        <TableCell>
-                          {formatAmount(channel.localBalance)} sats
+                          <div className="relative">
+                            <Progress
+                              value={(channel.localBalance / capacity) * 100}
+                              className="h-6 absolute"
+                            />
+                            <div className="flex flex-row w-full justify-between px-2 text-xs items-center h-6 mix-blend-exclusion text-white">
+                              <span>
+                                {formatAmount(channel.localBalance)} sats
+                              </span>
+                              <span>
+                                {formatAmount(channel.remoteBalance)} sats
+                              </span>
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
