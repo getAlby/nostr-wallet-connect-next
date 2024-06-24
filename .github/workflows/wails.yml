@@ -34,7 +34,7 @@ jobs:
       - name: Setup
         run: |
           echo "EXEC_NAME=albyhub" >> $GITHUB_ENV
-          echo "PACKAGE_NAME=$EXEC_NAME-Desktop-${{ runner.os }}" >> $GITHUB_ENV
+          echo "PACKAGE_NAME=albyhub-Desktop-${{ runner.os }}" >> $GITHUB_ENV
 
       - uses: actions/checkout@v4
         with:
