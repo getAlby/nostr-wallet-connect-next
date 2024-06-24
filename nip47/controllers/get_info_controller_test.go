@@ -68,13 +68,13 @@ func TestHandleGetInfoEvent_NoPermission(t *testing.T) {
 
 	assert.Nil(t, publishedResponse.Error)
 	nodeInfo := publishedResponse.Result.(*getInfoResponse)
-	assert.Empty(t, tests.MockNodeInfo.Alias, nodeInfo.Alias)
-	assert.Empty(t, tests.MockNodeInfo.Color, nodeInfo.Color)
-	assert.Empty(t, tests.MockNodeInfo.Pubkey, nodeInfo.Pubkey)
-	assert.Empty(t, tests.MockNodeInfo.Network, nodeInfo.Network)
-	assert.Empty(t, tests.MockNodeInfo.BlockHeight, nodeInfo.BlockHeight)
-	assert.Empty(t, tests.MockNodeInfo.BlockHash, nodeInfo.BlockHash)
-	assert.Equal(t, []string{"get_info"}, nodeInfo.Methods)
+	assert.Empty(t, nodeInfo.Alias)
+	assert.Empty(t, nodeInfo.Color)
+	assert.Empty(t, nodeInfo.Pubkey)
+	assert.Empty(t, nodeInfo.Network)
+	assert.Empty(t, nodeInfo.BlockHeight)
+	assert.Empty(t, nodeInfo.BlockHash)
+	assert.Equal(t, []string{"get_balance"}, nodeInfo.Methods)
 	assert.Equal(t, []string{}, nodeInfo.Notifications)
 }
 
