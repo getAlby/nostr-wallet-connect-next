@@ -53,7 +53,8 @@ export default function MigrateAlbyFunds() {
         }
         const newInstantChannelInvoiceRequest: NewInstantChannelInvoiceRequest =
           {
-            lsp: "ALBY",
+            lspUrl: "https://lsp.albylabs.com",
+            lspType: "PMLSP",
             amount,
             public: false,
           };

@@ -66,7 +66,13 @@ function NewChannelInternal({ network }: { network: Network }) {
       image: "",
     };
     return _channelPeerSuggestions
-      ? [..._channelPeerSuggestions, customOption]
+      ? [
+          ..._channelPeerSuggestions.filter(
+            (peer) =>
+              peer.paymentMethod !== "lightning" || peer.lspType !== "LSPS1"
+          ),
+          customOption,
+        ]
       : undefined;
   }, [_channelPeerSuggestions, network]);
 
@@ -121,7 +127,8 @@ function NewChannelInternal({ network }: { network: Network }) {
       ) {
         setOrder((current) => ({
           ...current,
-          lsp: selectedPeer.lsp,
+          lspType: selectedPeer.lspType,
+          lspUrl: selectedPeer.lspUrl,
         }));
       }
       setAmount(selectedPeer.minimumChannelSize.toString());
