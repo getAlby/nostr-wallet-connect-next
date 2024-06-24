@@ -32,6 +32,7 @@ jobs:
       TAG: ${{ github.ref_name }}
     steps:
       - name: Setup
+        shell: bash
         run: |
           echo "EXEC_NAME=albyhub" >> $GITHUB_ENV
           echo "PACKAGE_NAME=albyhub-Desktop-${{ runner.os }}" >> $GITHUB_ENV
