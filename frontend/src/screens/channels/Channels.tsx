@@ -52,7 +52,10 @@ import {
   TooltipTrigger,
 } from "src/components/ui/tooltip.tsx";
 import { toast } from "src/components/ui/use-toast.ts";
-import { ONCHAIN_DUST_SATS } from "src/constants.ts";
+import {
+  ALBY_HIDE_HOSTED_BALANCE_BELOW as ALBY_HIDE_HOSTED_BALANCE_LIMIT,
+  ONCHAIN_DUST_SATS,
+} from "src/constants.ts";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance.ts";
 import { useBalances } from "src/hooks/useBalances.ts";
 import { useChannels } from "src/hooks/useChannels";
@@ -256,6 +259,9 @@ export default function Channels() {
     }
   }
 
+  const showHostedBalance =
+    albyBalance && albyBalance.sats > ALBY_HIDE_HOSTED_BALANCE_LIMIT;
+
   return (
     <>
       <AppHeader
@@ -344,12 +350,10 @@ export default function Channels() {
       <div
         className={cn(
           "grid grid-cols-1 gap-3",
-          albyBalance && albyBalance.sats >= 100
-            ? "xl:grid-cols-4"
-            : "lg:grid-cols-3"
+          showHostedBalance ? "xl:grid-cols-4" : "lg:grid-cols-3"
         )}
       >
-        {albyBalance && albyBalance?.sats >= 100 && (
+        {showHostedBalance && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
