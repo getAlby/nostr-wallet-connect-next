@@ -41,13 +41,17 @@ func main() {
 		}
 	}()
 
-	// wait for exit signal
-	signal := <-osSignalChannel
-	logger.Logger.WithField("signal", signal).Info("Received OS signal")
-	cancel()
+	var signal os.Signal
+	go func() {
+		// wait for exit signal
+		signal = <-osSignalChannel
+		logger.Logger.WithField("signal", signal).Info("Received OS signal")
+		cancel()
+	}()
 
 	//handle graceful shutdown
 	<-ctx.Done()
+	logger.Logger.WithField("signal", signal).Info("Context Done")
 	logger.Logger.Info("Shutting down echo server...")
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
