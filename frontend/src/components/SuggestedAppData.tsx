@@ -19,7 +19,7 @@ import zappybird from "src/assets/suggested-apps/zappy-bird.png";
 
 export type SuggestedApp = {
   id: string;
-  webLink?: string;
+  webLink: string;
   playLink?: string;
   appleLink?: string;
   title: string;
@@ -47,8 +47,10 @@ export const suggestedApps: SuggestedApp[] = [
     id: "amethyst",
     title: "Amethyst",
     description: "Android Nostr client",
+    webLink:
+      "https://play.google.com/store/apps/details?id=com.vitorpamplona.amethyst",
     playLink:
-      "https://play.google.com/store/apps/details?id=com.vitorpamplona.amethyst&hl=de&gl=US",
+      "https://play.google.com/store/apps/details?id=com.vitorpamplona.amethyst",
     logo: amethyst,
   },
   {

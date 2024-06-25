@@ -36,13 +36,11 @@ function SuggestedAppCard({
       </CardContent>
       <CardFooter className="flex flex-row justify-between">
         <div className="flex flex-row gap-4">
-          {webLink && (
-            <ExternalLink to={webLink}>
-              <Button variant="outline" size="icon">
-                <Globe className="w-4 h-4" />
-              </Button>
-            </ExternalLink>
-          )}
+          <ExternalLink to={webLink}>
+            <Button variant="outline" size="icon">
+              <Globe className="w-4 h-4" />
+            </Button>
+          </ExternalLink>
           {appleLink && (
             <ExternalLink to={appleLink}>
               <Button variant="outline" size="icon">
