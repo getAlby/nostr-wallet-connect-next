@@ -545,9 +545,16 @@ export default function Channels() {
                             {channel.public ? "Public" : "Private"}
                           </Badge>
                         </TableCell>
-                        <TableCell>{formatAmount(capacity)} sats</TableCell>
-                        <TableCell>
-                          {channel.unspendablePunishmentReserve} sats
+                        <TableCell title={capacity / 1000 + " sats"}>
+                          {formatAmount(capacity)} sats
+                        </TableCell>
+                        <TableCell
+                          title={channel.unspendablePunishmentReserve + " sats"}
+                        >
+                          {formatAmount(
+                            channel.unspendablePunishmentReserve * 1000
+                          )}{" "}
+                          sats
                         </TableCell>
                         <TableCell>
                           <div className="relative">
@@ -556,10 +563,14 @@ export default function Channels() {
                               className="h-6 absolute"
                             />
                             <div className="flex flex-row w-full justify-between px-2 text-xs items-center h-6 mix-blend-exclusion text-white">
-                              <span>
+                              <span
+                                title={channel.localBalance / 1000 + " sats"}
+                              >
                                 {formatAmount(channel.localBalance)} sats
                               </span>
-                              <span>
+                              <span
+                                title={channel.remoteBalance / 1000 + " sats"}
+                              >
                                 {formatAmount(channel.remoteBalance)} sats
                               </span>
                             </div>
