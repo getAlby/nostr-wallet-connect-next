@@ -35,6 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "src/components/ui/dropdown-menu.tsx";
+import { LoadingButton } from "src/components/ui/loading-button.tsx";
 import {
   Table,
   TableBody,
@@ -43,7 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from "src/components/ui/table.tsx";
-import { toast } from "src/components/ui/use-toast.ts";
+import { useToast } from "src/components/ui/use-toast.ts";
 import { ONCHAIN_DUST_SATS } from "src/constants.ts";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance.ts";
 import { useBalances } from "src/hooks/useBalances.ts";
@@ -68,11 +69,14 @@ export default function Channels() {
   const { data: channels, mutate: reloadChannels } = useChannels();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
   const { data: balances } = useBalances();
-  const { data: albyBalance } = useAlbyBalance();
+  const { data: albyBalance, mutate: reloadAlbyBalance } = useAlbyBalance();
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const { mutate: reloadInfo } = useInfo();
   const { data: csrf } = useCSRF();
   const redeemOnchainFunds = useRedeemOnchainFunds();
+  const { toast } = useToast();
+  const [drainingAlbySharedFunds, setDrainingAlbySharedFunds] =
+    React.useState(false);
 
   // TODO: move to NWC backend
   const loadNodeStats = React.useCallback(async () => {
@@ -171,7 +175,10 @@ export default function Channels() {
       toast({ title: "Sucessfully closed channel" });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong: " + error);
+      toast({
+        variant: "destructive",
+        description: "Something went wrong: " + error,
+      });
     }
   }
 
@@ -213,7 +220,10 @@ export default function Channels() {
       toast({ title: "Sucessfully updated channel" });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong: " + error);
+      toast({
+        variant: "destructive",
+        description: "Something went wrong: " + error,
+      });
     }
   }
 
@@ -241,10 +251,13 @@ export default function Channels() {
         },
       });
       await reloadInfo();
-      alert(`🎉 Router reset`);
+      toast({ description: "🎉 Router reset" });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong: " + error);
+      toast({
+        variant: "destructive",
+        description: "Something went wrong: " + error,
+      });
     }
   }
 
@@ -335,7 +348,7 @@ export default function Channels() {
       ></AppHeader>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {albyBalance && albyBalance?.sats >= 100 && (
+        {albyBalance && albyBalance.sats >= 100 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -348,6 +361,52 @@ export default function Channels() {
                 {new Intl.NumberFormat().format(albyBalance?.sats)} sats
               </div>
             </CardContent>
+            <CardFooter className="flex justify-end space-x-1">
+              <LoadingButton
+                loading={drainingAlbySharedFunds}
+                onClick={async () => {
+                  if (
+                    !channels?.some(
+                      (channel) => channel.remoteBalance > albyBalance.sats
+                    )
+                  ) {
+                    toast({
+                      title: "Please increase your receiving capacity first",
+                    });
+                    return;
+                  }
+
+                  setDrainingAlbySharedFunds(true);
+                  try {
+                    if (!csrf) {
+                      throw new Error("csrf not loaded");
+                    }
+
+                    await request("/api/alby/drain", {
+                      method: "POST",
+                      headers: {
+                        "X-CSRF-Token": csrf,
+                        "Content-Type": "application/json",
+                      },
+                    });
+                    await reloadAlbyBalance();
+                    toast({
+                      description: "🎉 Funds swept from Alby shared wallet!",
+                    });
+                  } catch (error) {
+                    console.error(error);
+                    toast({
+                      variant: "destructive",
+                      description: "Something went wrong: " + error,
+                    });
+                  }
+                  setDrainingAlbySharedFunds(false);
+                }}
+                variant="outline"
+              >
+                Sweep
+              </LoadingButton>
+            </CardFooter>
           </Card>
         )}
         <Card>
