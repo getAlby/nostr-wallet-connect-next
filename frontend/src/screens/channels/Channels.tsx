@@ -7,6 +7,7 @@ import {
   ExternalLinkIcon,
   HandCoins,
   Hotel,
+  InfoIcon,
   MoreHorizontal,
   Trash2,
   Unplug,
@@ -44,6 +45,12 @@ import {
   TableHeader,
   TableRow,
 } from "src/components/ui/table.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "src/components/ui/tooltip.tsx";
 import { toast } from "src/components/ui/use-toast.ts";
 import { ONCHAIN_DUST_SATS } from "src/constants.ts";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance.ts";
@@ -465,6 +472,24 @@ export default function Channels() {
                 <TableHead className="w-[80px]">Status</TableHead>
                 <TableHead>Node</TableHead>
                 <TableHead className="w-[150px]">Capacity</TableHead>
+                <TableHead className="w-[150px]">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="flex flex-row gap-2 items-center">
+                          Reserve
+                          <InfoIcon className="h-4 w-4 shrink-0" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="w-[400px]">
+                        Funds each participant sets aside to discourage cheating
+                        by ensuring each party has something at stake. This
+                        reserve cannot be spent during the channel's lifetime
+                        and typically amounts to 1% of the channel capacity.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
                 <TableHead className="w-[300px]">
                   Channel Visualization
                 </TableHead>
@@ -507,6 +532,9 @@ export default function Channels() {
                           </Badge>
                         </TableCell>
                         <TableCell>{formatAmount(capacity)} sats</TableCell>
+                        <TableCell>
+                          {channel.unspendablePunishmentReserve} sats
+                        </TableCell>
                         <TableCell>
                           <div className="relative">
                             <Progress
