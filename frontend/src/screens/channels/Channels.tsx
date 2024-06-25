@@ -453,7 +453,7 @@ export default function Channels() {
           title="No Channels Available"
           description="Connect to the Lightning Network by establishing your first channel and start transacting."
           buttonText="Open Channel"
-          buttonLink="/channels/new"
+          buttonLink="/channels/outgoing"
         />
       )}
 
