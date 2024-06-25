@@ -117,7 +117,7 @@ function NewChannelInternal({ network }: { network: Network }) {
   return (
     <>
       <AppHeader
-        title="Increase Incoming Capacity"
+        title="Increase Receiving Capacity"
         description="Purchase a channel with incoming capacity to receive payments"
       />
       <form
