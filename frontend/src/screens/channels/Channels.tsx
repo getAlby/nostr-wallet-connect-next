@@ -61,7 +61,7 @@ import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo.ts";
 import { useRedeemOnchainFunds } from "src/hooks/useRedeemOnchainFunds.ts";
 import { useSyncWallet } from "src/hooks/useSyncWallet.ts";
 import { copyToClipboard } from "src/lib/clipboard.ts";
-import { formatAmount } from "src/lib/utils.ts";
+import { cn, formatAmount } from "src/lib/utils.ts";
 import {
   Channel,
   CloseChannelResponse,
@@ -341,7 +341,14 @@ export default function Channels() {
         }
       ></AppHeader>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-3",
+          albyBalance && albyBalance.sats >= 100
+            ? "xl:grid-cols-4"
+            : "lg:grid-cols-3"
+        )}
+      >
         {albyBalance && albyBalance?.sats >= 100 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -491,7 +498,10 @@ export default function Channels() {
                   </TooltipProvider>
                 </TableHead>
                 <TableHead className="w-[300px]">
-                  Channel Visualization
+                  <div className="flex flex-row justify-between items-center">
+                    <div>Spending</div>
+                    <div>Receiving</div>
+                  </div>
                 </TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
