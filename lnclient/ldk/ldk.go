@@ -787,6 +787,11 @@ func (ls *LDKService) ListChannels(ctx context.Context) ([]lnclient.Channel, err
 			"ForwardingFeeProportionalMillionths": ldkChannel.Config.ForwardingFeeProportionalMillionths(),
 		}
 
+		unspendablePunishmentReserve := uint64(0)
+		if ldkChannel.UnspendablePunishmentReserve != nil {
+			unspendablePunishmentReserve = *ldkChannel.UnspendablePunishmentReserve
+		}
+
 		channels = append(channels, lnclient.Channel{
 			InternalChannel:                          internalChannel,
 			LocalBalance:                             int64(ldkChannel.OutboundCapacityMsat),
@@ -799,7 +804,7 @@ func (ls *LDKService) ListChannels(ctx context.Context) ([]lnclient.Channel, err
 			Confirmations:                            ldkChannel.Confirmations,
 			ConfirmationsRequired:                    ldkChannel.ConfirmationsRequired,
 			ForwardingFeeBaseMsat:                    ldkChannel.Config.ForwardingFeeBaseMsat(),
-			UnspendablePunishmentReserve:             ldkChannel.UnspendablePunishmentReserve,
+			UnspendablePunishmentReserve:             unspendablePunishmentReserve,
 			CounterpartyUnspendablePunishmentReserve: ldkChannel.CounterpartyUnspendablePunishmentReserve,
 		})
 	}

@@ -85,7 +85,7 @@ type Channel struct {
 	Confirmations                            *uint32     `json:"confirmations"`
 	ConfirmationsRequired                    *uint32     `json:"confirmationsRequired"`
 	ForwardingFeeBaseMsat                    uint32      `json:"forwardingFeeBaseMsat"`
-	UnspendablePunishmentReserve             *uint64     `json:"unspendablePunishmentReserve"`
+	UnspendablePunishmentReserve             uint64      `json:"unspendablePunishmentReserve"`
 	CounterpartyUnspendablePunishmentReserve uint64      `json:"counterpartyUnspendablePunishmentReserve"`
 }
 
