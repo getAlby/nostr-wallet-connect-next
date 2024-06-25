@@ -1,5 +1,4 @@
 name: Linux-amd64 Docker build & push
-# FIXME: comment to trigger workflow
 on:
   push:
   release:
