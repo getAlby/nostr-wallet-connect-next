@@ -609,10 +609,10 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
   return (
     <div className="flex flex-col gap-5">
       <AppHeader
-        title={"Buy an Instant Channel"}
+        title={"Buy Channel"}
         description={
           wrappedInvoiceResponse
-            ? "Complete Payment to open an instant channel to your node"
+            ? "Complete Payment to open a channel to your node"
             : "Please wait, loading..."
         }
       />
