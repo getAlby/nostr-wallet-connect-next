@@ -15,8 +15,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.21.x
-      - name: Checkout code
-        uses: actions/checkout@v2
       - name: Run tests
         run: mkdir frontend/dist && touch frontend/dist/tmp && go test ./...
       - name: Docker build
