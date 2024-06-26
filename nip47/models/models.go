@@ -30,7 +30,6 @@ const (
 	ERROR_RESTRICTED           = "RESTRICTED"
 	ERROR_BAD_REQUEST          = "BAD_REQUEST"
 	OTHER                      = "OTHER"
-	CAPABILITIES               = "pay_invoice pay_keysend get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice multi_pay_keysend sign_message notifications"
 )
 
 const (

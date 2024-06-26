@@ -3,12 +3,15 @@ package permissions
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
+	"github.com/getAlby/nostr-wallet-connect/utils"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -27,7 +30,7 @@ type permissionsService struct {
 type PermissionsService interface {
 	HasPermission(app *db.App, requestMethod string, amount uint64) (result bool, code string, message string)
 	GetBudgetUsage(appPermission *db.AppPermission) uint64
-	GetPermittedMethods(app *db.App) []string
+	GetPermittedMethods(app *db.App, lnClient lnclient.LNClient) []string
 	PermitsNotifications(app *db.App) bool
 }
 
@@ -87,7 +90,7 @@ func (svc *permissionsService) GetBudgetUsage(appPermission *db.AppPermission) u
 	return result.Sum
 }
 
-func (svc *permissionsService) GetPermittedMethods(app *db.App) []string {
+func (svc *permissionsService) GetPermittedMethods(app *db.App, lnClient lnclient.LNClient) []string {
 	appPermissions := []db.AppPermission{}
 	// TODO: request_method needs to be renamed to scopes or capabilities
 	// see https://github.com/getAlby/nostr-wallet-connect-next/issues/219
@@ -100,6 +103,12 @@ func (svc *permissionsService) GetPermittedMethods(app *db.App) []string {
 		// all payment methods are tied to the pay_invoice permission
 		requestMethods = append(requestMethods, models.PAY_KEYSEND_METHOD, models.MULTI_PAY_INVOICE_METHOD, models.MULTI_PAY_KEYSEND_METHOD)
 	}
+
+	// only return methods supported by the lnClient
+	lnClientSupportedMethods := strings.Split(lnClient.GetSupportedNIP47Capabilities(), " ")
+	requestMethods = utils.Filter(requestMethods, func(requestMethod string) bool {
+		return slices.Contains(lnClientSupportedMethods, requestMethod)
+	})
 
 	return requestMethods
 }

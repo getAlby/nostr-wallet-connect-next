@@ -48,6 +48,7 @@ type API interface {
 	NewInstantChannelInvoice(ctx context.Context, request *NewInstantChannelInvoiceRequest) (*NewInstantChannelInvoiceResponse, error)
 	CreateBackup(unlockPassword string, w io.Writer) error
 	RestoreBackup(unlockPassword string, r io.Reader) error
+	GetWalletCapabilities(ctx context.Context) (*WalletCapabilitiesResponse, error)
 }
 
 type App struct {
@@ -246,4 +247,10 @@ type NewInstantChannelInvoiceResponse struct {
 	InvoiceAmount     uint64 `json:"invoiceAmount"`
 	IncomingLiquidity uint64 `json:"incomingLiquidity"`
 	OutgoingLiquidity uint64 `json:"outgoingLiquidity"`
+}
+
+type WalletCapabilitiesResponse struct {
+	Capabilities               []string `json:"capabilities"`
+	SupportedPermissions       []string `json:"supportedPermissions"`
+	SupportedNotificationTypes []string `json:"supportedNotificationTypes"`
 }

@@ -160,3 +160,10 @@ func (mln *MockLn) DisconnectPeer(ctx context.Context, peerId string) error {
 func (mln *MockLn) UpdateChannel(ctx context.Context, updateChannelRequest *lnclient.UpdateChannelRequest) error {
 	return nil
 }
+
+func (mln *MockLn) GetSupportedNIP47Capabilities() string {
+	return ""
+}
+func (mln *MockLn) GetSupportedNIP47NotificationTypes() string {
+	return ""
+}

@@ -7,26 +7,43 @@ import {
   BudgetRenewalType,
   CreateAppResponse,
   PermissionType,
-  nip47PermissionDescriptions,
+  WalletCapabilities,
   validBudgetRenewals,
 } from "src/types";
 
+import React from "react";
 import AppHeader from "src/components/AppHeader";
+import Loading from "src/components/Loading";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { Separator } from "src/components/ui/separator";
 import { useToast } from "src/components/ui/use-toast";
+import { useCapabilities } from "src/hooks/useCapabilities";
 import { handleRequestError } from "src/utils/handleRequestError";
 import { request } from "src/utils/request"; // build the project for this to appear
 import Permissions from "../../components/Permissions";
 import { suggestedApps } from "../../components/SuggestedAppData";
 
 const NewApp = () => {
+  const { data: capabilities } = useCapabilities();
+  if (!capabilities) {
+    return <Loading />;
+  }
+
+  return <NewAppInternal capabilities={capabilities} />;
+};
+
+type NewAppInternalProps = {
+  capabilities: WalletCapabilities;
+};
+
+const NewAppInternal = ({ capabilities }: NewAppInternalProps) => {
   const location = useLocation();
   const { data: csrf } = useCSRF();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [unsupportedError, setUnsupportedError] = useState<string>();
 
   const queryParams = new URLSearchParams(location.search);
 
@@ -48,17 +65,31 @@ const NewApp = () => {
   const maxAmountParam = queryParams.get("max_amount") ?? "";
   const expiresAtParam = queryParams.get("expires_at") ?? "";
 
-  const parseRequestMethods = (reqParam: string): Set<PermissionType> => {
-    const methods = reqParam
-      ? reqParam.split(" ")
-      : Object.keys(nip47PermissionDescriptions);
+  const initialRequestMethods: Set<PermissionType> = React.useMemo(() => {
+    const methods = reqMethodsParam
+      ? reqMethodsParam.split(" ")
+      : capabilities.supportedPermissions;
     // Create a Set of PermissionType from the array
     const requestMethodsSet = new Set<PermissionType>(
       methods as PermissionType[]
     );
 
+    const unsupportedCapabilities = Array.from(requestMethodsSet).filter(
+      (method) => capabilities.capabilities.indexOf(method) < 0
+    );
+    if (unsupportedCapabilities.length) {
+      setUnsupportedError(
+        "This app requests capabilties not supported by your wallet: " +
+          unsupportedCapabilities
+      );
+    }
+
     return requestMethodsSet;
-  };
+  }, [
+    capabilities.capabilities,
+    capabilities.supportedPermissions,
+    reqMethodsParam,
+  ]);
 
   const parseExpiresParam = (expiresParam: string): Date | undefined => {
     const expiresParamTimestamp = parseInt(expiresParam);
@@ -69,7 +100,7 @@ const NewApp = () => {
   };
 
   const [permissions, setPermissions] = useState<AppPermissions>({
-    requestMethods: parseRequestMethods(reqMethodsParam),
+    requestMethods: initialRequestMethods,
     maxAmount: parseInt(maxAmountParam || "100000"),
     budgetRenewal: validBudgetRenewals.includes(budgetRenewalParam)
       ? budgetRenewalParam
@@ -117,6 +148,15 @@ const NewApp = () => {
       handleRequestError(toast, "Failed to create app", error);
     }
   };
+
+  if (unsupportedError) {
+    return (
+      <>
+        <AppHeader title="Unsupported App" description={unsupportedError} />
+        <p>Try the Alby Hub LDK backend for extra features.</p>
+      </>
+    );
+  }
 
   return (
     <>

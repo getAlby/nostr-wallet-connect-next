@@ -64,9 +64,8 @@ func (api *api) CreateApp(createAppRequest *CreateAppRequest) (*CreateAppRespons
 	}
 
 	for _, m := range requestMethods {
-		// TODO: this should be backend-specific
-		//if we don't know this method, we return an error
-		if !strings.Contains(nip47.CAPABILITIES, m) {
+		//if we don't support this method, we return an error
+		if !strings.Contains(api.svc.GetLNClient().GetSupportedNIP47Capabilities(), m) {
 			return nil, fmt.Errorf("did not recognize request method: %s", m)
 		}
 	}
@@ -646,6 +645,26 @@ func (api *api) Setup(ctx context.Context, setupRequest *SetupRequest) error {
 	}
 
 	return nil
+}
+
+func (api *api) GetWalletCapabilities(ctx context.Context) (*WalletCapabilitiesResponse, error) {
+	if api.svc.GetLNClient() == nil {
+		return nil, errors.New("LNClient not started")
+	}
+
+	// capabilties = NIP-47 methods + notifications
+	capabilities := strings.Split(api.svc.GetLNClient().GetSupportedNIP47Capabilities(), " ")
+	supportedNotificationTypes := strings.Split(api.svc.GetLNClient().GetSupportedNIP47NotificationTypes(), " ")
+	// FIXME: permissions need to be decoupled from NIP-47 methods and capabilities
+	supportedPermissions := utils.Filter(capabilities, func(s string) bool {
+		return s != nip47.PAY_KEYSEND_METHOD && s != nip47.MULTI_PAY_INVOICE_METHOD && s != nip47.MULTI_PAY_KEYSEND_METHOD
+	})
+
+	return &WalletCapabilitiesResponse{
+		Capabilities:               capabilities,
+		SupportedNotificationTypes: supportedNotificationTypes,
+		SupportedPermissions:       supportedPermissions,
+	}, nil
 }
 
 func (api *api) SendPaymentProbes(ctx context.Context, sendPaymentProbesRequest *SendPaymentProbesRequest) (*SendPaymentProbesResponse, error) {

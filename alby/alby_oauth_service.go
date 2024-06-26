@@ -375,7 +375,7 @@ func (svc *albyOAuthService) GetAuthUrl() string {
 	return svc.oauthConf.AuthCodeURL("unused")
 }
 
-func (svc *albyOAuthService) LinkAccount(ctx context.Context) error {
+func (svc *albyOAuthService) LinkAccount(ctx context.Context, lnClient lnclient.LNClient) error {
 	connectionPubkey, err := svc.createAlbyAccountNWCNode(ctx)
 	if err != nil {
 		logger.Logger.WithError(err).Error("Failed to create alby account nwc node")
@@ -388,7 +388,7 @@ func (svc *albyOAuthService) LinkAccount(ctx context.Context) error {
 		1_000_000,
 		nip47.BUDGET_RENEWAL_MONTHLY,
 		nil,
-		strings.Split(nip47.CAPABILITIES, " "),
+		strings.Split(lnClient.GetSupportedNIP47Capabilities(), " "),
 	)
 
 	if err != nil {

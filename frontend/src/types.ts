@@ -45,10 +45,17 @@ export type BudgetRenewalType =
   | "never"
   | "";
 
+// TODO: permissions is not the same as request methods (one payment permission gives multiple request methods)
 // TODO: move other permissions
 export type PermissionType =
   | RequestMethodType
   | typeof NIP_47_NOTIFICATIONS_PERMISSION;
+
+export type Nip47Capability =
+  | RequestMethodType
+  | typeof NIP_47_NOTIFICATIONS_PERMISSION;
+
+export type Nip47NotificationType = "payment_received" | "payment_sent";
 
 export type IconMap = {
   [key in PermissionType]: LucideIcon;
@@ -65,6 +72,12 @@ export const iconMap: IconMap = {
   [NIP_47_NOTIFICATIONS_PERMISSION]: Bell,
 };
 
+export type WalletCapabilities = {
+  capabilities: Nip47Capability[];
+  supportedPermissions: PermissionType[];
+  supportedNotificationTypes: Nip47NotificationType[];
+};
+
 export const validBudgetRenewals: BudgetRenewalType[] = [
   "daily",
   "weekly",
@@ -76,7 +89,7 @@ export const validBudgetRenewals: BudgetRenewalType[] = [
 export const nip47MethodDescriptions: Record<RequestMethodType, string> = {
   [NIP_47_GET_BALANCE_METHOD]: "Read your balance",
   [NIP_47_GET_INFO_METHOD]: "Read your node info",
-  [NIP_47_LIST_TRANSACTIONS_METHOD]: "Read incoming transaction history",
+  [NIP_47_LIST_TRANSACTIONS_METHOD]: "Read transaction history",
   [NIP_47_LOOKUP_INVOICE_METHOD]: "Lookup status of invoices",
   [NIP_47_MAKE_INVOICE_METHOD]: "Create invoices",
   [NIP_47_PAY_INVOICE_METHOD]: "Send payments",
