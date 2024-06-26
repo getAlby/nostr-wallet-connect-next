@@ -410,7 +410,8 @@ export default function Channels() {
                     });
                     await reloadAlbyBalance();
                     toast({
-                      description: "🎉 Funds swept from Alby shared wallet!",
+                      description:
+                        "🎉 Funds from Alby shared wallet moved to self-custody!",
                     });
                   } catch (error) {
                     console.error(error);
@@ -423,7 +424,7 @@ export default function Channels() {
                 }}
                 variant="outline"
               >
-                Sweep
+                Take Custody
               </LoadingButton>
             </CardFooter>
           </Card>
