@@ -195,7 +195,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p ./build/out
-          create-dmg --volname "AlbyHub" --background "./build/darwin/dmgcover.png" --window-pos 200 120 --window-size 800 400 --icon-size 80 --icon "AlbyHub.app" 200 160 --hide-extension "AlbyHub.app" --app-drop-link 600 160 "./build/out/${{ env.PACKAGE_NAME }}.dmg" "./build/bin/${{ env.EXEC_NAME }}.app"
+          create-dmg --skip-jenkins --volname "AlbyHub" --background "./build/darwin/dmgcover.png" --window-pos 200 120 --window-size 800 400 --icon-size 80 --icon "AlbyHub.app" 200 160 --hide-extension "AlbyHub.app" --app-drop-link 600 160 "./build/out/${{ env.PACKAGE_NAME }}.dmg" "./build/bin/${{ env.EXEC_NAME }}.app"
           rm -Rf ./build/bin/*
           mv ./build/out/${{ env.PACKAGE_NAME }}.dmg ./build/bin/
 
