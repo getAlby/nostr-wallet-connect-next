@@ -308,7 +308,13 @@ func (svc *PhoenixService) MakeInvoice(ctx context.Context, amount int64, descri
 	if err := json.NewDecoder(resp.Body).Decode(&invoiceRes); err != nil {
 		return nil, err
 	}
-	expiresAt := time.Now().Add(1 * time.Hour).Unix()
+
+	// set the default to one day
+	if expiry == 0 {
+		expiry = 86400
+	}
+
+	expiresAt := time.Now().Add(time.Duration(expiry) * time.Second).Unix()
 
 	tx := &lnclient.Transaction{
 		Type:        "incoming",
