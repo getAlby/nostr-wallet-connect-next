@@ -1,7 +1,8 @@
-import { CircleCheck, CopyIcon } from "lucide-react";
+import { ArrowUp, CircleCheck, ClipboardPaste, CopyIcon } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
+import Loading from "src/components/Loading";
 import { Button } from "src/components/ui/button";
 import {
   Card,
@@ -13,12 +14,14 @@ import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
 import { useToast } from "src/components/ui/use-toast";
+import { useBalances } from "src/hooks/useBalances";
 import { useCSRF } from "src/hooks/useCSRF";
 import { copyToClipboard } from "src/lib/clipboard";
 import { PayInvoiceResponse } from "src/types";
 import { request } from "src/utils/request";
 
 export default function Send() {
+  const { data: balances } = useBalances();
   const { data: csrf } = useCSRF();
   const { toast } = useToast();
   const [isLoading, setLoading] = React.useState(false);
@@ -26,6 +29,10 @@ export default function Send() {
   const [payResponse, setPayResponse] =
     React.useState<PayInvoiceResponse | null>(null);
   const [paymentDone, setPaymentDone] = React.useState(false);
+
+  if (!balances) {
+    return <Loading />;
+  }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -69,65 +76,109 @@ export default function Send() {
     toast({ title: "Copied to clipboard." });
   };
 
+  const paste = async () => {
+    const text = await navigator.clipboard.readText();
+    setInvoice(text);
+  };
+
   return (
     <div className="grid gap-5">
       <AppHeader title="Send" description="Send sats from your node" />
-      <div className="max-w-lg">
-        {paymentDone ? (
-          <>
-            <Card className="w-full">
-              <CardHeader>
-                <CardTitle className="text-center">
-                  Payment Successful
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center gap-4">
-                <CircleCheck className="w-32 h-32 mb-2" />
-                <Button onClick={copy} variant="outline">
-                  <CopyIcon className="w-4 h-4 mr-2" />
-                  Copy Preimage
-                </Button>
-              </CardContent>
-            </Card>
-            {paymentDone && (
-              <Link to="/wallet">
-                <Button
-                  className="mt-4 w-full"
-                  onClick={() => {
-                    setPaymentDone(false);
-                  }}
-                  variant="secondary"
+      <div className="flex gap-12 w-full">
+        <div className="w-full max-w-lg">
+          {paymentDone ? (
+            <>
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle className="text-center">
+                    Payment Successful
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center gap-4">
+                  <CircleCheck className="w-32 h-32 mb-2" />
+                  <Button onClick={copy} variant="outline">
+                    <CopyIcon className="w-4 h-4 mr-2" />
+                    Copy Preimage
+                  </Button>
+                </CardContent>
+              </Card>
+              {paymentDone && (
+                <Link to="/wallet">
+                  <Button
+                    className="mt-4 w-full"
+                    onClick={() => {
+                      setPaymentDone(false);
+                    }}
+                    variant="secondary"
+                  >
+                    Back to Wallet
+                  </Button>
+                </Link>
+              )}
+            </>
+          ) : (
+            <form onSubmit={handleSubmit} className="grid gap-5">
+              <div className="">
+                <Label htmlFor="recipient">Recipient</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="recipient"
+                    type="text"
+                    value={invoice}
+                    placeholder="Enter an invoice"
+                    onChange={(e) => {
+                      setInvoice(e.target.value);
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    className="px-2"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      paste();
+                    }}
+                  >
+                    <ClipboardPaste className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <LoadingButton
+                  loading={isLoading}
+                  type="submit"
+                  disabled={!invoice}
                 >
-                  Back to Wallet
-                </Button>
-              </Link>
+                  Continue
+                </LoadingButton>
+              </div>
+            </form>
+          )}
+        </div>
+        <Card className="w-full hidden md:block self-start">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Spending Balance
+            </CardTitle>
+            <ArrowUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {!balances && (
+              <div>
+                <div className="animate-pulse d-inline ">
+                  <div className="h-2.5 bg-primary rounded-full w-12 my-2"></div>
+                </div>
+              </div>
             )}
-          </>
-        ) : (
-          <form onSubmit={handleSubmit} className="grid gap-5">
-            <div className="">
-              <Label htmlFor="recipient">Recipient</Label>
-              <Input
-                id="recipient"
-                type="text"
-                value={invoice}
-                placeholder="Paste an invoice"
-                onChange={(e) => {
-                  setInvoice(e.target.value);
-                }}
-              />
-            </div>
-            <div>
-              <LoadingButton
-                loading={isLoading}
-                type="submit"
-                disabled={!invoice}
-              >
-                Continue
-              </LoadingButton>
-            </div>
-          </form>
-        )}
+            {balances && (
+              <div className="text-2xl font-bold">
+                {new Intl.NumberFormat(undefined, {}).format(
+                  Math.floor(balances.lightning.totalSpendable / 1000)
+                )}{" "}
+                sats
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
