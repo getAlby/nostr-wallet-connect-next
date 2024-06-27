@@ -3,23 +3,34 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { useCSRF } from "src/hooks/useCSRF";
 import {
-  AppPermissions,
   BudgetRenewalType,
   CreateAppResponse,
-  PermissionType,
-  nip47PermissionDescriptions,
+  NIP_47_MAKE_INVOICE_METHOD,
+  NIP_47_PAY_INVOICE_METHOD,
+  ScopeType,
+  budgetOptions,
+  expiryOptions,
   validBudgetRenewals,
 } from "src/types";
 
+import { PlusCircle, XIcon } from "lucide-react";
 import AppHeader from "src/components/AppHeader";
+import Scopes from "src/components/Scopes";
 import { Button } from "src/components/ui/button";
 import { Input } from "src/components/ui/input";
 import { Label } from "src/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "src/components/ui/select";
 import { Separator } from "src/components/ui/separator";
 import { useToast } from "src/components/ui/use-toast";
+import { cn } from "src/lib/utils";
 import { handleRequestError } from "src/utils/handleRequestError";
 import { request } from "src/utils/request"; // build the project for this to appear
-import Permissions from "../../components/Permissions";
 import { suggestedApps } from "../../components/SuggestedAppData";
 
 const NewApp = () => {
@@ -36,31 +47,30 @@ const NewApp = () => {
   const nameParam = app
     ? app.title
     : (queryParams.get("name") || queryParams.get("c")) ?? "";
+
   const pubkey = queryParams.get("pubkey") ?? "";
   const returnTo = queryParams.get("return_to") ?? "";
 
-  const [appName, setAppName] = useState(nameParam);
-
+  const scopesParam =
+    (queryParams.get("request_methods") || queryParams.get("scopes")) ?? "";
   const budgetRenewalParam = queryParams.get(
     "budget_renewal"
   ) as BudgetRenewalType;
-  const reqMethodsParam = queryParams.get("request_methods") ?? "";
-  const maxAmountParam = queryParams.get("max_amount") ?? "";
+  const budgetAmountParam = queryParams.get("max_amount") ?? "";
   const expiresAtParam = queryParams.get("expires_at") ?? "";
 
-  const parseRequestMethods = (reqParam: string): Set<PermissionType> => {
-    const methods = reqParam
-      ? reqParam.split(" ")
-      : Object.keys(nip47PermissionDescriptions);
-    // Create a Set of PermissionType from the array
-    const requestMethodsSet = new Set<PermissionType>(
-      methods as PermissionType[]
-    );
+  const parseScopes = (scopeString: string): Set<ScopeType> => {
+    const scopes = scopeString
+      ? scopeString.split(" ")
+      : [NIP_47_MAKE_INVOICE_METHOD, NIP_47_PAY_INVOICE_METHOD];
 
-    return requestMethodsSet;
+    // Create a Set of ScopeType from the array
+    const scopeSet = new Set<ScopeType>(scopes as ScopeType[]);
+
+    return scopeSet;
   };
 
-  const parseExpiresParam = (expiresParam: string): Date | undefined => {
+  const parseExpiry = (expiresParam: string): Date | undefined => {
     const expiresParamTimestamp = parseInt(expiresParam);
     if (!isNaN(expiresParamTimestamp)) {
       return new Date(expiresParamTimestamp * 1000);
@@ -68,14 +78,22 @@ const NewApp = () => {
     return undefined;
   };
 
-  const [permissions, setPermissions] = useState<AppPermissions>({
-    requestMethods: parseRequestMethods(reqMethodsParam),
-    maxAmount: parseInt(maxAmountParam || "100000"),
-    budgetRenewal: validBudgetRenewals.includes(budgetRenewalParam)
+  const [appName, setAppName] = useState(nameParam);
+  const [scopes, setScopes] = useState(parseScopes(scopesParam));
+  const [maxAmount, setMaxAmount] = useState(budgetAmountParam || "100000");
+  const [budgetRenewal, setBudgetRenewal] = useState(
+    validBudgetRenewals.includes(budgetRenewalParam)
       ? budgetRenewalParam
-      : "monthly",
-    expiresAt: parseExpiresParam(expiresAtParam),
-  });
+      : "monthly"
+  );
+  const [expiresAt, setExpiresAt] = useState(parseExpiry(expiresAtParam));
+  const [customBudget, setCustomBudget] = useState(!!budgetAmountParam);
+
+  // TODO: set expiry when set to non expiryType value like 24 days for example
+  const [days, setDays] = useState(0);
+
+  const [budgetOption, setBudgetOption] = useState(!!budgetAmountParam);
+  const [expireOption, setExpireOption] = useState(!!expiresAtParam);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -93,9 +111,10 @@ const NewApp = () => {
         body: JSON.stringify({
           name: appName,
           pubkey,
-          ...permissions,
-          requestMethods: [...permissions.requestMethods].join(" "),
-          expiresAt: permissions.expiresAt?.toISOString(),
+          budgetRenewal,
+          maxAmount: parseInt(maxAmount),
+          requestMethods: [...scopes].join(" "),
+          expiresAt: expiresAt?.toISOString(),
           returnTo: returnTo,
         }),
       });
@@ -118,6 +137,27 @@ const NewApp = () => {
     }
   };
 
+  const handleDaysChange = (days: number) => {
+    setDays(days);
+    if (!days) {
+      setExpiresAt(undefined);
+      return;
+    }
+    const currentDate = new Date();
+    const expiryDate = new Date(
+      Date.UTC(
+        currentDate.getUTCFullYear(),
+        currentDate.getUTCMonth(),
+        currentDate.getUTCDate() + days,
+        23,
+        59,
+        59,
+        0
+      )
+    );
+    setExpiresAt(expiryDate);
+  };
+
   return (
     <>
       <AppHeader
@@ -127,7 +167,7 @@ const NewApp = () => {
       <form
         onSubmit={handleSubmit}
         acceptCharset="UTF-8"
-        className="flex flex-col items-start gap-5 max-w-lg"
+        className="flex flex-col items-start max-w-lg"
       >
         {app && (
           <div className="flex flex-row items-center gap-3">
@@ -136,7 +176,7 @@ const NewApp = () => {
           </div>
         )}
         {!nameParam && (
-          <div className="w-full grid gap-1.5">
+          <div className="w-full grid gap-1.5 mb-6">
             <Label htmlFor="name">Name</Label>
             <Input
               autoFocus
@@ -153,17 +193,172 @@ const NewApp = () => {
             </p>
           </div>
         )}
-        <div className="flex flex-col gap-2 w-full">
-          <p className="font-medium text-sm">Authorize the app to:</p>
-          <Permissions
-            initialPermissions={permissions}
-            onPermissionsChange={setPermissions}
-            canEditPermissions={!reqMethodsParam}
-            isNewConnection
-          />
-        </div>
 
-        <Separator />
+        <Scopes scopes={scopes} onScopeChange={setScopes} />
+
+        {scopes.has(NIP_47_PAY_INVOICE_METHOD) && (
+          <>
+            {!budgetOption && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setBudgetOption(true)}
+                className="mb-4"
+              >
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Set budget renewal
+              </Button>
+            )}
+            {budgetOption && (
+              <>
+                <p className="font-medium text-sm mb-2">Budget Renewal</p>
+                <div className="flex gap-2 items-center text-muted-foreground mb-4 text-sm capitalize">
+                  <Select
+                    value={budgetRenewal}
+                    onValueChange={(value) =>
+                      setBudgetRenewal(value as BudgetRenewalType)
+                    }
+                  >
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder={budgetRenewal} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {validBudgetRenewals.map((renewalOption) => (
+                        <SelectItem
+                          key={renewalOption || "never"}
+                          value={renewalOption || "never"}
+                        >
+                          {renewalOption
+                            ? renewalOption.charAt(0).toUpperCase() +
+                              renewalOption.slice(1)
+                            : "Never"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                    <XIcon
+                      className="cursor-pointer w-4 text-muted-foreground"
+                      onClick={() => setBudgetRenewal("never")}
+                    />
+                  </Select>
+                </div>
+                <div className="grid grid-cols-5 grid-rows-2 md:grid-rows-1 md:grid-cols-5 gap-2 text-xs mb-4">
+                  {Object.keys(budgetOptions).map((budget) => {
+                    return (
+                      // replace with something else and then remove dark prefixes
+                      <div
+                        key={budget}
+                        onClick={() => {
+                          setCustomBudget(false);
+                          setMaxAmount(budgetOptions[budget].toString());
+                        }}
+                        className={`col-span-2 md:col-span-1 cursor-pointer rounded text-nowrap border-2 ${
+                          !customBudget &&
+                          parseInt(maxAmount) == budgetOptions[budget]
+                            ? "border-primary"
+                            : "border-muted"
+                        } text-center p-4 dark:text-white`}
+                      >
+                        {`${budget} ${budgetOptions[budget] ? " sats" : ""}`}
+                      </div>
+                    );
+                  })}
+                  <div
+                    onClick={() => {
+                      setCustomBudget(true);
+                      setMaxAmount("");
+                    }}
+                    className={`col-span-2 md:col-span-1 cursor-pointer rounded border-2 ${
+                      customBudget ? "border-primary" : "border-muted"
+                    } text-center p-4 dark:text-white`}
+                  >
+                    Custom...
+                  </div>
+                </div>
+                {customBudget && (
+                  <div className="w-full mb-6">
+                    <Label htmlFor="budget" className="block mb-2">
+                      Custom budget amount (sats)
+                    </Label>
+                    <Input
+                      id="budget"
+                      name="budget"
+                      type="number"
+                      required
+                      min={1}
+                      value={maxAmount}
+                      onChange={(e) => {
+                        setMaxAmount(e.target.value.trim());
+                      }}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {!expireOption && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setExpireOption(true)}
+            className="mb-6"
+          >
+            <PlusCircle className="w-4 h-4 mr-2" />
+            Set expiration time
+          </Button>
+        )}
+
+        {expireOption && (
+          <div className="mb-6">
+            <p className="font-medium text-sm mb-2">Connection expiration</p>
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              {Object.keys(expiryOptions).map((expiry) => {
+                return (
+                  <div
+                    key={expiry}
+                    onClick={() => handleDaysChange(expiryOptions[expiry])}
+                    className={cn(
+                      "cursor-pointer rounded border-2 text-center p-4",
+                      days == expiryOptions[expiry]
+                        ? "border-primary"
+                        : "border-muted"
+                    )}
+                  >
+                    {expiry}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* <div className="flex gap-4 mt-4">
+          {scopes.has(NIP_47_PAY_INVOICE_METHOD) && !budgetOption && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setBudgetOption(true)}
+              className="mb-4"
+            >
+              <PlusCircle className="w-4 h-4 mr-2" />
+              Set Budget Renewal
+            </Button>
+          )}
+          {!expireOption && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setExpireOption(true)}
+              className="mb-6"
+            >
+              <PlusCircle className="w-4 h-4 mr-2" />
+              Set expiration time
+            </Button>
+          )}
+        </div> */}
+
+        <Separator className="mb-6" />
         {returnTo && (
           <p className="text-xs text-muted-foreground">
             You will automatically return to {returnTo}

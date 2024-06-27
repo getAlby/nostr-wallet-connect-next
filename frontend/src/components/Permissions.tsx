@@ -14,11 +14,11 @@ import { cn } from "src/lib/utils";
 import {
   AppPermissions,
   BudgetRenewalType,
-  PermissionType,
+  ScopeType,
   budgetOptions,
   expiryOptions,
   iconMap,
-  nip47PermissionDescriptions,
+  nip47ScopeDescriptions,
   validBudgetRenewals,
 } from "src/types";
 
@@ -53,7 +53,7 @@ const Permissions: React.FC<PermissionsProps> = ({
     onPermissionsChange(updatedPermissions);
   };
 
-  const handleRequestMethodChange = (requestMethod: PermissionType) => {
+  const handleRequestMethodChange = (requestMethod: ScopeType) => {
     if (!canEditPermissions) {
       return;
     }
@@ -100,7 +100,7 @@ const Permissions: React.FC<PermissionsProps> = ({
     <div>
       <div className="mb-6">
         <ul className="flex flex-col w-full">
-          {(Object.keys(nip47PermissionDescriptions) as PermissionType[]).map(
+          {(Object.keys(nip47ScopeDescriptions) as ScopeType[]).map(
             (rm, index) => {
               const RequestMethodIcon = iconMap[rm];
               return (
@@ -136,7 +136,7 @@ const Permissions: React.FC<PermissionsProps> = ({
                       htmlFor={rm}
                       className={`${canEditPermissions && "cursor-pointer"}`}
                     >
-                      {nip47PermissionDescriptions[rm]}
+                      {nip47ScopeDescriptions[rm]}
                     </Label>
                   </div>
                   {rm == "pay_invoice" && (

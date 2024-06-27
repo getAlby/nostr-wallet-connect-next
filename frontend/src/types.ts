@@ -17,7 +17,6 @@ export const NIP_47_MAKE_INVOICE_METHOD = "make_invoice";
 export const NIP_47_LOOKUP_INVOICE_METHOD = "lookup_invoice";
 export const NIP_47_LIST_TRANSACTIONS_METHOD = "list_transactions";
 export const NIP_47_SIGN_MESSAGE_METHOD = "sign_message";
-
 export const NIP_47_NOTIFICATIONS_PERMISSION = "notifications";
 
 export type BackendType =
@@ -28,14 +27,17 @@ export type BackendType =
   | "PHOENIX"
   | "CASHU";
 
-export type RequestMethodType =
+export type ScopeType =
   | "pay_invoice"
   | "get_balance"
   | "get_info"
   | "make_invoice"
   | "lookup_invoice"
   | "list_transactions"
-  | "sign_message";
+  | "sign_message"
+  | "notifications";
+
+export type ScopeGroupType = "send_receive" | "only_receive" | "custom";
 
 export type BudgetRenewalType =
   | "daily"
@@ -45,13 +47,8 @@ export type BudgetRenewalType =
   | "never"
   | "";
 
-// TODO: move other permissions
-export type PermissionType =
-  | RequestMethodType
-  | typeof NIP_47_NOTIFICATIONS_PERMISSION;
-
 export type IconMap = {
-  [key in PermissionType]: LucideIcon;
+  [key in ScopeType]: LucideIcon;
 };
 
 export const iconMap: IconMap = {
@@ -73,7 +70,7 @@ export const validBudgetRenewals: BudgetRenewalType[] = [
   "never",
 ];
 
-export const nip47MethodDescriptions: Record<RequestMethodType, string> = {
+export const nip47ScopeDescriptions: Record<ScopeType, string> = {
   [NIP_47_GET_BALANCE_METHOD]: "Read your balance",
   [NIP_47_GET_INFO_METHOD]: "Read your node info",
   [NIP_47_LIST_TRANSACTIONS_METHOD]: "Read incoming transaction history",
@@ -81,11 +78,6 @@ export const nip47MethodDescriptions: Record<RequestMethodType, string> = {
   [NIP_47_MAKE_INVOICE_METHOD]: "Create invoices",
   [NIP_47_PAY_INVOICE_METHOD]: "Send payments",
   [NIP_47_SIGN_MESSAGE_METHOD]: "Sign messages",
-};
-
-// TODO: merge with nip47MethodDescriptions
-export const nip47PermissionDescriptions: Record<PermissionType, string> = {
-  ...nip47MethodDescriptions,
   [NIP_47_NOTIFICATIONS_PERMISSION]: "Receive wallet notifications",
 };
 
@@ -98,8 +90,6 @@ export const expiryOptions: Record<string, number> = {
 
 export const budgetOptions: Record<string, number> = {
   "10k": 10_000,
-  "25k": 25_000,
-  "50k": 50_000,
   "100k": 100_000,
   "1M": 1_000_000,
   Unlimited: 0,
@@ -121,7 +111,7 @@ export interface App {
   expiresAt?: string;
 
   // TODO: rename
-  requestMethods: PermissionType[];
+  requestMethods: ScopeType[];
   maxAmount: number;
   budgetUsage: number;
   budgetRenewal: string;
@@ -129,7 +119,7 @@ export interface App {
 
 export interface AppPermissions {
   // TODO: rename to permissions
-  requestMethods: Set<PermissionType>;
+  requestMethods: Set<ScopeType>;
   maxAmount: number;
   budgetRenewal: BudgetRenewalType;
   expiresAt?: Date;
