@@ -82,7 +82,7 @@ _If you get a blank screen, try running in your normal terminal (outside of vsco
 ### Run dockerfile locally (HTTP mode)
 
     $ docker build . -t nwc-local --progress=plain
-    $ docker run --env-file .env -p 8080:8080 nwc-local
+    $ docker run -v $(pwd)/.data/docker:/data -e WORK_DIR='/data' -p 8080:8080 nwc-local
 
 ### Testing
 
@@ -120,6 +120,10 @@ For more information refer to:
 
 - [DataDog Profiler documentation](https://docs.datadoghq.com/profiler/enabling/go/)
 - [DataDog Profiler Go library](https://pkg.go.dev/gopkg.in/DataDog/dd-trace-go.v1/profiler)
+
+### Versioning
+
+    $ go run -ldflags="-X 'github.com/getAlby/nostr-wallet-connect/version.Tag=v0.6.0'" cmd/http/main.go
 
 ### Windows
 
@@ -371,8 +375,12 @@ LDK logs:
 
 #### From Alby's Container Registry
 
-`docker run -p 8080:8080 ghcr.io/getalby/nostr-wallet-connect-next:latest`
+_Tested on Linux only_
+
+`docker run -v ~/.local/share/alby-nwc:/data -e WORK_DIR='/data' -p 8080:8080 ghcr.io/getalby/nostr-wallet-connect-next:latest`
 
 #### From Source
 
-`docker run -p 8080:8080 $(docker build -q .)`
+_Tested on Linux only_
+
+`docker run -v ~/.local/share/alby-nwc:/data -e WORK_DIR='/data' -p 8080:8080 $(docker build -q .)`

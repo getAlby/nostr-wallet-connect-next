@@ -7,6 +7,7 @@ import {
   ExternalLinkIcon,
   HandCoins,
   Hotel,
+  InfoIcon,
   MoreHorizontal,
   Trash2,
   Unplug,
@@ -35,6 +36,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "src/components/ui/dropdown-menu.tsx";
+import { LoadingButton } from "src/components/ui/loading-button.tsx";
+import { Progress } from "src/components/ui/progress.tsx";
 import {
   Table,
   TableBody,
@@ -43,8 +46,17 @@ import {
   TableHeader,
   TableRow,
 } from "src/components/ui/table.tsx";
-import { toast } from "src/components/ui/use-toast.ts";
-import { ONCHAIN_DUST_SATS } from "src/constants.ts";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "src/components/ui/tooltip.tsx";
+import { useToast } from "src/components/ui/use-toast.ts";
+import {
+  ALBY_HIDE_HOSTED_BALANCE_BELOW as ALBY_HIDE_HOSTED_BALANCE_LIMIT,
+  ONCHAIN_DUST_SATS,
+} from "src/constants.ts";
 import { useAlbyBalance } from "src/hooks/useAlbyBalance.ts";
 import { useBalances } from "src/hooks/useBalances.ts";
 import { useChannels } from "src/hooks/useChannels";
@@ -53,7 +65,7 @@ import { useNodeConnectionInfo } from "src/hooks/useNodeConnectionInfo.ts";
 import { useRedeemOnchainFunds } from "src/hooks/useRedeemOnchainFunds.ts";
 import { useSyncWallet } from "src/hooks/useSyncWallet.ts";
 import { copyToClipboard } from "src/lib/clipboard.ts";
-import { formatAmount } from "src/lib/utils.ts";
+import { cn, formatAmount } from "src/lib/utils.ts";
 import {
   Channel,
   CloseChannelResponse,
@@ -68,11 +80,14 @@ export default function Channels() {
   const { data: channels, mutate: reloadChannels } = useChannels();
   const { data: nodeConnectionInfo } = useNodeConnectionInfo();
   const { data: balances } = useBalances();
-  const { data: albyBalance } = useAlbyBalance();
+  const { data: albyBalance, mutate: reloadAlbyBalance } = useAlbyBalance();
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const { mutate: reloadInfo } = useInfo();
   const { data: csrf } = useCSRF();
   const redeemOnchainFunds = useRedeemOnchainFunds();
+  const { toast } = useToast();
+  const [drainingAlbySharedFunds, setDrainingAlbySharedFunds] =
+    React.useState(false);
 
   // TODO: move to NWC backend
   const loadNodeStats = React.useCallback(async () => {
@@ -171,7 +186,10 @@ export default function Channels() {
       toast({ title: "Sucessfully closed channel" });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong: " + error);
+      toast({
+        variant: "destructive",
+        description: "Something went wrong: " + error,
+      });
     }
   }
 
@@ -213,7 +231,10 @@ export default function Channels() {
       toast({ title: "Sucessfully updated channel" });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong: " + error);
+      toast({
+        variant: "destructive",
+        description: "Something went wrong: " + error,
+      });
     }
   }
 
@@ -241,12 +262,18 @@ export default function Channels() {
         },
       });
       await reloadInfo();
-      alert(`🎉 Router reset`);
+      toast({ description: "🎉 Router reset" });
     } catch (error) {
       console.error(error);
-      alert("Something went wrong: " + error);
+      toast({
+        variant: "destructive",
+        description: "Something went wrong: " + error,
+      });
     }
   }
+
+  const showHostedBalance =
+    albyBalance && albyBalance.sats > ALBY_HIDE_HOSTED_BALANCE_LIMIT;
 
   return (
     <>
@@ -265,20 +292,21 @@ export default function Channels() {
               <DropdownMenuContent className="w-56">
                 <DropdownMenuGroup>
                   <DropdownMenuItem>
-                    <div className="flex flex-row gap-10 items-center w-full">
-                      <div className="whitespace-nowrap flex flex-row items-center gap-2">
-                        Node
-                      </div>
-                      <div className="overflow-hidden text-ellipsis">
+                    <div
+                      className="flex flex-row gap-4 items-center w-full cursor-pointer"
+                      onClick={() => {
+                        if (!nodeConnectionInfo) {
+                          return;
+                        }
+                        copyToClipboard(nodeConnectionInfo.pubkey);
+                      }}
+                    >
+                      <div>Node</div>
+                      <div className="overflow-hidden text-ellipsis flex-1">
                         {nodeConnectionInfo?.pubkey || "Loading..."}
                       </div>
                       {nodeConnectionInfo && (
-                        <CopyIcon
-                          className="shrink-0 w-4 h-4"
-                          onClick={() => {
-                            copyToClipboard(nodeConnectionInfo.pubkey);
-                          }}
-                        />
+                        <CopyIcon className="shrink-0 w-4 h-4" />
                       )}
                     </div>
                   </DropdownMenuItem>
@@ -326,15 +354,20 @@ export default function Channels() {
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Link to="/channels/new">
+            {/* <Link to="/channels/new">
               <Button>Open Channel</Button>
-            </Link>
+            </Link> */}
           </>
         }
       ></AppHeader>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {albyBalance && albyBalance?.sats >= 100 && (
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-3",
+          showHostedBalance ? "xl:grid-cols-4" : "lg:grid-cols-3"
+        )}
+      >
+        {showHostedBalance && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -347,6 +380,53 @@ export default function Channels() {
                 {new Intl.NumberFormat().format(albyBalance?.sats)} sats
               </div>
             </CardContent>
+            <CardFooter className="flex justify-end space-x-1">
+              <LoadingButton
+                loading={drainingAlbySharedFunds}
+                onClick={async () => {
+                  if (
+                    !channels?.some(
+                      (channel) => channel.remoteBalance > albyBalance.sats
+                    )
+                  ) {
+                    toast({
+                      title: "Please increase your receiving capacity first",
+                    });
+                    return;
+                  }
+
+                  setDrainingAlbySharedFunds(true);
+                  try {
+                    if (!csrf) {
+                      throw new Error("csrf not loaded");
+                    }
+
+                    await request("/api/alby/drain", {
+                      method: "POST",
+                      headers: {
+                        "X-CSRF-Token": csrf,
+                        "Content-Type": "application/json",
+                      },
+                    });
+                    await reloadAlbyBalance();
+                    toast({
+                      description:
+                        "🎉 Funds from Alby shared wallet moved to self-custody!",
+                    });
+                  } catch (error) {
+                    console.error(error);
+                    toast({
+                      variant: "destructive",
+                      description: "Something went wrong: " + error,
+                    });
+                  }
+                  setDrainingAlbySharedFunds(false);
+                }}
+                variant="outline"
+              >
+                Take Custody
+              </LoadingButton>
+            </CardFooter>
           </Card>
         )}
         <Card>
@@ -417,7 +497,7 @@ export default function Channels() {
             )}
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Link to="/channels/new">
+            <Link to="/channels/outgoing">
               <Button variant="outline">Increase</Button>
             </Link>
           </CardFooter>
@@ -439,7 +519,7 @@ export default function Channels() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Link to="/channels/new">
+            <Link to="/channels/incoming">
               <Button variant="outline">Increase</Button>
             </Link>
           </CardFooter>
@@ -452,7 +532,7 @@ export default function Channels() {
           title="No Channels Available"
           description="Connect to the Lightning Network by establishing your first channel and start transacting."
           buttonText="Open Channel"
-          buttonLink="/channels/new"
+          buttonLink="/channels/outgoing"
         />
       )}
 
@@ -464,8 +544,30 @@ export default function Channels() {
                 <TableHead className="w-[80px]">Status</TableHead>
                 <TableHead>Node</TableHead>
                 <TableHead className="w-[150px]">Capacity</TableHead>
-                <TableHead className="w-[150px]">Inbound</TableHead>
-                <TableHead className="w-[150px]">Outbound</TableHead>
+                <TableHead className="w-[150px]">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="flex flex-row gap-2 items-center">
+                          Reserve
+                          <InfoIcon className="h-4 w-4 shrink-0" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="w-[400px]">
+                        Funds each participant sets aside to discourage cheating
+                        by ensuring each party has something at stake. This
+                        reserve cannot be spent during the channel's lifetime
+                        and typically amounts to 1% of the channel capacity.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </TableHead>
+                <TableHead className="w-[300px]">
+                  <div className="flex flex-row justify-between items-center">
+                    <div>Spending</div>
+                    <div>Receiving</div>
+                  </div>
+                </TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -484,7 +586,7 @@ export default function Channels() {
                       <TableRow key={channel.id}>
                         <TableCell>
                           {channel.active ? (
-                            <Badge>Online</Badge>
+                            <Badge variant="positive">Online</Badge>
                           ) : (
                             <Badge variant="outline">Offline</Badge>
                           )}{" "}
@@ -504,12 +606,36 @@ export default function Channels() {
                             {channel.public ? "Public" : "Private"}
                           </Badge>
                         </TableCell>
-                        <TableCell>{formatAmount(capacity)} sats</TableCell>
-                        <TableCell>
-                          {formatAmount(channel.remoteBalance)} sats
+                        <TableCell title={capacity / 1000 + " sats"}>
+                          {formatAmount(capacity)} sats
+                        </TableCell>
+                        <TableCell
+                          title={channel.unspendablePunishmentReserve + " sats"}
+                        >
+                          {formatAmount(
+                            channel.unspendablePunishmentReserve * 1000
+                          )}{" "}
+                          sats
                         </TableCell>
                         <TableCell>
-                          {formatAmount(channel.localBalance)} sats
+                          <div className="relative">
+                            <Progress
+                              value={(channel.localBalance / capacity) * 100}
+                              className="h-6 absolute"
+                            />
+                            <div className="flex flex-row w-full justify-between px-2 text-xs items-center h-6 mix-blend-exclusion text-white">
+                              <span
+                                title={channel.localBalance / 1000 + " sats"}
+                              >
+                                {formatAmount(channel.localBalance)} sats
+                              </span>
+                              <span
+                                title={channel.remoteBalance / 1000 + " sats"}
+                              >
+                                {formatAmount(channel.remoteBalance)} sats
+                              </span>
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>

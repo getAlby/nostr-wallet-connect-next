@@ -67,18 +67,16 @@ func NewLDKService(ctx context.Context, cfg config.Config, eventPublisher events
 		"[::]:9735",
 	}
 	config.TrustedPeers0conf = []string{
-		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
 		lsp.MegalithLSP().Pubkey,
 
 		// Mutinynet
 		lsp.AlbyMutinynetPlebsLSP().Pubkey,
-		lsp.OlympusMutinynetFlowLSP().Pubkey,
+		lsp.OlympusMutinynetLSP().Pubkey,
 		lsp.MegalithMutinynetLSP().Pubkey,
 	}
 	config.AnchorChannelsConfig.TrustedPeersNoReserve = []string{
-		lsp.VoltageLSP().Pubkey,
 		lsp.OlympusLSP().Pubkey,
 		lsp.AlbyPlebsLSP().Pubkey,
 		lsp.MegalithLSP().Pubkey,
@@ -86,7 +84,7 @@ func NewLDKService(ctx context.Context, cfg config.Config, eventPublisher events
 
 		// Mutinynet
 		lsp.AlbyMutinynetPlebsLSP().Pubkey,
-		lsp.OlympusMutinynetFlowLSP().Pubkey,
+		lsp.OlympusMutinynetLSP().Pubkey,
 		lsp.MegalithMutinynetLSP().Pubkey,
 	}
 
@@ -110,7 +108,8 @@ func NewLDKService(ctx context.Context, cfg config.Config, eventPublisher events
 
 	// TODO: remove when https://github.com/lightningdevkit/rust-lightning/issues/2914 is merged
 	// LDK default HTLC inflight value is 10% of the channel size. If an LSPS service is configured this will be set to 0.
-	builder.SetLiquiditySourceLsps2("52.88.33.119:9735", lsp.VoltageLSP().Pubkey, nil)
+	// The liquidity source below is not used because we do not use the native LDK-node LSPS2 API.
+	builder.SetLiquiditySourceLsps2("52.88.33.119:9735", lsp.OlympusLSP().Pubkey, nil)
 
 	//builder.SetLogDirPath (filepath.Join(newpath, "./logs")); // missing?
 	node, err := builder.Build()
@@ -237,10 +236,17 @@ func NewLDKService(ctx context.Context, cfg config.Config, eventPublisher events
 		MIN_SYNC_INTERVAL := 1 * time.Minute
 		MAX_SYNC_INTERVAL := 1 * time.Hour // NOTE: this could be increased further (possibly to 6 hours)
 		for {
+			ls.syncing = false
 			select {
 			case <-ldkCtx.Done():
 				return
 			case <-time.After(MIN_SYNC_INTERVAL):
+				ls.syncing = true
+				// always update fee rates to avoid differences in fee rates with channel partners
+				err = node.UpdateFeeEstimates()
+				if err != nil {
+					logger.Logger.WithError(err).Error("Failed to update fee estimates")
+				}
 
 				if time.Since(ls.lastWalletSyncRequest) > MIN_SYNC_INTERVAL && time.Since(ls.lastSync) < MAX_SYNC_INTERVAL {
 					// logger.Debug("skipping background wallet sync")
@@ -249,9 +255,7 @@ func NewLDKService(ctx context.Context, cfg config.Config, eventPublisher events
 
 				logger.Logger.Info("Starting background wallet sync")
 				syncStartTime := time.Now()
-				ls.syncing = true
 				err = node.SyncWallets()
-				ls.syncing = false
 
 				if err != nil {
 					logger.Logger.WithError(err).Error("Failed to sync LDK wallets")
@@ -787,18 +791,25 @@ func (ls *LDKService) ListChannels(ctx context.Context) ([]lnclient.Channel, err
 			"ForwardingFeeProportionalMillionths": ldkChannel.Config.ForwardingFeeProportionalMillionths(),
 		}
 
+		unspendablePunishmentReserve := uint64(0)
+		if ldkChannel.UnspendablePunishmentReserve != nil {
+			unspendablePunishmentReserve = *ldkChannel.UnspendablePunishmentReserve
+		}
+
 		channels = append(channels, lnclient.Channel{
-			InternalChannel:       internalChannel,
-			LocalBalance:          int64(ldkChannel.OutboundCapacityMsat),
-			RemoteBalance:         int64(ldkChannel.InboundCapacityMsat),
-			RemotePubkey:          ldkChannel.CounterpartyNodeId,
-			Id:                    ldkChannel.UserChannelId, // CloseChannel takes the UserChannelId
-			Active:                ldkChannel.IsUsable,      // superset of ldkChannel.IsReady
-			Public:                ldkChannel.IsPublic,
-			FundingTxId:           fundingTxId,
-			Confirmations:         ldkChannel.Confirmations,
-			ConfirmationsRequired: ldkChannel.ConfirmationsRequired,
-			ForwardingFeeBaseMsat: ldkChannel.Config.ForwardingFeeBaseMsat(),
+			InternalChannel:                          internalChannel,
+			LocalBalance:                             int64(ldkChannel.OutboundCapacityMsat),
+			RemoteBalance:                            int64(ldkChannel.InboundCapacityMsat),
+			RemotePubkey:                             ldkChannel.CounterpartyNodeId,
+			Id:                                       ldkChannel.UserChannelId, // CloseChannel takes the UserChannelId
+			Active:                                   ldkChannel.IsUsable,      // superset of ldkChannel.IsReady
+			Public:                                   ldkChannel.IsPublic,
+			FundingTxId:                              fundingTxId,
+			Confirmations:                            ldkChannel.Confirmations,
+			ConfirmationsRequired:                    ldkChannel.ConfirmationsRequired,
+			ForwardingFeeBaseMsat:                    ldkChannel.Config.ForwardingFeeBaseMsat(),
+			UnspendablePunishmentReserve:             unspendablePunishmentReserve,
+			CounterpartyUnspendablePunishmentReserve: ldkChannel.CounterpartyUnspendablePunishmentReserve,
 		})
 	}
 
@@ -856,13 +867,8 @@ func (ls *LDKService) OpenChannel(ctx context.Context, openChannelRequest *lncli
 	ldkEventSubscription := ls.ldkEventBroadcaster.Subscribe()
 	defer ls.ldkEventBroadcaster.CancelSubscription(ldkEventSubscription)
 
-	channelConfig := ldk_node.NewChannelConfig()
-
-	// set a super-high forwarding fee of 100K sats by default to disable unwanted routing
-	channelConfig.SetForwardingFeeBaseMsat(100_000_000)
-
 	logger.Logger.WithField("peer_id", foundPeer.NodeId).Info("Opening channel")
-	userChannelId, err := ls.node.ConnectOpenChannel(foundPeer.NodeId, foundPeer.Address, uint64(openChannelRequest.Amount), nil, &channelConfig, openChannelRequest.Public)
+	userChannelId, err := ls.node.ConnectOpenChannel(foundPeer.NodeId, foundPeer.Address, uint64(openChannelRequest.Amount), nil, nil, openChannelRequest.Public)
 	if err != nil {
 		logger.Logger.WithError(err).Error("OpenChannel failed")
 		return nil, err
@@ -914,6 +920,7 @@ func (ls *LDKService) UpdateChannel(ctx context.Context, updateChannelRequest *l
 	}
 
 	if foundChannel == nil {
+		logger.Logger.WithField("request", updateChannelRequest).Error("failed to find channel to update")
 		return errors.New("channel not found")
 	}
 
@@ -932,8 +939,13 @@ func (ls *LDKService) CloseChannel(ctx context.Context, closeChannelRequest *lnc
 	logger.Logger.WithFields(logrus.Fields{
 		"request": closeChannelRequest,
 	}).Info("Closing Channel")
-	// TODO: support passing force option
-	err := ls.node.CloseChannel(closeChannelRequest.ChannelId, closeChannelRequest.NodeId, closeChannelRequest.Force)
+
+	var err error
+	if closeChannelRequest.Force {
+		err = ls.node.ForceCloseChannel(closeChannelRequest.ChannelId, closeChannelRequest.NodeId)
+	} else {
+		err = ls.node.CloseChannel(closeChannelRequest.ChannelId, closeChannelRequest.NodeId)
+	}
 	if err != nil {
 		logger.Logger.WithError(err).Error("CloseChannel failed")
 		return nil, err
@@ -1039,8 +1051,12 @@ func (ls *LDKService) ldkPaymentToTransaction(payment *ldk_node.PaymentDetails) 
 	if isSpontaneousPaymentKind {
 		// keysend payment
 		lastUpdate := int64(payment.LastUpdate)
-		// TODO: use proper created at time (currently no access to created time for keysend payments)
-		createdAt = lastUpdate
+		createdAt = int64(payment.CreatedAt)
+		// TODO: remove this check some point in the future
+		// all payments after v0.6.2 will have createdAt set
+		if createdAt == 0 {
+			createdAt = lastUpdate
+		}
 		if payment.Status == ldk_node.PaymentStatusSucceeded {
 			settledAt = &lastUpdate
 		}
@@ -1201,6 +1217,23 @@ func (ls *LDKService) handleLdkEvent(event *ldk_node.Event) {
 		})
 
 		ls.publishChannelsBackupEvent()
+
+		if eventType.CounterpartyNodeId == nil {
+			logger.Logger.WithField("event", eventType).Error("channel ready event has no counterparty node ID")
+			return
+		}
+		// set a super-high forwarding fee of 100K sats by default to disable unwanted routing
+		err := ls.UpdateChannel(context.Background(), &lnclient.UpdateChannelRequest{
+			ChannelId:             eventType.UserChannelId,
+			NodeId:                *eventType.CounterpartyNodeId,
+			ForwardingFeeBaseMsat: 100_000_000,
+		})
+
+		if err != nil {
+			logger.Logger.WithField("event", eventType).Error("channel ready event has no counterparty node ID")
+			return
+		}
+
 	case ldk_node.EventChannelClosed:
 		closureReason := ls.getChannelCloseReason(&eventType)
 		logger.Logger.WithFields(logrus.Fields{
@@ -1224,10 +1257,21 @@ func (ls *LDKService) handleLdkEvent(event *ldk_node.Event) {
 			},
 		})
 	case ldk_node.EventPaymentSuccessful:
+		var duration uint64 = 0
+		if eventType.PaymentId != nil {
+			payment := ls.node.Payment(*eventType.PaymentId)
+			if payment == nil {
+				logger.Logger.WithField("payment_id", *eventType.PaymentId).Error("could not find LDK payment")
+				return
+			}
+			duration = payment.LastUpdate - payment.CreatedAt
+		}
+
 		ls.eventPublisher.Publish(&events.Event{
 			Event: "nwc_payment_sent",
 			Properties: &events.PaymentSentEventProperties{
 				PaymentHash: eventType.PaymentHash,
+				Duration:    duration,
 			},
 		})
 	}

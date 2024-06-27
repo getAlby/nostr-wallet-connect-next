@@ -146,6 +146,8 @@ export interface InfoResponse {
   nextBackupReminder: string;
   albyUserIdentifier: string;
   network?: Network;
+  version: string;
+  latestVersion: string;
 }
 
 export type Network = "bitcoin" | "testnet" | "signet";
@@ -173,6 +175,8 @@ export type Channel = {
   confirmations?: number;
   confirmationsRequired?: number;
   forwardingFeeBaseMsat: number;
+  unspendablePunishmentReserve: number;
+  counterpartyUnspendablePunishmentReserve: number;
 };
 
 export type UpdateChannelRequest = {
@@ -260,6 +264,8 @@ export type SetupNodeInfo = Partial<{
   phoenixdAuthorization?: string;
 }>;
 
+export type LSPType = "LSPS1" | "Flow 2.0" | "PMLSP";
+
 export type RecommendedChannelPeer = {
   network: Network;
   image: string;
@@ -273,7 +279,8 @@ export type RecommendedChannelPeer = {
     }
   | {
       paymentMethod: "lightning";
-      lsp: string;
+      lspType: LSPType;
+      lspUrl: string;
     }
 );
 
@@ -295,7 +302,8 @@ export type AlbyBalance = {
 
 export type NewInstantChannelInvoiceRequest = {
   amount: number;
-  lsp: string;
+  lspType: LSPType;
+  lspUrl: string;
   public: boolean;
 };
 
@@ -355,6 +363,7 @@ export type NewChannelOrder = {
     }
   | {
       paymentMethod: "lightning";
-      lsp: string;
+      lspType: LSPType;
+      lspUrl: string;
     }
 );

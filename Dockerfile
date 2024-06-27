@@ -1,14 +1,15 @@
 FROM node:20-alpine as frontend
 WORKDIR /build
 COPY frontend ./frontend
-RUN cd frontend && yarn install && yarn build:http
+RUN cd frontend && yarn install --network-timeout 3000000 && yarn build:http
 
 FROM golang:1.22.2 as builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
+ARG TAG
 
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM"
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM, release tag $TAG"
 
 RUN apt-get update && \
    apt-get install -y gcc
@@ -33,11 +34,13 @@ COPY . .
 # Copy frontend dist files into the container
 COPY --from=frontend /build/frontend/dist ./frontend/dist
 
-RUN GOARCH=$(echo "$TARGETPLATFORM" | cut -d'/' -f2) go build -o main cmd/http/main.go
+RUN GOARCH=$(echo "$TARGETPLATFORM" | cut -d'/' -f2) go build \
+   -ldflags="-X 'github.com/getAlby/nostr-wallet-connect/version.Tag=$TAG'" \
+   -o main cmd/http/main.go
 
-RUN cp `find /go/pkg/mod/github.com/breez/ |grep linux-amd64 |grep libbreez_sdk_bindings.so` ./
-RUN cp `find /go/pkg/mod/github.com/get\!alby/ | grep x86_64-unknown-linux-gnu | grep libglalby_bindings.so` ./
-RUN cp `find /go/pkg/mod/github.com/get\!alby/ | grep x86_64-unknown-linux-gnu | grep libldk_node.so` ./
+COPY ./build/docker/copy_dylibs.sh .
+RUN chmod +x copy_dylibs.sh
+RUN ./copy_dylibs.sh $(echo "$TARGETPLATFORM" | cut -d'/' -f2)
 
 # Start a new, final image to reduce size.
 FROM debian as final

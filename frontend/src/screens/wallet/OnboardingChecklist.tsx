@@ -40,7 +40,9 @@ function OnboardingChecklist() {
     albyMe &&
     nodeConnectionInfo &&
     albyMe?.keysend_pubkey === nodeConnectionInfo?.pubkey;
-  const hasChannel = hasChannelManagement && channels && channels?.length > 0;
+  const hasChannel =
+    !hasChannelManagement ||
+    (hasChannelManagement && channels && channels?.length > 0);
   const hasBackedUp =
     hasMnemonic &&
     info &&
@@ -59,7 +61,7 @@ function OnboardingChecklist() {
       description:
         "Establish a new Lightning channel to enable fast and low-fee Bitcoin transactions.",
       checked: hasChannel,
-      to: "/channels/new",
+      to: "/channels",
     },
     {
       title: "Link your Alby Account",

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/getAlby/nostr-wallet-connect/events"
+	"github.com/getAlby/nostr-wallet-connect/lnclient"
 )
 
 type AlbyOAuthService interface {
@@ -17,6 +18,7 @@ type AlbyOAuthService interface {
 	GetBalance(ctx context.Context) (*AlbyBalance, error)
 	GetMe(ctx context.Context) (*AlbyMe, error)
 	SendPayment(ctx context.Context, invoice string) error
+	DrainSharedWallet(ctx context.Context, lnClient lnclient.LNClient) error
 }
 
 type AlbyBalanceResponse struct {
@@ -52,7 +54,10 @@ type ChannelPeerSuggestion struct {
 	MinimumChannelSize uint64 `json:"minimumChannelSize"`
 	Name               string `json:"name"`
 	Image              string `json:"image"`
-	Lsp                string `json:"lsp"`
+	BrokenLspUrl       string `json:"lsp_url"`
+	BrokenLspType      string `json:"lsp_type"`
+	LspUrl             string `json:"lspUrl"`
+	LspType            string `json:"lspType"`
 }
 
 type ErrorResponse struct {

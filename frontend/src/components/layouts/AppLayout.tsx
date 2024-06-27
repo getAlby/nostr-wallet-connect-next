@@ -4,9 +4,12 @@ import {
   ExternalLinkIcon,
   FlaskRound,
   Lock,
+  Megaphone,
   Menu,
   MessageCircleQuestion,
   Settings,
+  ShieldAlertIcon,
+  ShieldCheckIcon,
   Store,
   Wallet,
 } from "lucide-react";
@@ -31,6 +34,12 @@ import {
   DropdownMenuTrigger,
 } from "src/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "src/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "src/components/ui/tooltip";
 import { useToast } from "src/components/ui/use-toast";
 import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useCSRF } from "src/hooks/useCSRF";
@@ -44,7 +53,7 @@ import ExternalLink from "../ExternalLink";
 export default function AppLayout() {
   const { data: albyMe } = useAlbyMe();
   const { data: csrf } = useCSRF();
-  const { mutate: refetchInfo } = useInfo();
+  const { data: info, mutate: refetchInfo } = useInfo();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const location = useLocation();
@@ -142,6 +151,18 @@ export default function AppLayout() {
         <MenuItem
           to="/"
           onClick={(e) => {
+            openLink(
+              "https://feedback.getalby.com/-alby-hub-request-a-feature"
+            );
+            e.preventDefault();
+          }}
+        >
+          <Megaphone className="h-4 w-4" />
+          Feedback
+        </MenuItem>
+        <MenuItem
+          to="/"
+          onClick={(e) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const chatwoot = (window as any).$chatwoot;
             if (chatwoot) {
@@ -160,6 +181,13 @@ export default function AppLayout() {
     );
   }
 
+  const upToDate =
+    info?.version &&
+    info.latestVersion &&
+    info.version.startsWith("v") &&
+    info.latestVersion.startsWith("v") &&
+    info.version.substring(1) >= info.latestVersion.substring(1);
+
   return (
     <>
       <div className="font-sans min-h-screen w-full flex flex-col">
@@ -168,10 +196,37 @@ export default function AppLayout() {
             <div className="flex h-full max-h-screen flex-col gap-2 sticky top-0">
               <div className="flex-1">
                 <nav className="grid items-start px-2 py-2 text-sm font-medium lg:px-4">
-                  <div className="p-3 ">
+                  <div className="p-3 flex justify-between items-center">
                     <Link to="/" className="font-semibold text-xl">
                       <span className="">Alby Hub</span>
                     </Link>
+
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <ExternalLink
+                            to="https://getalby.com/hub_deployment/edit" // TODO: link to general update page
+                            className="font-semibold text-xl"
+                          >
+                            <span className="text-xs flex items-center text-muted-foreground">
+                              {info?.version}&nbsp;
+                              {upToDate ? (
+                                <ShieldCheckIcon className="w-4 h-4" />
+                              ) : (
+                                <ShieldAlertIcon className="w-4 h-4" />
+                              )}
+                            </span>
+                          </ExternalLink>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {upToDate ? (
+                            <p>Alby Hub is up to date!</p>
+                          ) : (
+                            <p>Alby Hub {info?.latestVersion} available!</p>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   <MainMenuContent />
                 </nav>

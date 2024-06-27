@@ -151,6 +151,8 @@ type InfoResponse struct {
 	NextBackupReminder   string `json:"nextBackupReminder"`
 	AlbyUserIdentifier   string `json:"albyUserIdentifier"`
 	AlbyAccountConnected bool   `json:"albyAccountConnected"`
+	Version              string `json:"version"`
+	LatestVersion        string `json:"latestVersion"`
 	Network              string `json:"network"`
 }
 
@@ -248,9 +250,10 @@ type BasicRestoreWailsRequest struct {
 type NetworkGraphResponse = lnclient.NetworkGraphResponse
 
 type NewInstantChannelInvoiceRequest struct {
-	Amount uint64 `json:"amount"`
-	LSP    string `json:"lsp"`
-	Public bool   `json:"public"`
+	Amount  uint64 `json:"amount"`
+	LSPType string `json:"lspType"`
+	LSPUrl  string `json:"lspUrl"`
+	Public  bool   `json:"public"`
 }
 
 type NewInstantChannelInvoiceResponse struct {
