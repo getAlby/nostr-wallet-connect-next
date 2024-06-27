@@ -5,13 +5,11 @@ import Loading from "src/components/Loading";
 import { useTransactions } from "src/hooks/useTransactions";
 
 function TransactionsList() {
-  const { data: transactions } = useTransactions();
+  const { data: transactions, isLoading } = useTransactions();
 
-  if (!transactions) {
+  if (isLoading) {
     return <Loading />;
   }
-
-  console.info(transactions);
 
   return (
     <div>
