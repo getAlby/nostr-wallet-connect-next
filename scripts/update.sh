@@ -9,15 +9,13 @@ rm -rf albyhub-backup
 mkdir albyhub-backup
 mv app albyhub-backup
 cp -r data albyhub-backup
-wget https://nightly.link/getalby/nostr-wallet-connect-next/workflows/http/master/albyhub-Server-Linux-armv6.tar.gz.zip
+wget https://github.com/getAlby/nostr-wallet-connect-next/releases/latest/download/albyhub-Server-Linux-armv6.tar.gz
 
 # Extract archives
-unzip albyhub-Server-Linux-armv6.tar.gz.zip
 tar -xvf albyhub-Server-Linux-armv6.tar.gz
 
 # Cleanup
 rm albyhub-Server-Linux-armv6.tar.gz
-rm albyhub-Server-Linux-armv6.tar.gz.zip
 
 sudo systemctl start albyhub
 
