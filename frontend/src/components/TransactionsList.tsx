@@ -26,8 +26,8 @@ function TransactionsList() {
             return (
               <div
                 key={`tx-${i}`}
-                className="p-3 mb-4 hover:bg-gray-100 dark:hover:bg-primary-foreground cursor-pointer rounded-md"
-                // onClick={() => openDetails(tx)}
+                className="p-3 mb-4 rounded-md"
+                // TODO: Add modal onclick to show payment details
               >
                 <div className="flex gap-3">
                   <div className="flex items-center">

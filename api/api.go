@@ -522,10 +522,7 @@ func (api *api) CreateInvoice(ctx context.Context, amount int64, description str
 		return nil, errors.New("LNClient not started")
 	}
 	invoice, err := api.svc.GetLNClient().MakeInvoice(ctx, amount, description, "", 86400)
-	if err != nil {
-		return nil, err
-	}
-	return invoice, nil
+	return invoice, err
 }
 
 func (api *api) LookupInvoice(ctx context.Context, paymentHash string) (*LookupInvoiceResponse, error) {
@@ -533,10 +530,7 @@ func (api *api) LookupInvoice(ctx context.Context, paymentHash string) (*LookupI
 		return nil, errors.New("LNClient not started")
 	}
 	invoice, err := api.svc.GetLNClient().LookupInvoice(ctx, paymentHash)
-	if err != nil {
-		return nil, err
-	}
-	return invoice, nil
+	return invoice, err
 }
 
 // TODO: remove dependency on this endpoint
