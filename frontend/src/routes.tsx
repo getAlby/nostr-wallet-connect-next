@@ -10,6 +10,7 @@ import { StartRedirect } from "src/components/redirects/StartRedirect";
 import { BackupMnemonic } from "src/screens/BackupMnemonic";
 import { BackupNode } from "src/screens/BackupNode";
 import { BackupNodeSuccess } from "src/screens/BackupNodeSuccess";
+import Home from "src/screens/Home";
 import { Intro } from "src/screens/Intro";
 import NotFound from "src/screens/NotFound";
 import Start from "src/screens/Start";
@@ -61,6 +62,17 @@ const routes = [
       {
         index: true,
         element: <HomeRedirect />,
+      },
+      {
+        path: "home",
+        element: <DefaultRedirect />,
+        handle: { crumb: () => "Dashboard" },
+        children: [
+          {
+            index: true,
+            element: <Home />,
+          },
+        ],
       },
       {
         path: "wallet",
