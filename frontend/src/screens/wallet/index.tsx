@@ -3,7 +3,7 @@ import {
   ArrowUp,
   ArrowUpIcon,
   Bitcoin,
-  PiggyBankIcon,
+  CreditCard,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
@@ -41,8 +41,8 @@ function Wallet() {
         <div className="flex items-center gap-4">
           <ExternalLink to="https://www.getalby.com/topup">
             <Button size="lg" variant="secondary">
-              <PiggyBankIcon className="h-4 w-4 mr-2" />
-              Topup
+              <CreditCard className="h-4 w-4 mr-2" />
+              Buy Bitcoin
             </Button>
           </ExternalLink>
           <Link to="/wallet/receive">
