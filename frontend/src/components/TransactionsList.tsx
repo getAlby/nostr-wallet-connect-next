@@ -26,7 +26,7 @@ function TransactionsList() {
             return (
               <div
                 key={`tx-${i}`}
-                className="p-3 mb-4 hover:bg-gray-100 dark:hover:bg-surface-02dp cursor-pointer rounded-md"
+                className="p-3 mb-4 hover:bg-gray-100 dark:hover:bg-primary-foreground cursor-pointer rounded-md"
                 // onClick={() => openDetails(tx)}
               >
                 <div className="flex gap-3">
@@ -53,7 +53,7 @@ function TransactionsList() {
                   </div>
                   <div className="overflow-hidden mr-3">
                     <div className="flex items-center gap-2 truncate dark:text-white">
-                      <p className="text-lg md:text-xl font-semibold text-black">
+                      <p className="text-lg md:text-xl font-semibold">
                         {type == "incoming" ? "Received" : "Sent"}
                       </p>
                       <p className="text-sm md:text-base truncate text-muted-foreground">
