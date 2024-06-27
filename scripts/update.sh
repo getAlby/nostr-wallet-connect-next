@@ -7,7 +7,7 @@ sudo systemctl stop albyhub
 cd /opt/albyhub
 rm -rf albyhub-backup
 mkdir albyhub-backup
-mv app albyhub-backup
+mv bin albyhub-backup
 cp -r data albyhub-backup
 wget https://github.com/getAlby/nostr-wallet-connect-next/releases/latest/download/albyhub-Server-Linux-armv6.tar.gz
 
