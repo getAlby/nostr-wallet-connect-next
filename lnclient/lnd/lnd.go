@@ -262,7 +262,22 @@ func (svc *LNDService) MakeInvoice(ctx context.Context, amount int64, descriptio
 		}
 	}
 
-	resp, err := svc.client.AddInvoice(ctx, &lnrpc.Invoice{ValueMsat: amount, Memo: description, DescriptionHash: descriptionHashBytes, Expiry: expiry})
+	invoiceRequest := &lnrpc.Invoice{
+		ValueMsat:       amount,
+		Memo:            description,
+		DescriptionHash: descriptionHashBytes,
+		Expiry:          expiry,
+	}
+
+	if amount != 0 {
+		// includes routing hints for private channels
+		invoiceRequest.Private = true
+	}
+
+	resp, err := svc.client.AddInvoice(ctx, invoiceRequest)
+
+	// RouteHints
+
 	if err != nil {
 		return nil, err
 	}

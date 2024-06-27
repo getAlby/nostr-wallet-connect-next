@@ -37,6 +37,7 @@ type API interface {
 	GetTransactions(ctx context.Context) (*TransactionsResponse, error)
 	SendPayment(ctx context.Context, invoice string) (*SendPaymentResponse, error)
 	CreateInvoice(ctx context.Context, amount int64, description string) (*CreateInvoiceResponse, error)
+	LookupInvoice(ctx context.Context, paymentHash string) (*LookupInvoiceResponse, error)
 	RequestMempoolApi(endpoint string) (interface{}, error)
 	GetInfo(ctx context.Context) (*InfoResponse, error)
 	GetEncryptedMnemonic() *EncryptedMnemonicResponse
@@ -184,6 +185,7 @@ type BalancesResponse = lnclient.BalancesResponse
 
 type SendPaymentResponse = lnclient.PayInvoiceResponse
 type CreateInvoiceResponse = lnclient.Transaction
+type LookupInvoiceResponse = lnclient.Transaction
 type TransactionsResponse = []lnclient.Transaction
 
 // debug api

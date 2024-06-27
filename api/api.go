@@ -526,6 +526,17 @@ func (api *api) CreateInvoice(ctx context.Context, amount int64, description str
 	return invoice, nil
 }
 
+func (api *api) LookupInvoice(ctx context.Context, paymentHash string) (*LookupInvoiceResponse, error) {
+	if api.svc.GetLNClient() == nil {
+		return nil, errors.New("LNClient not started")
+	}
+	invoice, err := api.svc.GetLNClient().LookupInvoice(ctx, paymentHash)
+	if err != nil {
+		return nil, err
+	}
+	return invoice, nil
+}
+
 // TODO: remove dependency on this endpoint
 func (api *api) RequestMempoolApi(endpoint string) (interface{}, error) {
 	url := api.cfg.GetEnv().MempoolApi + endpoint

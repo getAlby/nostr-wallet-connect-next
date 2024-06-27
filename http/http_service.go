@@ -108,6 +108,7 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.POST("/api/wallet/send", httpSvc.sendHandler, authMiddleware)
 	e.POST("/api/wallet/receive", httpSvc.receiveHandler, authMiddleware)
 	e.GET("/api/transactions", httpSvc.transactionsHandler, authMiddleware)
+	e.GET("/api/invoice/:paymentHash", httpSvc.lookupInvoiceHandler, authMiddleware)
 	e.GET("/api/balances", httpSvc.balancesHandler, authMiddleware)
 	e.POST("/api/reset-router", httpSvc.resetRouterHandler, authMiddleware)
 	e.POST("/api/stop", httpSvc.stopHandler, authMiddleware)
@@ -431,6 +432,20 @@ func (httpSvc *HttpService) receiveHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, invoice)
+}
+
+func (httpSvc *HttpService) lookupInvoiceHandler(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	paymentInfo, err := httpSvc.api.LookupInvoice(ctx, c.Param("paymentHash"))
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, paymentInfo)
 }
 
 func (httpSvc *HttpService) transactionsHandler(c echo.Context) error {
