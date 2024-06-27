@@ -116,7 +116,7 @@ export default function Receive() {
             <Card className="w-full">
               <CardHeader>
                 <CardTitle className="text-center">
-                  {paymentDone ? "Payment Received" : "Payment Invoice"}
+                  {paymentDone ? "Payment Received" : "Invoice"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-4">

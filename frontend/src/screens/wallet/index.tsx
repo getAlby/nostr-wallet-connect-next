@@ -1,6 +1,13 @@
-import { ArrowDownIcon, ArrowUp, ArrowUpIcon, Bitcoin } from "lucide-react";
+import {
+  ArrowDownIcon,
+  ArrowUp,
+  ArrowUpIcon,
+  Bitcoin,
+  PiggyBankIcon,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
+import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
 import TransactionsList from "src/components/TransactionsList";
 import { Button } from "src/components/ui/button";
@@ -32,6 +39,12 @@ function Wallet() {
           sats
         </div>
         <div className="flex items-center gap-4">
+          <ExternalLink to="https://www.getalby.com/topup">
+            <Button variant="secondary">
+              <PiggyBankIcon className="h-4 w-4 mr-2" />
+              Topup
+            </Button>
+          </ExternalLink>
           <Link to="/wallet/receive">
             <Button>
               <ArrowDownIcon className="h-4 w-4 mr-2" />
