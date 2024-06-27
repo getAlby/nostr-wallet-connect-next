@@ -1,10 +1,4 @@
-import {
-  ArrowDownIcon,
-  ArrowUp,
-  ArrowUpIcon,
-  Bitcoin,
-  ScanIcon,
-} from "lucide-react";
+import { ArrowDownIcon, ArrowUp, ArrowUpIcon, Bitcoin } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
 import Loading from "src/components/Loading";
@@ -38,12 +32,6 @@ function Wallet() {
           sats
         </div>
         <div className="flex items-center gap-4">
-          <Link to="/wallet/scan">
-            <Button variant="secondary">
-              <ScanIcon className="h-4 w-4 mr-2" />
-              Scan
-            </Button>
-          </Link>
           <Link to="/wallet/receive">
             <Button>
               <ArrowDownIcon className="h-4 w-4 mr-2" />
