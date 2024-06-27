@@ -40,19 +40,19 @@ function Wallet() {
         </div>
         <div className="flex items-center gap-4">
           <ExternalLink to="https://www.getalby.com/topup">
-            <Button variant="secondary">
+            <Button size="lg" variant="secondary">
               <PiggyBankIcon className="h-4 w-4 mr-2" />
               Topup
             </Button>
           </ExternalLink>
           <Link to="/wallet/receive">
-            <Button>
+            <Button size="lg">
               <ArrowDownIcon className="h-4 w-4 mr-2" />
               Receive
             </Button>
           </Link>
           <Link to="/wallet/send">
-            <Button>
+            <Button size="lg">
               <ArrowUpIcon className="h-4 w-4 mr-2" />
               Send
             </Button>
