@@ -185,6 +185,22 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		return WailsRequestRouterResponse{Body: node, Error: ""}
 	}
 
+	invoiceRegex := regexp.MustCompile(
+		`/api/invoice/([0-9a-fA-F]+)`,
+	)
+	invoiceMatch := invoiceRegex.FindStringSubmatch(route)
+
+	switch {
+	case len(invoiceMatch) > 1:
+		paymentHash := invoiceMatch[1]
+		paymentInfo, err := app.api.LookupInvoice(ctx, paymentHash)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		return WailsRequestRouterResponse{Body: paymentInfo, Error: ""}
+	}
+
 	switch route {
 	case "/api/alby/me":
 		me, err := app.svc.GetAlbyOAuthSvc().GetMe(ctx)
@@ -322,6 +338,46 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		res := WailsRequestRouterResponse{Body: *balancesResponse, Error: ""}
 		return res
+	case "/api/wallet/send":
+		walletSendRequest := &api.WalletSendRequest{}
+		err := json.Unmarshal([]byte(body), walletSendRequest)
+		if err != nil {
+			logger.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		paymentResponse, err := app.api.SendPayment(ctx, walletSendRequest.Invoice)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		res := WailsRequestRouterResponse{Body: paymentResponse, Error: ""}
+		return res
+	case "/api/wallet/receive":
+		walletReceiveRequest := &api.WalletReceiveRequest{}
+		err := json.Unmarshal([]byte(body), walletReceiveRequest)
+		if err != nil {
+			logger.Logger.WithFields(logrus.Fields{
+				"route":  route,
+				"method": method,
+				"body":   body,
+			}).WithError(err).Error("Failed to decode request to wails router")
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		invoice, err := app.api.CreateInvoice(ctx, walletReceiveRequest.Amount, walletReceiveRequest.Description)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		res := WailsRequestRouterResponse{Body: invoice, Error: ""}
+		return res
+	case "/api/transactions":
+		transactions, err := app.api.GetTransactions(ctx)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+		return WailsRequestRouterResponse{Body: transactions, Error: ""}
 	case "/api/wallet/sync":
 		app.api.SyncWallet()
 		return WailsRequestRouterResponse{Body: nil, Error: ""}

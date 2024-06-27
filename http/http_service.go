@@ -404,7 +404,7 @@ func (httpSvc *HttpService) sendHandler(c echo.Context) error {
 		})
 	}
 
-	resp, err := httpSvc.api.SendPayment(c.Request().Context(), walletSendRequest.Invoice)
+	paymentResponse, err := httpSvc.api.SendPayment(c.Request().Context(), walletSendRequest.Invoice)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -412,7 +412,7 @@ func (httpSvc *HttpService) sendHandler(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, resp)
+	return c.JSON(http.StatusOK, paymentResponse)
 }
 
 func (httpSvc *HttpService) receiveHandler(c echo.Context) error {
