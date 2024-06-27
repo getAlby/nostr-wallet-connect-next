@@ -493,10 +493,12 @@ func (api *api) GetBalances(ctx context.Context) (*BalancesResponse, error) {
 	return balances, nil
 }
 
+// TODO: accept offset, limit params for pagination
 func (api *api) GetTransactions(ctx context.Context) (*TransactionsResponse, error) {
 	if api.svc.GetLNClient() == nil {
 		return nil, errors.New("LNClient not started")
 	}
+	// TODO: review parameters passed
 	transactions, err := api.svc.GetLNClient().ListTransactions(ctx, 0, 100000000000, 1000, 0, false, "")
 	if err != nil {
 		return nil, err
@@ -519,7 +521,7 @@ func (api *api) CreateInvoice(ctx context.Context, amount int64, description str
 	if api.svc.GetLNClient() == nil {
 		return nil, errors.New("LNClient not started")
 	}
-	invoice, err := api.svc.GetLNClient().MakeInvoice(ctx, amount, description, "", 0)
+	invoice, err := api.svc.GetLNClient().MakeInvoice(ctx, amount, description, "", 86400)
 	if err != nil {
 		return nil, err
 	}
