@@ -1,4 +1,4 @@
-import { Box, Zap } from "lucide-react";
+import { Box, ChevronDown, Zap } from "lucide-react";
 import React, { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
@@ -177,7 +177,7 @@ function NewChannelInternal({ network }: { network: Network }) {
         if (!partner) {
           toast({
             description:
-              "No ideal channel partner found. Please choose from the advanced options",
+              "No ideal channel partner found. Please choose from the advanced options to continue",
           });
           return;
         }
@@ -403,15 +403,18 @@ function NewChannelInternal({ network }: { network: Network }) {
             </div>
           </>
         )}
-
+        {!showAdvanced && (
+          <Button
+            type="button"
+            variant="link"
+            className="text-muted-foreground text-xs"
+            onClick={() => setShowAdvanced((current) => !current)}
+          >
+            <ChevronDown className="w-4 h-4 mr-2" />
+            Advanced Options
+          </Button>
+        )}
         <Button size="lg">{openImmediately ? "Open Channel" : "Next"}</Button>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => setShowAdvanced((current) => !current)}
-        >
-          {showAdvanced ? "Simple Options" : "Advanced Options"}
-        </Button>
       </form>
     </>
   );
