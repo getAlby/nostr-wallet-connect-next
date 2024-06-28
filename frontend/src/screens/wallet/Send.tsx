@@ -108,17 +108,30 @@ export default function Send() {
                 </CardContent>
               </Card>
               {paymentDone && (
-                <Link to="/wallet">
+                <>
                   <Button
                     className="mt-4 w-full"
                     onClick={() => {
                       setPaymentDone(false);
+                      setShowConfirmation(false);
+                      setPayResponse(null);
+                      setInvoice("");
                     }}
-                    variant="secondary"
                   >
-                    Back to Wallet
+                    Make Another Payment
                   </Button>
-                </Link>
+                  <Link to="/wallet">
+                    <Button
+                      className="mt-4 w-full"
+                      onClick={() => {
+                        setPaymentDone(false);
+                      }}
+                      variant="secondary"
+                    >
+                      Back To Wallet
+                    </Button>
+                  </Link>
+                </>
               )}
             </>
           ) : showConfirmation ? (

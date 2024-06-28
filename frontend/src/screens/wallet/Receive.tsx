@@ -148,15 +148,28 @@ export default function Receive() {
                 </CardContent>
               </Card>
               {paymentDone && (
-                <Button
-                  className="mt-4 w-full"
-                  onClick={() => {
-                    setPaymentDone(false);
-                    setInvoice(null);
-                  }}
-                >
-                  Receive another payment
-                </Button>
+                <>
+                  <Button
+                    className="mt-4 w-full"
+                    onClick={() => {
+                      setPaymentDone(false);
+                      setInvoice(null);
+                    }}
+                  >
+                    Receive Another Payment
+                  </Button>
+                  <Link to="/wallet">
+                    <Button
+                      className="mt-4 w-full"
+                      onClick={() => {
+                        setPaymentDone(false);
+                      }}
+                      variant="secondary"
+                    >
+                      Back To Wallet
+                    </Button>
+                  </Link>
+                </>
               )}
             </>
           ) : (
