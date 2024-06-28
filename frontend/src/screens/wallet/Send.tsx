@@ -163,11 +163,10 @@ export default function Send() {
                     }}
                   />
                   <Button
+                    type="button"
                     variant="outline"
                     className="px-2"
-                    onClick={(e) => {
-                      paste();
-                    }}
+                    onClick={paste}
                   >
                     <ClipboardPaste className="w-4 h-4" />
                   </Button>

@@ -339,8 +339,8 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		res := WailsRequestRouterResponse{Body: *balancesResponse, Error: ""}
 		return res
 	case "/api/wallet/send":
-		walletSendRequest := &api.WalletSendRequest{}
-		err := json.Unmarshal([]byte(body), walletSendRequest)
+		sendPaymentRequest := &api.SendPaymentRequest{}
+		err := json.Unmarshal([]byte(body), sendPaymentRequest)
 		if err != nil {
 			logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
@@ -349,15 +349,15 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			}).WithError(err).Error("Failed to decode request to wails router")
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
-		paymentResponse, err := app.api.SendPayment(ctx, walletSendRequest.Invoice)
+		paymentResponse, err := app.api.SendPayment(ctx, sendPaymentRequest.Invoice)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 		res := WailsRequestRouterResponse{Body: paymentResponse, Error: ""}
 		return res
 	case "/api/wallet/receive":
-		walletReceiveRequest := &api.WalletReceiveRequest{}
-		err := json.Unmarshal([]byte(body), walletReceiveRequest)
+		makeInvoiceRequest := &api.MakeInvoiceRequest{}
+		err := json.Unmarshal([]byte(body), makeInvoiceRequest)
 		if err != nil {
 			logger.Logger.WithFields(logrus.Fields{
 				"route":  route,
@@ -366,7 +366,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 			}).WithError(err).Error("Failed to decode request to wails router")
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
-		invoice, err := app.api.CreateInvoice(ctx, walletReceiveRequest.Amount, walletReceiveRequest.Description)
+		invoice, err := app.api.CreateInvoice(ctx, makeInvoiceRequest.Amount, makeInvoiceRequest.Description)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
