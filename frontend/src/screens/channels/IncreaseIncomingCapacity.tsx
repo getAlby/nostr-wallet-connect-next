@@ -125,24 +125,21 @@ function NewChannelInternal({ network }: { network: Network }) {
         }
 
         // find the best channel partner
-        // TODO: get pubkey from LSP info?
         const okPartners = channelPeerSuggestions.filter(
           (partner) =>
             amount >= partner.minimumChannelSize &&
             partner.network === network &&
             partner.paymentMethod === "lightning" &&
-            partner.lspType === "LSPS1"
-
-          /* &&
+            partner.lspType === "LSPS1" &&
             partner.pubkey &&
-            !channels.some((channel) => channel.remotePubkey === partner.pubkey)*/
+            !channels.some((channel) => channel.remotePubkey === partner.pubkey)
         );
 
         const partner = okPartners[0];
         if (!partner) {
           toast({
             description:
-              "No ideal channel partner found. Please choose from the advanced options",
+              "No ideal channel partner found. Please choose from the advanced options to continue",
           });
           return;
         }
