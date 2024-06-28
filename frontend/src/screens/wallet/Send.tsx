@@ -1,3 +1,4 @@
+import { Invoice } from "@getalby/lightning-tools";
 import { ArrowUp, CircleCheck, ClipboardPaste, CopyIcon } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
@@ -29,6 +30,7 @@ export default function Send() {
   const [payResponse, setPayResponse] =
     React.useState<PayInvoiceResponse | null>(null);
   const [paymentDone, setPaymentDone] = React.useState(false);
+  const [showConfirmation, setShowConfirmation] = React.useState(false);
 
   if (!balances) {
     return <Loading />;
@@ -116,8 +118,36 @@ export default function Send() {
                 </Link>
               )}
             </>
-          ) : (
+          ) : showConfirmation ? (
             <form onSubmit={handleSubmit} className="grid gap-5">
+              <div className="">
+                <p className="text-lg mb-5">Payment Details</p>
+                <p className="font-bold">
+                  {new Invoice({ pr: invoice }).satoshi} sats
+                </p>
+                <p className="text-muted-foreground">
+                  {new Invoice({ pr: invoice }).description}
+                </p>
+              </div>
+              <div className="flex gap-5">
+                <LoadingButton
+                  loading={isLoading}
+                  type="submit"
+                  disabled={!invoice}
+                  autoFocus
+                >
+                  Confirm Payment
+                </LoadingButton>
+                <Button
+                  onClick={() => setShowConfirmation(false)}
+                  variant="secondary"
+                >
+                  Back
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="grid gap-5">
               <div className="">
                 <Label htmlFor="recipient">Recipient</Label>
                 <div className="flex gap-2">
@@ -125,6 +155,7 @@ export default function Send() {
                     id="recipient"
                     type="text"
                     value={invoice}
+                    autoFocus
                     placeholder="Enter an invoice"
                     onChange={(e) => {
                       setInvoice(e.target.value);
@@ -134,7 +165,6 @@ export default function Send() {
                     variant="outline"
                     className="px-2"
                     onClick={(e) => {
-                      e.preventDefault();
                       paste();
                     }}
                   >
@@ -143,15 +173,14 @@ export default function Send() {
                 </div>
               </div>
               <div>
-                <LoadingButton
-                  loading={isLoading}
-                  type="submit"
+                <Button
+                  onClick={() => setShowConfirmation(true)}
                   disabled={!invoice}
                 >
                   Continue
-                </LoadingButton>
+                </Button>
               </div>
-            </form>
+            </div>
           )}
         </div>
         <Card className="w-full hidden md:block self-start">
