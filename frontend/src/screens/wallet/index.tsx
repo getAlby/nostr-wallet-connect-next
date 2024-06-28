@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
+import BreezRedeem from "src/components/BreezRedeem";
 import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
 import TransactionsList from "src/components/TransactionsList";
@@ -32,6 +33,7 @@ function Wallet() {
   return (
     <>
       <AppHeader title="Wallet" description="Send and receive transactions" />
+      <BreezRedeem />
       <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-5">
         <div className="text-5xl font-semibold">
           {new Intl.NumberFormat().format(

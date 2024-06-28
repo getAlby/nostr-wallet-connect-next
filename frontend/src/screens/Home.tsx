@@ -1,7 +1,6 @@
 import { ExternalLinkIcon } from "lucide-react";
 import AlbyHead from "src/assets/images/alby-head.svg";
 import AppHeader from "src/components/AppHeader";
-import BreezRedeem from "src/components/BreezRedeem";
 import ExternalLink from "src/components/ExternalLink";
 import Loading from "src/components/Loading";
 import { Button } from "src/components/ui/button";
@@ -109,7 +108,6 @@ function Home() {
       </div>
 
       <OnboardingChecklist />
-      <BreezRedeem />
     </>
   );
 }
