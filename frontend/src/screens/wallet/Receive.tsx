@@ -112,7 +112,7 @@ export default function Receive() {
     <div className="grid gap-5">
       <AppHeader
         title="Receive"
-        description="Request instant and specific amount bitcoin payments"
+        description="Create a lightning invoice that can be paid by any bitcoin lightning wallet"
       />
       <div className="flex gap-12 w-full">
         <div className="w-full max-w-lg">

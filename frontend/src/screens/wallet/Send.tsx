@@ -86,7 +86,10 @@ export default function Send() {
 
   return (
     <div className="grid gap-5">
-      <AppHeader title="Send" description="Send sats from your node" />
+      <AppHeader
+        title="Send"
+        description="Pay a lightning invoice created by any bitcoin lightning wallet"
+      />
       <div className="flex gap-12 w-full">
         <div className="w-full max-w-lg">
           {paymentDone ? (
