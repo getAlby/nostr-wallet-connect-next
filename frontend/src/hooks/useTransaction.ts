@@ -9,7 +9,7 @@ const pollConfiguration: SWRConfiguration = {
 
 export function useTransaction(paymentHash: string, poll = false) {
   return useSWR<Transaction>(
-    paymentHash && `/api/invoice/${paymentHash}`,
+    paymentHash && `/api/transactions/${paymentHash}`,
     swrFetcher,
     poll ? pollConfiguration : undefined
   );

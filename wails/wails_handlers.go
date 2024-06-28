@@ -185,20 +185,36 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		return WailsRequestRouterResponse{Body: node, Error: ""}
 	}
 
-	invoiceRegex := regexp.MustCompile(
-		`/api/invoice/([0-9a-fA-F]+)`,
+	transactionRegex := regexp.MustCompile(
+		`/api/transactions/([0-9a-fA-F]+)`,
 	)
-	invoiceMatch := invoiceRegex.FindStringSubmatch(route)
+	paymentHashMatch := transactionRegex.FindStringSubmatch(route)
 
 	switch {
-	case len(invoiceMatch) > 1:
-		paymentHash := invoiceMatch[1]
+	case len(paymentHashMatch) > 1:
+		paymentHash := paymentHashMatch[1]
 		paymentInfo, err := app.api.LookupInvoice(ctx, paymentHash)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}
 
 		return WailsRequestRouterResponse{Body: paymentInfo, Error: ""}
+	}
+
+	paymentRegex := regexp.MustCompile(
+		`/api/payments/([0-9a-zA-Z]+)`,
+	)
+	invoiceMatch := paymentRegex.FindStringSubmatch(route)
+
+	switch {
+	case len(invoiceMatch) > 1:
+		invoice := invoiceMatch[1]
+		paymentResponse, err := app.api.SendPayment(ctx, invoice)
+		if err != nil {
+			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
+		}
+
+		return WailsRequestRouterResponse{Body: paymentResponse, Error: ""}
 	}
 
 	switch route {
@@ -338,24 +354,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		}
 		res := WailsRequestRouterResponse{Body: *balancesResponse, Error: ""}
 		return res
-	case "/api/wallet/send":
-		sendPaymentRequest := &api.SendPaymentRequest{}
-		err := json.Unmarshal([]byte(body), sendPaymentRequest)
-		if err != nil {
-			logger.Logger.WithFields(logrus.Fields{
-				"route":  route,
-				"method": method,
-				"body":   body,
-			}).WithError(err).Error("Failed to decode request to wails router")
-			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
-		}
-		paymentResponse, err := app.api.SendPayment(ctx, sendPaymentRequest.Invoice)
-		if err != nil {
-			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
-		}
-		res := WailsRequestRouterResponse{Body: paymentResponse, Error: ""}
-		return res
-	case "/api/wallet/receive":
+	case "/api/invoices":
 		makeInvoiceRequest := &api.MakeInvoiceRequest{}
 		err := json.Unmarshal([]byte(body), makeInvoiceRequest)
 		if err != nil {

@@ -105,10 +105,10 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.POST("/api/wallet/redeem-onchain-funds", httpSvc.redeemOnchainFundsHandler, authMiddleware)
 	e.POST("/api/wallet/sign-message", httpSvc.signMessageHandler, authMiddleware)
 	e.POST("/api/wallet/sync", httpSvc.walletSyncHandler, authMiddleware)
-	e.POST("/api/wallet/send", httpSvc.sendPaymentHandler, authMiddleware)
-	e.POST("/api/wallet/receive", httpSvc.receiveHandler, authMiddleware)
+	e.POST("/api/payments/:invoice", httpSvc.sendPaymentHandler, authMiddleware)
+	e.POST("/api/invoices", httpSvc.receiveHandler, authMiddleware)
 	e.GET("/api/transactions", httpSvc.listTransactionsHandler, authMiddleware)
-	e.GET("/api/invoice/:paymentHash", httpSvc.lookupInvoiceHandler, authMiddleware)
+	e.GET("/api/transactions/:paymentHash", httpSvc.lookupInvoiceHandler, authMiddleware)
 	e.GET("/api/balances", httpSvc.balancesHandler, authMiddleware)
 	e.POST("/api/reset-router", httpSvc.resetRouterHandler, authMiddleware)
 	e.POST("/api/stop", httpSvc.stopHandler, authMiddleware)
@@ -397,14 +397,9 @@ func (httpSvc *HttpService) balancesHandler(c echo.Context) error {
 }
 
 func (httpSvc *HttpService) sendPaymentHandler(c echo.Context) error {
-	var sendPaymentRequest api.SendPaymentRequest
-	if err := c.Bind(&sendPaymentRequest); err != nil {
-		return c.JSON(http.StatusBadRequest, ErrorResponse{
-			Message: fmt.Sprintf("Bad request: %s", err.Error()),
-		})
-	}
+	ctx := c.Request().Context()
 
-	paymentResponse, err := httpSvc.api.SendPayment(c.Request().Context(), sendPaymentRequest.Invoice)
+	paymentResponse, err := httpSvc.api.SendPayment(ctx, c.Param("invoice"))
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{

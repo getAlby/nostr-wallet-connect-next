@@ -43,7 +43,7 @@ export default function Receive() {
       setPaymentDone(true);
       popConfetti();
       toast({
-        title: "Payment done!",
+        title: "Payment received!",
       });
     }
   }, [invoiceData, toast]);
@@ -55,7 +55,7 @@ export default function Receive() {
     }
     try {
       setLoading(true);
-      const invoice = await request<Transaction>("/api/wallet/receive", {
+      const invoice = await request<Transaction>("/api/invoices", {
         method: "POST",
         headers: {
           "X-CSRF-Token": csrf,
