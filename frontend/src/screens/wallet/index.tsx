@@ -1,8 +1,8 @@
 import {
+  ArrowDown,
   ArrowDownIcon,
   ArrowUp,
   ArrowUpIcon,
-  Bitcoin,
   CreditCard,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -89,9 +89,9 @@ function Wallet() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Savings Balance
+              Receiving Capacity
             </CardTitle>
-            <Bitcoin className="h-4 w-4 text-muted-foreground" />
+            <ArrowDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {!balances && (
@@ -104,18 +104,10 @@ function Wallet() {
             <div className="text-2xl font-bold">
               {balances && (
                 <>
-                  {new Intl.NumberFormat().format(balances.onchain.spendable)}{" "}
+                  {new Intl.NumberFormat().format(
+                    Math.floor(balances.lightning.totalReceivable / 1000)
+                  )}{" "}
                   sats
-                  {balances &&
-                    balances.onchain.spendable !== balances.onchain.total && (
-                      <p className="text-xs text-muted-foreground animate-pulse">
-                        +
-                        {new Intl.NumberFormat().format(
-                          balances.onchain.total - balances.onchain.spendable
-                        )}{" "}
-                        sats incoming
-                      </p>
-                    )}
                 </>
               )}
             </div>
