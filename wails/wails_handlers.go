@@ -372,7 +372,7 @@ func (app *WailsApp) WailsRequestRouter(route string, method string, body string
 		res := WailsRequestRouterResponse{Body: invoice, Error: ""}
 		return res
 	case "/api/transactions":
-		transactions, err := app.api.GetTransactions(ctx)
+		transactions, err := app.api.ListTransactions(ctx)
 		if err != nil {
 			return WailsRequestRouterResponse{Body: nil, Error: err.Error()}
 		}

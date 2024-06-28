@@ -494,7 +494,7 @@ func (api *api) GetBalances(ctx context.Context) (*BalancesResponse, error) {
 }
 
 // TODO: accept offset, limit params for pagination
-func (api *api) GetTransactions(ctx context.Context) (*ListTransactionsResponse, error) {
+func (api *api) ListTransactions(ctx context.Context) (*ListTransactionsResponse, error) {
 	if api.svc.GetLNClient() == nil {
 		return nil, errors.New("LNClient not started")
 	}
