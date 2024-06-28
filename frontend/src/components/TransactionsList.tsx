@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
-import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, Drum } from "lucide-react";
+import EmptyState from "src/components/EmptyState";
 
 import Loading from "src/components/Loading";
 import { useTransactions } from "src/hooks/useTransactions";
@@ -14,10 +15,13 @@ function TransactionsList() {
   return (
     <div>
       {!transactions?.length ? (
-        <p className="text-center py-16 text-gray-500 dark:text-neutral-400">
-          No transactions, yet.
-          {/* Deposit Bitcoin Button */}
-        </p>
+        <EmptyState
+          icon={Drum}
+          title="No transactions yet"
+          description="Your most recent incoming and outgoing payments will show up here."
+          buttonText="Receive Your First Payment"
+          buttonLink="/wallet/receive"
+        />
       ) : (
         <>
           {transactions?.map((tx, i) => {
