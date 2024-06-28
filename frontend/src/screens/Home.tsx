@@ -11,11 +11,12 @@ import {
   CardHeader,
   CardTitle,
 } from "src/components/ui/card";
+import { useAlbyMe } from "src/hooks/useAlbyMe";
 import { useBalances } from "src/hooks/useBalances";
 import { useInfo } from "src/hooks/useInfo";
 import OnboardingChecklist from "src/screens/wallet/OnboardingChecklist";
 
-function getGreeting() {
+function getGreeting(name: string | undefined) {
   const hours = new Date().getHours();
   let greeting;
 
@@ -27,12 +28,13 @@ function getGreeting() {
     greeting = "Good Evening";
   }
 
-  return `${greeting}!`;
+  return `${greeting}${name && `, ${name}`}!`;
 }
 
 function Home() {
   const { data: info } = useInfo();
   const { data: balances } = useBalances();
+  const { data: albyMe } = useAlbyMe();
 
   /* eslint-disable  @typescript-eslint/no-explicit-any */
   const extensionInstalled = (window as any).alby !== undefined;
@@ -43,7 +45,7 @@ function Home() {
 
   return (
     <>
-      <AppHeader title={getGreeting()} description="" />
+      <AppHeader title={getGreeting(albyMe?.name)} description="" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <ExternalLink to="https://www.getalby.com/dashboard">
