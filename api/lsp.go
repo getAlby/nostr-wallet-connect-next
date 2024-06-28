@@ -16,6 +16,7 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
 	"github.com/getAlby/nostr-wallet-connect/lsp"
+	"github.com/getAlby/nostr-wallet-connect/utils"
 	decodepay "github.com/nbd-wtf/ln-decodepay"
 	"github.com/sirupsen/logrus"
 )
@@ -174,40 +175,21 @@ func (api *api) getLSPS1LSPInfo(url string) (*lspInfo, error) {
 		return nil, fmt.Errorf("failed to deserialize json %s %s", url, string(body))
 	}
 
-	var validURI string
-	var parts []string
-	for _, uri := range lsps1LspInfo.URIs {
-		regex := regexp.MustCompile(`^([0-9a-f]+)@([^:]+):([0-9]+)$`)
-		parts = regex.FindStringSubmatch(uri)
-		logger.Logger.WithField("parts", parts).Info("Split URI")
+	// filter all other uris to only have valid IPv4 URI or DNS-resolvable name
+	filteredURIs := utils.FilterURIs(lsps1LspInfo.URIs)
+	uri := filteredURIs[0]
 
-		if parts == nil || len(parts) != 4 {
-			logger.Logger.WithField("parts", parts).Info("Unsupported URI")
-			continue
-		}
-
-		host := parts[2]
-
-		// Check if the host is a valid IPv4 address or a DNS-resolvable name and not an .onion address
-		ipv4Regex := regexp.MustCompile(`^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)$`)
-		domainRegex := regexp.MustCompile(`^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$`)
-		if !ipv4Regex.MatchString(host) && (!domainRegex.MatchString(host) || strings.HasSuffix(host, ".onion")) {
-			logger.Logger.WithField("host", host).Info("Invalid host: neither a valid IPv4 address nor a valid DNS-resolvable name")
-			continue
-		}
-
-		validURI = uri
-		break
-	}
-
-	if validURI == "" {
-		logger.Logger.Info("No valid URI found")
+	regex := regexp.MustCompile(`^([0-9a-f]+)@([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]+):([0-9]+)$`)
+	parts := regex.FindStringSubmatch(uri)
+	logger.Logger.WithField("parts", parts).Info("Split URI")
+	if parts == nil || len(parts) != 5 {
+		logger.Logger.WithField("parts", parts).Info("Unsupported URI")
 		return nil, errors.New("could not decode LSP URI")
 	}
 
-	port, err := strconv.Atoi(parts[3])
+	port, err := strconv.Atoi(parts[4])
 	if err != nil {
-		logger.Logger.WithField("port", parts[3]).WithError(err).Info("Failed to decode port number")
+		logger.Logger.WithField("port", parts[4]).WithError(err).Info("Failed to decode port number")
 
 		return nil, err
 	}

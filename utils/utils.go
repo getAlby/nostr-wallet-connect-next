@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
+	"strings"
 )
 
 func ReadFileTail(filePath string, maxLen int) (data []byte, err error) {
@@ -43,4 +45,15 @@ func ReadFileTail(filePath string, maxLen int) (data []byte, err error) {
 	}
 
 	return data, nil
+}
+
+func FilterURIs(uris []string) []string {
+	validURIs := []string{}
+	regex := regexp.MustCompile(`^[0-9a-f]+@([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+|([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]+):[0-9]+$`)
+	for _, uri := range uris {
+		if regex.MatchString(uri) && !strings.Contains(uri, ".onion") {
+			validURIs = append(validURIs, uri)
+		}
+	}
+	return validURIs
 }
