@@ -174,14 +174,34 @@ func (api *api) getLSPS1LSPInfo(url string) (*lspInfo, error) {
 		return nil, fmt.Errorf("failed to deserialize json %s %s", url, string(body))
 	}
 
-	uri := lsps1LspInfo.URIs[0]
+	var validURI string
+	var parts []string
+	for _, uri := range lsps1LspInfo.URIs {
+		regex := regexp.MustCompile(`^([0-9a-f]+)@([^:]+):([0-9]+)$`)
+		parts = regex.FindStringSubmatch(uri)
+		logger.Logger.WithField("parts", parts).Info("Split URI")
 
-	// make sure it's a valid IPv4 URI
-	regex := regexp.MustCompile(`^([0-9a-f]+)@([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+):([0-9]+)$`)
-	parts := regex.FindStringSubmatch(uri)
-	logger.Logger.WithField("parts", parts).Info("Split URI")
-	if parts == nil || len(parts) != 4 {
-		logger.Logger.WithField("parts", parts).Info("Unsupported URI")
+		if parts == nil || len(parts) != 4 {
+			logger.Logger.WithField("parts", parts).Info("Unsupported URI")
+			continue
+		}
+
+		host := parts[2]
+
+		// Check if the host is a valid IPv4 address or a DNS-resolvable name and not an .onion address
+		ipv4Regex := regexp.MustCompile(`^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)$`)
+		domainRegex := regexp.MustCompile(`^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$`)
+		if !ipv4Regex.MatchString(host) && (!domainRegex.MatchString(host) || strings.HasSuffix(host, ".onion")) {
+			logger.Logger.WithField("host", host).Info("Invalid host: neither a valid IPv4 address nor a valid DNS-resolvable name")
+			continue
+		}
+
+		validURI = uri
+		break
+	}
+
+	if validURI == "" {
+		logger.Logger.Info("No valid URI found")
 		return nil, errors.New("could not decode LSP URI")
 	}
 
