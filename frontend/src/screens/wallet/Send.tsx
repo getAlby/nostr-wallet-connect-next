@@ -45,14 +45,13 @@ export default function Send() {
     try {
       setLoading(true);
       const payInvoiceResponse = await request<PayInvoiceResponse>(
-        "/api/wallet/send",
+        `/api/payments/${invoice.trim()}`,
         {
           method: "POST",
           headers: {
             "X-CSRF-Token": csrf,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ invoice: invoice.trim() }),
         }
       );
       if (payInvoiceResponse) {

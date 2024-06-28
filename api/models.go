@@ -228,10 +228,6 @@ type SignMessageResponse struct {
 	Signature string `json:"signature"`
 }
 
-type SendPaymentRequest struct {
-	Invoice string `json:"invoice"`
-}
-
 type MakeInvoiceRequest struct {
 	Amount      int64  `json:"amount"`
 	Description string `json:"description"`
