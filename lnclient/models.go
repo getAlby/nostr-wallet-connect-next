@@ -75,6 +75,7 @@ type LNClient interface {
 
 type Channel struct {
 	LocalBalance                             int64       `json:"localBalance"`
+	LocalSpendableBalance                    int64       `json:"localSpendableBalance"`
 	RemoteBalance                            int64       `json:"remoteBalance"`
 	Id                                       string      `json:"id"`
 	RemotePubkey                             string      `json:"remotePubkey"`
@@ -156,3 +157,6 @@ type BalancesResponse struct {
 }
 
 type NetworkGraphResponse = interface{}
+
+// default invoice expiry in seconds (1 day)
+const DEFAULT_INVOICE_EXPIRY = 86400
