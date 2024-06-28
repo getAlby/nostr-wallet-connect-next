@@ -39,7 +39,7 @@ function Home() {
   /* eslint-disable  @typescript-eslint/no-explicit-any */
   const extensionInstalled = (window as any).alby !== undefined;
 
-  if (!info || !balances) {
+  if (!info || !balances || !albyMe) {
     return <Loading />;
   }
 
