@@ -55,7 +55,7 @@ export function AppCardConnectionInfo({
             </div>
           )}
         </>
-      ) : (
+      ) : connection.requestMethods.indexOf("pay_invoice") > -1 ? (
         <>
           <div className="flex flex-row justify-between">
             <div className="mb-2">
@@ -71,6 +71,22 @@ export function AppCardConnectionInfo({
             <Button variant="outline">
               <PlusCircle className="w-4 h-4 mr-2" />
               Set Budget
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex flex-row justify-between h-full">
+            <div className="mb-2">
+              <p className="text-xs text-secondary-foreground font-medium">
+                Read only
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-1 flex-row justify-end items-center">
+            <Button variant="outline">
+              <PlusCircle className="w-4 h-4 mr-2" />
+              Enable Payments
             </Button>
           </div>
         </>
