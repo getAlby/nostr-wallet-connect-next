@@ -380,12 +380,9 @@ export default function Channels() {
               <AlertTitle>Low receiving capacity</AlertTitle>
               <AlertDescription>
                 You likely won't be able to receive payments until you{" "}
-                <ExternalLink
-                  className="underline"
-                  to="https://guides.getalby.com/user-guide/v/alby-account-and-browser-extension/alby-hub/liquidity/increase-receiving-capacity"
-                >
+                <Link className="underline" to="/channels/incoming">
                   increase your receiving capacity.
-                </ExternalLink>
+                </Link>
               </AlertDescription>
             </Alert>
           )}
@@ -401,12 +398,9 @@ export default function Channels() {
               <AlertTitle>Channel reserves unmet</AlertTitle>
               <AlertDescription>
                 You won't be able to make payments until you{" "}
-                <ExternalLink
-                  className="underline"
-                  to="https://guides.getalby.com/user-guide/v/alby-account-and-browser-extension/alby-hub/liquidity/increase-spending-balance"
-                >
+                <Link className="underline" to="/channels/outgoing">
                   increase your spending balance.
-                </ExternalLink>
+                </Link>
               </AlertDescription>
             </Alert>
           )}
@@ -645,7 +639,7 @@ export default function Channels() {
                       let channelWarning = "";
                       if (channel.localSpendableBalance < capacity * 0.1) {
                         channelWarning =
-                          "Sending balance low. You may have trouble sending payments through this channel.";
+                          "Spending balance low. You may have trouble sending payments through this channel.";
                       }
                       if (channel.localSpendableBalance > capacity * 0.9) {
                         channelWarning =
