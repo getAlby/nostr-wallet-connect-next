@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import React, { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "src/components/AppHeader";
@@ -316,15 +317,18 @@ function NewChannelInternal({ network }: { network: Network }) {
             </div>
           </>
         )}
-
+        {!showAdvanced && (
+          <Button
+            type="button"
+            variant="link"
+            className="text-muted-foreground text-xs"
+            onClick={() => setShowAdvanced((current) => !current)}
+          >
+            <ChevronDown className="w-4 h-4 mr-2" />
+            Advanced Options
+          </Button>
+        )}
         <Button size="lg">Next</Button>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => setShowAdvanced((current) => !current)}
-        >
-          {showAdvanced ? "Simple Options" : "Advanced Options"}
-        </Button>
       </form>
     </>
   );
