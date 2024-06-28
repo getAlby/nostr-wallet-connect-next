@@ -156,3 +156,6 @@ type BalancesResponse struct {
 }
 
 type NetworkGraphResponse = interface{}
+
+// default invoice expiry in seconds (1 day)
+const DEFAULT_INVOICE_EXPIRY = 86400

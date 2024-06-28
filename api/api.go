@@ -521,7 +521,7 @@ func (api *api) CreateInvoice(ctx context.Context, amount int64, description str
 	if api.svc.GetLNClient() == nil {
 		return nil, errors.New("LNClient not started")
 	}
-	invoice, err := api.svc.GetLNClient().MakeInvoice(ctx, amount, description, "", 86400)
+	invoice, err := api.svc.GetLNClient().MakeInvoice(ctx, amount, description, "", 0)
 	return invoice, err
 }
 
