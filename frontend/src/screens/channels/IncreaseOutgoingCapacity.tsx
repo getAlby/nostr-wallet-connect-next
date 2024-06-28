@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "src/components/ui/select";
+import { useBalances } from "src/hooks/useBalances";
 import { useChannelPeerSuggestions } from "src/hooks/useChannelPeerSuggestions";
 import { useInfo } from "src/hooks/useInfo";
 import { usePeers } from "src/hooks/usePeers";
@@ -44,6 +45,7 @@ export default function IncreaseOutgoingCapacity() {
 
 function NewChannelInternal({ network }: { network: Network }) {
   const { data: _channelPeerSuggestions } = useChannelPeerSuggestions();
+  const { data: balances } = useBalances();
   const navigate = useNavigate();
 
   const [order, setOrder] = React.useState<Partial<NewChannelOrder>>({
@@ -147,6 +149,12 @@ function NewChannelInternal({ network }: { network: Network }) {
   if (!channelPeerSuggestions) {
     return <Loading />;
   }
+
+  const openImmediately =
+    balances &&
+    order.amount &&
+    order.paymentMethod === "onchain" &&
+    +order.amount < balances.onchain.spendable;
 
   return (
     <>
@@ -327,7 +335,7 @@ function NewChannelInternal({ network }: { network: Network }) {
           </div>
         </div>
 
-        <Button size="lg">Next</Button>
+        <Button size="lg">{openImmediately ? "Open Channel" : "Next"}</Button>
       </form>
     </>
   );
