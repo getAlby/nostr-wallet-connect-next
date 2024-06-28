@@ -150,49 +150,57 @@ function NewChannelInternal({ network }: { network: Network }) {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
 
-    if (!showAdvanced) {
-      if (!channelPeerSuggestions) {
-        throw new Error("Channel Peer suggestions not loaded");
-      }
-      if (!channels) {
-        throw new Error("Channels not loaded");
-      }
-      const amount = parseInt(order.amount || "0");
-      if (!amount) {
-        throw new Error("No amount set");
+    try {
+      if (!showAdvanced) {
+        if (!channelPeerSuggestions) {
+          throw new Error("Channel Peer suggestions not loaded");
+        }
+        if (!channels) {
+          throw new Error("Channels not loaded");
+        }
+        const amount = parseInt(order.amount || "0");
+        if (!amount) {
+          throw new Error("No amount set");
+        }
+
+        // find the best channel partner
+        const okPartners = channelPeerSuggestions.filter(
+          (partner) =>
+            amount >= partner.minimumChannelSize &&
+            partner.network === network &&
+            partner.paymentMethod === "onchain" &&
+            partner.pubkey &&
+            !channels.some((channel) => channel.remotePubkey === partner.pubkey)
+        );
+
+        const partner = okPartners[0];
+        if (!partner) {
+          toast({
+            description:
+              "No ideal channel partner found. Please choose from the advanced options",
+          });
+          return;
+        }
+        order.paymentMethod = "onchain";
+        if (
+          order.paymentMethod !== "onchain" ||
+          partner.paymentMethod !== "onchain"
+        ) {
+          throw new Error("Unexpected order or partner payment method");
+        }
+        order.pubkey = partner.pubkey;
+        order.host = partner.host;
       }
 
-      // find the best channel partner
-      const okPartners = channelPeerSuggestions.filter(
-        (partner) =>
-          amount >= partner.minimumChannelSize &&
-          partner.network === network &&
-          partner.paymentMethod === "onchain" &&
-          partner.pubkey &&
-          !channels.some((channel) => channel.remotePubkey === partner.pubkey)
-      );
-
-      const partner = okPartners[0];
-      if (!partner) {
-        toast({
-          description:
-            "No ideal channel partner found. Please choose from the advanced options",
-        });
-        return;
-      }
-      order.paymentMethod = "onchain";
-      if (
-        order.paymentMethod !== "onchain" ||
-        partner.paymentMethod !== "onchain"
-      ) {
-        throw new Error("Unexpected order or partner payment method");
-      }
-      order.pubkey = partner.pubkey;
-      order.host = partner.host;
+      useChannelOrderStore.getState().setOrder(order as NewChannelOrder);
+      navigate("/channels/order");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        description: "Something went wrong: " + error,
+      });
+      console.error(error);
     }
-
-    useChannelOrderStore.getState().setOrder(order as NewChannelOrder);
-    navigate("/channels/order");
   }
 
   if (!channelPeerSuggestions) {
