@@ -8,6 +8,7 @@ import { Button } from "src/components/ui/button";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "src/components/ui/card";
@@ -207,6 +208,11 @@ export default function Send() {
               </div>
             )}
           </CardContent>
+          <CardFooter className="flex justify-end">
+            <Link to="/channels/outgoing">
+              <Button variant="outline">Top Up</Button>
+            </Link>
+          </CardFooter>
         </Card>
       </div>
     </div>
