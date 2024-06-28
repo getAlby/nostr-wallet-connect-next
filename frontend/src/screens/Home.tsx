@@ -46,7 +46,7 @@ function Home() {
   return (
     <>
       <AppHeader title={getGreeting(albyMe?.name)} description="" />
-
+      <OnboardingChecklist />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <ExternalLink to="https://www.getalby.com/dashboard">
           <Card>
@@ -108,8 +108,6 @@ function Home() {
           </ExternalLink>
         )}
       </div>
-
-      <OnboardingChecklist />
     </>
   );
 }
