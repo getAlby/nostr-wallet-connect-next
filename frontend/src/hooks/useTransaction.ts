@@ -7,9 +7,9 @@ const pollConfiguration: SWRConfiguration = {
   refreshInterval: 3000,
 };
 
-export function useInvoice(invoice: string, poll = false) {
+export function useTransaction(paymentHash: string, poll = false) {
   return useSWR<Transaction>(
-    invoice && `/api/invoice/${invoice}`,
+    paymentHash && `/api/invoice/${paymentHash}`,
     swrFetcher,
     poll ? pollConfiguration : undefined
   );

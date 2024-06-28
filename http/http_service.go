@@ -105,9 +105,9 @@ func (httpSvc *HttpService) RegisterSharedRoutes(e *echo.Echo) {
 	e.POST("/api/wallet/redeem-onchain-funds", httpSvc.redeemOnchainFundsHandler, authMiddleware)
 	e.POST("/api/wallet/sign-message", httpSvc.signMessageHandler, authMiddleware)
 	e.POST("/api/wallet/sync", httpSvc.walletSyncHandler, authMiddleware)
-	e.POST("/api/wallet/send", httpSvc.sendHandler, authMiddleware)
+	e.POST("/api/wallet/send", httpSvc.sendPaymentHandler, authMiddleware)
 	e.POST("/api/wallet/receive", httpSvc.receiveHandler, authMiddleware)
-	e.GET("/api/transactions", httpSvc.transactionsHandler, authMiddleware)
+	e.GET("/api/transactions", httpSvc.listTransactionsHandler, authMiddleware)
 	e.GET("/api/invoice/:paymentHash", httpSvc.lookupInvoiceHandler, authMiddleware)
 	e.GET("/api/balances", httpSvc.balancesHandler, authMiddleware)
 	e.POST("/api/reset-router", httpSvc.resetRouterHandler, authMiddleware)
@@ -396,15 +396,15 @@ func (httpSvc *HttpService) balancesHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, balances)
 }
 
-func (httpSvc *HttpService) sendHandler(c echo.Context) error {
-	var walletSendRequest api.WalletSendRequest
-	if err := c.Bind(&walletSendRequest); err != nil {
+func (httpSvc *HttpService) sendPaymentHandler(c echo.Context) error {
+	var sendPaymentRequest api.SendPaymentRequest
+	if err := c.Bind(&sendPaymentRequest); err != nil {
 		return c.JSON(http.StatusBadRequest, ErrorResponse{
 			Message: fmt.Sprintf("Bad request: %s", err.Error()),
 		})
 	}
 
-	paymentResponse, err := httpSvc.api.SendPayment(c.Request().Context(), walletSendRequest.Invoice)
+	paymentResponse, err := httpSvc.api.SendPayment(c.Request().Context(), sendPaymentRequest.Invoice)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -416,14 +416,14 @@ func (httpSvc *HttpService) sendHandler(c echo.Context) error {
 }
 
 func (httpSvc *HttpService) receiveHandler(c echo.Context) error {
-	var walletReceiveRequest api.WalletReceiveRequest
-	if err := c.Bind(&walletReceiveRequest); err != nil {
+	var makeInvoiceRequest api.MakeInvoiceRequest
+	if err := c.Bind(&makeInvoiceRequest); err != nil {
 		return c.JSON(http.StatusBadRequest, ErrorResponse{
 			Message: fmt.Sprintf("Bad request: %s", err.Error()),
 		})
 	}
 
-	invoice, err := httpSvc.api.CreateInvoice(c.Request().Context(), walletReceiveRequest.Amount, walletReceiveRequest.Description)
+	invoice, err := httpSvc.api.CreateInvoice(c.Request().Context(), makeInvoiceRequest.Amount, makeInvoiceRequest.Description)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -448,7 +448,7 @@ func (httpSvc *HttpService) lookupInvoiceHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, paymentInfo)
 }
 
-func (httpSvc *HttpService) transactionsHandler(c echo.Context) error {
+func (httpSvc *HttpService) listTransactionsHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	transactions, err := httpSvc.api.GetTransactions(ctx)

@@ -16,7 +16,7 @@ import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
 import { useToast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
-import { useInvoice } from "src/hooks/useInvoice";
+import { useTransaction } from "src/hooks/useTransaction";
 import { copyToClipboard } from "src/lib/clipboard";
 import { CreateInvoiceRequest, Transaction } from "src/types";
 import { request } from "src/utils/request";
@@ -29,7 +29,7 @@ export default function Receive() {
   const [description, setDescription] = React.useState<string>("");
   const [invoice, setInvoice] = React.useState<Transaction | null>(null);
   const [paymentDone, setPaymentDone] = React.useState(false);
-  const { data: invoiceData } = useInvoice(
+  const { data: invoiceData } = useTransaction(
     invoice ? invoice.payment_hash : "",
     true
   );

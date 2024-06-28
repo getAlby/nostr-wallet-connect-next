@@ -34,9 +34,9 @@ type API interface {
 	SignMessage(ctx context.Context, message string) (*SignMessageResponse, error)
 	RedeemOnchainFunds(ctx context.Context, toAddress string) (*RedeemOnchainFundsResponse, error)
 	GetBalances(ctx context.Context) (*BalancesResponse, error)
-	GetTransactions(ctx context.Context) (*TransactionsResponse, error)
+	GetTransactions(ctx context.Context) (*ListTransactionsResponse, error)
 	SendPayment(ctx context.Context, invoice string) (*SendPaymentResponse, error)
-	CreateInvoice(ctx context.Context, amount int64, description string) (*CreateInvoiceResponse, error)
+	CreateInvoice(ctx context.Context, amount int64, description string) (*MakeInvoiceResponse, error)
 	LookupInvoice(ctx context.Context, paymentHash string) (*LookupInvoiceResponse, error)
 	RequestMempoolApi(endpoint string) (interface{}, error)
 	GetInfo(ctx context.Context) (*InfoResponse, error)
@@ -184,9 +184,9 @@ type OnchainBalanceResponse = lnclient.OnchainBalanceResponse
 type BalancesResponse = lnclient.BalancesResponse
 
 type SendPaymentResponse = lnclient.PayInvoiceResponse
-type CreateInvoiceResponse = lnclient.Transaction
+type MakeInvoiceResponse = lnclient.Transaction
 type LookupInvoiceResponse = lnclient.Transaction
-type TransactionsResponse = []lnclient.Transaction
+type ListTransactionsResponse = []lnclient.Transaction
 
 // debug api
 type SendPaymentProbesRequest struct {
@@ -228,11 +228,11 @@ type SignMessageResponse struct {
 	Signature string `json:"signature"`
 }
 
-type WalletSendRequest struct {
+type SendPaymentRequest struct {
 	Invoice string `json:"invoice"`
 }
 
-type WalletReceiveRequest struct {
+type MakeInvoiceRequest struct {
 	Amount      int64  `json:"amount"`
 	Description string `json:"description"`
 }
