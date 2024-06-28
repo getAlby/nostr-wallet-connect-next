@@ -498,8 +498,7 @@ func (api *api) GetTransactions(ctx context.Context) (*TransactionsResponse, err
 	if api.svc.GetLNClient() == nil {
 		return nil, errors.New("LNClient not started")
 	}
-	// TODO: review parameters passed
-	transactions, err := api.svc.GetLNClient().ListTransactions(ctx, 0, 100000000000, 1000, 0, false, "")
+	transactions, err := api.svc.GetLNClient().ListTransactions(ctx, 0, 0, 20, 0, false, "")
 	if err != nil {
 		return nil, err
 	}
