@@ -23,7 +23,7 @@ import { useBalances } from "src/hooks/useBalances";
 import { useInfo } from "src/hooks/useInfo";
 
 function Wallet() {
-  const { data: info } = useInfo();
+  const { data: info, hasChannelManagement } = useInfo();
   const { data: balances } = useBalances();
 
   if (!info || !balances) {
@@ -88,11 +88,13 @@ function Wallet() {
               </div>
             )}
           </CardContent>
-          <CardFooter className="flex justify-end">
-            <Link to="/channels/outgoing">
-              <Button variant="outline">Top Up</Button>
-            </Link>
-          </CardFooter>
+          {hasChannelManagement && (
+            <CardFooter className="flex justify-end">
+              <Link to="/channels/outgoing">
+                <Button variant="outline">Top Up</Button>
+              </Link>
+            </CardFooter>
+          )}
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -120,11 +122,13 @@ function Wallet() {
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex justify-end">
-            <Link to="/channels/incoming">
-              <Button variant="outline">Increase</Button>
-            </Link>
-          </CardFooter>
+          {hasChannelManagement && (
+            <CardFooter className="flex justify-end">
+              <Link to="/channels/incoming">
+                <Button variant="outline">Increase</Button>
+              </Link>
+            </CardFooter>
+          )}
         </Card>
       </div>
 

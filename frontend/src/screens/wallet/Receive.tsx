@@ -18,6 +18,7 @@ import { Label } from "src/components/ui/label";
 import { LoadingButton } from "src/components/ui/loading-button";
 import { useToast } from "src/components/ui/use-toast";
 import { useBalances } from "src/hooks/useBalances";
+import { useInfo } from "src/hooks/useInfo";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useTransaction } from "src/hooks/useTransaction";
 import { copyToClipboard } from "src/lib/clipboard";
@@ -25,6 +26,7 @@ import { CreateInvoiceRequest, Transaction } from "src/types";
 import { request } from "src/utils/request";
 
 export default function Receive() {
+  const { hasChannelManagement } = useInfo();
   const { data: balances } = useBalances();
   const { data: csrf } = useCSRF();
   const { toast } = useToast();
@@ -238,11 +240,13 @@ export default function Receive() {
               )}
             </div>
           </CardContent>
-          <CardFooter className="flex justify-end">
-            <Link to="/channels/incoming">
-              <Button variant="outline">Increase</Button>
-            </Link>
-          </CardFooter>
+          {hasChannelManagement && (
+            <CardFooter className="flex justify-end">
+              <Link to="/channels/incoming">
+                <Button variant="outline">Increase</Button>
+              </Link>
+            </CardFooter>
+          )}
         </Card>
       </div>
     </div>
