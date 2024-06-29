@@ -71,7 +71,7 @@ func (svc *dbService) CreateApp(name string, pubkey string, maxAmount uint64, bu
 	}
 
 	svc.eventPublisher.Publish(&events.Event{
-		Event: "connection_created",
+		Event: "app_created",
 		Properties: map[string]interface{}{
 			"name": name,
 		},
