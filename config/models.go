@@ -40,6 +40,7 @@ type AppConfig struct {
 	PhoenixdAuthorization string `envconfig:"PHOENIXD_AUTHORIZATION"`
 	GoProfilerAddr        string `envconfig:"GO_PROFILER_ADDR"`
 	DdProfilerEnabled     bool   `envconfig:"DD_PROFILER_ENABLED" default:"false"`
+	UpdateUrl             string `envconfig:"UPDATE_URL" default:"https://guides.getalby.com/user-guide/v/alby-account-and-browser-extension/alby-hub/updating-your-hub"`
 }
 
 func (c *AppConfig) IsDefaultClientId() bool {

@@ -155,6 +155,7 @@ type InfoResponse struct {
 	Version              string `json:"version"`
 	LatestVersion        string `json:"latestVersion"`
 	Network              string `json:"network"`
+	UpdateUrl            string `json:"updateUrl"`
 }
 
 type EncryptedMnemonicResponse struct {

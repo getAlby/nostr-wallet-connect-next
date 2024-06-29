@@ -206,32 +206,34 @@ export default function AppLayout() {
                       <span className="">Alby Hub</span>
                     </Link>
 
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <ExternalLink
-                            to="https://getalby.com/hub_deployment/edit" // TODO: link to general update page
-                            className="font-semibold text-xl"
-                          >
-                            <span className="text-xs flex items-center text-muted-foreground">
-                              {info?.version}&nbsp;
-                              {upToDate ? (
-                                <ShieldCheckIcon className="w-4 h-4" />
-                              ) : (
-                                <ShieldAlertIcon className="w-4 h-4" />
-                              )}
-                            </span>
-                          </ExternalLink>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {upToDate ? (
-                            <p>Alby Hub is up to date!</p>
-                          ) : (
-                            <p>Alby Hub {info?.latestVersion} available!</p>
-                          )}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    {info && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <ExternalLink
+                              to={info.updateUrl}
+                              className="font-semibold text-xl"
+                            >
+                              <span className="text-xs flex items-center text-muted-foreground">
+                                {info.version}&nbsp;
+                                {upToDate ? (
+                                  <ShieldCheckIcon className="w-4 h-4" />
+                                ) : (
+                                  <ShieldAlertIcon className="w-4 h-4" />
+                                )}
+                              </span>
+                            </ExternalLink>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {upToDate ? (
+                              <p>Alby Hub is up to date!</p>
+                            ) : (
+                              <p>Alby Hub {info.latestVersion} available!</p>
+                            )}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </div>
                   <MainMenuContent />
                 </nav>

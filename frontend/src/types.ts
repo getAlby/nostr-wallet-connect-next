@@ -148,6 +148,7 @@ export interface InfoResponse {
   network?: Network;
   version: string;
   latestVersion: string;
+  updateUrl: string;
 }
 
 export type Network = "bitcoin" | "testnet" | "signet";
