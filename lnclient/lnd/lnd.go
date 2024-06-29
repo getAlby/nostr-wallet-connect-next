@@ -802,7 +802,7 @@ func (svc *LNDService) DisconnectPeer(ctx context.Context, peerId string) error 
 	return nil
 }
 
-func (svc *LNDService) GetSupportedNIP47Capabilities() string {
+func (svc *LNDService) GetSupportedNIP47Methods() string {
 	return "pay_invoice pay_keysend get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice multi_pay_keysend sign_message"
 }
 

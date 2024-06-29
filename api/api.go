@@ -65,7 +65,14 @@ func (api *api) CreateApp(createAppRequest *CreateAppRequest) (*CreateAppRespons
 
 	for _, m := range requestMethods {
 		//if we don't support this method, we return an error
-		if !strings.Contains(api.svc.GetLNClient().GetSupportedNIP47Capabilities(), m) {
+		if !strings.Contains(api.svc.GetLNClient().GetSupportedNIP47Methods(), m) {
+			return nil, fmt.Errorf("did not recognize request method: %s", m)
+		}
+	}
+
+	for _, m := range notificationTypes {
+		//if we don't support this method, we return an error
+		if !strings.Contains(api.svc.GetLNClient().GetSupportedNIP47Methods(), m) {
 			return nil, fmt.Errorf("did not recognize request method: %s", m)
 		}
 	}
@@ -691,18 +698,21 @@ func (api *api) GetWalletCapabilities(ctx context.Context) (*WalletCapabilitiesR
 		return nil, errors.New("LNClient not started")
 	}
 
-	// capabilties = NIP-47 methods + notifications
-	capabilities := strings.Split(api.svc.GetLNClient().GetSupportedNIP47Capabilities(), " ")
-	supportedNotificationTypes := strings.Split(api.svc.GetLNClient().GetSupportedNIP47NotificationTypes(), " ")
-	// FIXME: permissions need to be decoupled from NIP-47 methods and capabilities
-	supportedPermissions := utils.Filter(capabilities, func(s string) bool {
+	methods := strings.Split(api.svc.GetLNClient().GetSupportedNIP47Methods(), " ")
+	notificationTypes := strings.Split(api.svc.GetLNClient().GetSupportedNIP47NotificationTypes(), " ")
+
+	// FIXME: permissions need to be decoupled from NIP-47 methods and notifications
+	permissions := utils.Filter(methods, func(s string) bool {
 		return s != nip47.PAY_KEYSEND_METHOD && s != nip47.MULTI_PAY_INVOICE_METHOD && s != nip47.MULTI_PAY_KEYSEND_METHOD
 	})
+	if len(notificationTypes) > 0 {
+		permissions = append(permissions, "notifications")
+	}
 
 	return &WalletCapabilitiesResponse{
-		Capabilities:               capabilities,
-		SupportedNotificationTypes: supportedNotificationTypes,
-		SupportedPermissions:       supportedPermissions,
+		Methods:           methods,
+		NotificationTypes: notificationTypes,
+		Scopes:            permissions,
 	}, nil
 }
 

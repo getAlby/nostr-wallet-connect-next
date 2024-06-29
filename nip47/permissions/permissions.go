@@ -105,7 +105,7 @@ func (svc *permissionsService) GetPermittedMethods(app *db.App, lnClient lnclien
 	}
 
 	// only return methods supported by the lnClient
-	lnClientSupportedMethods := strings.Split(lnClient.GetSupportedNIP47Capabilities(), " ")
+	lnClientSupportedMethods := strings.Split(lnClient.GetSupportedNIP47Methods(), " ")
 	requestMethods = utils.Filter(requestMethods, func(requestMethod string) bool {
 		return slices.Contains(lnClientSupportedMethods, requestMethod)
 	})

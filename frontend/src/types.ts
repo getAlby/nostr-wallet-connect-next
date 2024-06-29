@@ -28,14 +28,17 @@ export type BackendType =
   | "PHOENIX"
   | "CASHU";
 
-export type RequestMethodType =
-  | "pay_invoice"
-  | "get_balance"
+export type Nip47RequestMethod =
   | "get_info"
+  | "get_balance"
   | "make_invoice"
+  | "pay_invoice"
+  | "pay_keysend"
   | "lookup_invoice"
   | "list_transactions"
-  | "sign_message";
+  | "sign_message"
+  | "multi_pay_invoice"
+  | "multi_pay_keysend";
 
 export type BudgetRenewalType =
   | "daily"
@@ -45,20 +48,20 @@ export type BudgetRenewalType =
   | "never"
   | "";
 
-// TODO: permissions is not the same as request methods (one payment permission gives multiple request methods)
-// TODO: move other permissions
-export type PermissionType =
-  | RequestMethodType
-  | typeof NIP_47_NOTIFICATIONS_PERMISSION;
-
-export type Nip47Capability =
-  | RequestMethodType
-  | typeof NIP_47_NOTIFICATIONS_PERMISSION;
+export type Scope =
+  | "pay_invoice" // also used for pay_keysend, multi_pay_invoice, multi_pay_keysend
+  | "get_balance"
+  | "get_info"
+  | "make_invoice"
+  | "lookup_invoice"
+  | "list_transactions"
+  | "sign_message"
+  | "notifications"; // covers all notification types
 
 export type Nip47NotificationType = "payment_received" | "payment_sent";
 
 export type IconMap = {
-  [key in PermissionType]: LucideIcon;
+  [key in Scope]: LucideIcon;
 };
 
 export const iconMap: IconMap = {
@@ -73,9 +76,9 @@ export const iconMap: IconMap = {
 };
 
 export type WalletCapabilities = {
-  capabilities: Nip47Capability[];
-  supportedPermissions: PermissionType[];
-  supportedNotificationTypes: Nip47NotificationType[];
+  methods: Nip47RequestMethod[];
+  scopes: Scope[];
+  notificationTypes: Nip47NotificationType[];
 };
 
 export const validBudgetRenewals: BudgetRenewalType[] = [
@@ -86,7 +89,7 @@ export const validBudgetRenewals: BudgetRenewalType[] = [
   "never",
 ];
 
-export const nip47MethodDescriptions: Record<RequestMethodType, string> = {
+export const scopeDescriptions: Record<Scope, string> = {
   [NIP_47_GET_BALANCE_METHOD]: "Read your balance",
   [NIP_47_GET_INFO_METHOD]: "Read your node info",
   [NIP_47_LIST_TRANSACTIONS_METHOD]: "Read transaction history",
@@ -94,11 +97,6 @@ export const nip47MethodDescriptions: Record<RequestMethodType, string> = {
   [NIP_47_MAKE_INVOICE_METHOD]: "Create invoices",
   [NIP_47_PAY_INVOICE_METHOD]: "Send payments",
   [NIP_47_SIGN_MESSAGE_METHOD]: "Sign messages",
-};
-
-// TODO: merge with nip47MethodDescriptions
-export const nip47PermissionDescriptions: Record<PermissionType, string> = {
-  ...nip47MethodDescriptions,
   [NIP_47_NOTIFICATIONS_PERMISSION]: "Receive wallet notifications",
 };
 
@@ -133,16 +131,15 @@ export interface App {
   lastEventAt?: string;
   expiresAt?: string;
 
-  // TODO: rename
-  requestMethods: PermissionType[];
+  scopes: Scope[];
   maxAmount: number;
   budgetUsage: number;
   budgetRenewal: string;
 }
 
 export interface AppPermissions {
-  // TODO: rename to permissions
-  requestMethods: Set<PermissionType>;
+  requestMethods: Set<Nip47RequestMethod>;
+  notificationTypes: Set<Nip47NotificationType>;
   maxAmount: number;
   budgetRenewal: BudgetRenewalType;
   expiresAt?: Date;
@@ -167,6 +164,17 @@ export type Network = "bitcoin" | "testnet" | "signet";
 
 export interface EncryptedMnemonicResponse {
   mnemonic: string;
+}
+
+export interface CreateAppRequest {
+  name: string;
+  pubkey: string;
+  maxAmount: number;
+  budgetRenewal: string;
+  expiresAt: string | undefined;
+  requestMethods: Nip47RequestMethod[];
+  notificationTypes: Nip47NotificationType[];
+  returnTo: string;
 }
 
 export interface CreateAppResponse {

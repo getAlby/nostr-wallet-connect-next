@@ -71,7 +71,7 @@ type LNClient interface {
 	GetStorageDir() (string, error)
 	GetNetworkGraph(nodeIds []string) (NetworkGraphResponse, error)
 	UpdateLastWalletSyncRequest()
-	GetSupportedNIP47Capabilities() string
+	GetSupportedNIP47Methods() string
 	GetSupportedNIP47NotificationTypes() string
 }
 

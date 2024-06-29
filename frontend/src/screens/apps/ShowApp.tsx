@@ -5,7 +5,13 @@ import { useApp } from "src/hooks/useApp";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useDeleteApp } from "src/hooks/useDeleteApp";
 import { useInfo } from "src/hooks/useInfo";
-import { AppPermissions, BudgetRenewalType, PermissionType } from "src/types";
+import {
+  AppPermissions,
+  BudgetRenewalType,
+  Nip47NotificationType,
+  Nip47RequestMethod,
+  Scope,
+} from "src/types";
 
 import { handleRequestError } from "src/utils/handleRequestError";
 import { request } from "src/utils/request"; // build the project for this to appear
@@ -50,16 +56,29 @@ function ShowApp() {
   });
 
   const [permissions, setPermissions] = React.useState<AppPermissions>({
-    requestMethods: new Set<PermissionType>(),
+    requestMethods: new Set<Nip47RequestMethod>(),
+    notificationTypes: new Set<Nip47NotificationType>(),
     maxAmount: 0,
     budgetRenewal: "",
     expiresAt: undefined,
   });
 
   React.useEffect(() => {
+    const scopesToRequestMethods = (
+      _scopes: Scope[]
+    ): Set<Nip47RequestMethod> => {
+      throw new Error("TODO - map should come from backend");
+    };
+    const scopesToNotificationTypes = (
+      _scopes: Scope[]
+    ): Set<Nip47NotificationType> => {
+      throw new Error("TODO - map should come from backend");
+    };
+
     if (app) {
       setPermissions({
-        requestMethods: new Set(app.requestMethods as PermissionType[]),
+        requestMethods: scopesToRequestMethods(app.scopes),
+        notificationTypes: scopesToNotificationTypes(app.scopes),
         maxAmount: app.maxAmount,
         budgetRenewal: app.budgetRenewal as BudgetRenewalType,
         expiresAt: app.expiresAt ? new Date(app.expiresAt) : undefined,
@@ -195,9 +214,9 @@ function ShowApp() {
                           type="button"
                           variant="outline"
                           onClick={() => {
-                            setPermissions({
+                            /*setPermissions({
                               requestMethods: new Set(
-                                app.requestMethods as PermissionType[]
+                                app.requestMethods as Scope[]
                               ),
                               maxAmount: app.maxAmount,
                               budgetRenewal:
@@ -205,7 +224,7 @@ function ShowApp() {
                               expiresAt: app.expiresAt
                                 ? new Date(app.expiresAt)
                                 : undefined,
-                            });
+                            });*/
                             setEditMode(!editMode);
                             // TODO: clicking cancel and then editing again will leave the days option wrong
                           }}

@@ -676,7 +676,7 @@ func (gs *GreenlightService) DisconnectPeer(ctx context.Context, peerId string) 
 	return nil
 }
 
-func (gs *GreenlightService) GetSupportedNIP47Capabilities() string {
+func (gs *GreenlightService) GetSupportedNIP47Methods() string {
 	return "pay_invoice pay_keysend get_balance get_info make_invoice lookup_invoice list_transactions multi_pay_invoice multi_pay_keysend sign_message"
 }
 

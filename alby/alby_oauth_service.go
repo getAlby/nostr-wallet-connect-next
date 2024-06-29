@@ -388,7 +388,7 @@ func (svc *albyOAuthService) LinkAccount(ctx context.Context, lnClient lnclient.
 		1_000_000,
 		nip47.BUDGET_RENEWAL_MONTHLY,
 		nil,
-		strings.Split(lnClient.GetSupportedNIP47Capabilities(), " "),
+		strings.Split(lnClient.GetSupportedNIP47Methods(), " "),
 	)
 
 	if err != nil {

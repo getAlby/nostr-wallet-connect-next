@@ -5,8 +5,10 @@ import { useCSRF } from "src/hooks/useCSRF";
 import {
   AppPermissions,
   BudgetRenewalType,
+  CreateAppRequest,
   CreateAppResponse,
-  PermissionType,
+  Nip47NotificationType,
+  Nip47RequestMethod,
   WalletCapabilities,
   validBudgetRenewals,
 } from "src/types";
@@ -61,35 +63,61 @@ const NewAppInternal = ({ capabilities }: NewAppInternalProps) => {
   const budgetRenewalParam = queryParams.get(
     "budget_renewal"
   ) as BudgetRenewalType;
+
   const reqMethodsParam = queryParams.get("request_methods") ?? "";
+  const notificationTypesParam = queryParams.get("notification_types") ?? "";
   const maxAmountParam = queryParams.get("max_amount") ?? "";
   const expiresAtParam = queryParams.get("expires_at") ?? "";
 
-  const initialRequestMethods: Set<PermissionType> = React.useMemo(() => {
+  const initialRequestMethods: Set<Nip47RequestMethod> = React.useMemo(() => {
     const methods = reqMethodsParam
       ? reqMethodsParam.split(" ")
-      : capabilities.supportedPermissions;
-    // Create a Set of PermissionType from the array
-    const requestMethodsSet = new Set<PermissionType>(
-      methods as PermissionType[]
-    );
+      : capabilities.methods;
 
-    const unsupportedCapabilities = Array.from(requestMethodsSet).filter(
-      (method) => capabilities.capabilities.indexOf(method) < 0
+    const requestMethodsSet = new Set<Nip47RequestMethod>(
+      methods as Nip47RequestMethod[]
     );
-    if (unsupportedCapabilities.length) {
+    const unsupportedMethods = Array.from(requestMethodsSet).filter(
+      (method) => capabilities.methods.indexOf(method) < 0
+    );
+    if (unsupportedMethods.length) {
       setUnsupportedError(
-        "This app requests capabilties not supported by your wallet: " +
-          unsupportedCapabilities
+        "This app requests methods not supported by your wallet: " +
+          unsupportedMethods
       );
     }
-
     return requestMethodsSet;
-  }, [
-    capabilities.capabilities,
-    capabilities.supportedPermissions,
-    reqMethodsParam,
-  ]);
+  }, [capabilities.methods, reqMethodsParam]);
+
+  const initialNotificationTypes: Set<Nip47NotificationType> =
+    React.useMemo(() => {
+      const notificationTypes = notificationTypesParam
+        ? notificationTypesParam.split(" ")
+        : capabilities.notificationTypes;
+
+      const notificationTypesSet = new Set<Nip47NotificationType>(
+        notificationTypes as Nip47NotificationType[]
+      );
+      const unsupportedNotificationTypes = Array.from(
+        notificationTypesSet
+      ).filter(
+        (notificationType) =>
+          capabilities.notificationTypes.indexOf(notificationType) < 0
+      );
+      if (unsupportedNotificationTypes.length) {
+        setUnsupportedError(
+          "This app requests methods not supported by your wallet: " +
+            unsupportedNotificationTypes
+        );
+      }
+      return notificationTypesSet;
+    }, [capabilities.notificationTypes, notificationTypesParam]);
+
+  // TODO: check unsupported notifications here from notificationTypesParam
+
+  // TODO: map request methods to permissions here
+
+  // TODO: DB rename
 
   const parseExpiresParam = (expiresParam: string): Date | undefined => {
     const expiresParamTimestamp = parseInt(expiresParam);
@@ -101,6 +129,7 @@ const NewAppInternal = ({ capabilities }: NewAppInternalProps) => {
 
   const [permissions, setPermissions] = useState<AppPermissions>({
     requestMethods: initialRequestMethods,
+    notificationTypes: initialNotificationTypes,
     maxAmount: parseInt(maxAmountParam || "100000"),
     budgetRenewal: validBudgetRenewals.includes(budgetRenewalParam)
       ? budgetRenewalParam
@@ -115,20 +144,24 @@ const NewAppInternal = ({ capabilities }: NewAppInternalProps) => {
     }
 
     try {
+      const createAppRequest: CreateAppRequest = {
+        name: appName,
+        pubkey,
+        budgetRenewal: permissions.budgetRenewal,
+        maxAmount: permissions.maxAmount,
+        requestMethods: Array.from(permissions.requestMethods),
+        notificationTypes: Array.from(permissions.notificationTypes),
+        expiresAt: permissions.expiresAt?.toISOString(),
+        returnTo: returnTo,
+      };
+
       const createAppResponse = await request<CreateAppResponse>("/api/apps", {
         method: "POST",
         headers: {
           "X-CSRF-Token": csrf,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: appName,
-          pubkey,
-          ...permissions,
-          requestMethods: [...permissions.requestMethods].join(" "),
-          expiresAt: permissions.expiresAt?.toISOString(),
-          returnTo: returnTo,
-        }),
+        body: JSON.stringify(createAppRequest),
       });
 
       if (!createAppResponse) {

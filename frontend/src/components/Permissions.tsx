@@ -15,11 +15,13 @@ import { cn } from "src/lib/utils";
 import {
   AppPermissions,
   BudgetRenewalType,
-  PermissionType,
+  Nip47NotificationType,
+  Nip47RequestMethod,
+  Scope,
   budgetOptions,
   expiryOptions,
   iconMap,
-  nip47PermissionDescriptions,
+  scopeDescriptions,
   validBudgetRenewals,
 } from "src/types";
 
@@ -55,18 +57,52 @@ const Permissions: React.FC<PermissionsProps> = ({
     onPermissionsChange(updatedPermissions);
   };
 
-  const handleRequestMethodChange = (requestMethod: PermissionType) => {
+  const toScopes = (
+    _requestMethods: Set<Nip47RequestMethod>,
+    _notificationTypes: Set<Nip47NotificationType>
+  ): Set<Scope> => {
+    throw new Error("TODO - map should come from backend");
+  };
+
+  const handleScopeChange = (scope: Scope) => {
     if (!canEditPermissions) {
       return;
     }
 
+    const scopeToRequestMethods = (_scope: Scope): Nip47RequestMethod[] => {
+      throw new Error("TODO - map should come from backend");
+    };
+    const scopeToNotificationTypes = (
+      _scope: Scope
+    ): Nip47NotificationType[] => {
+      throw new Error("TODO - map should come from backend");
+    };
+
+    const scopeRequestMethods = scopeToRequestMethods(scope);
+    const scopeNotificationTypes = scopeToNotificationTypes(scope);
+
     const newRequestMethods = new Set(permissions.requestMethods);
-    if (newRequestMethods.has(requestMethod)) {
-      newRequestMethods.delete(requestMethod);
-    } else {
-      newRequestMethods.add(requestMethod);
+    for (const method of scopeRequestMethods) {
+      if (newRequestMethods.has(method)) {
+        newRequestMethods.delete(method);
+      } else {
+        newRequestMethods.add(method);
+      }
     }
-    handlePermissionsChange({ requestMethods: newRequestMethods });
+
+    const newNotificationTypes = new Set(permissions.notificationTypes);
+    for (const notificationType of scopeNotificationTypes) {
+      if (newNotificationTypes.has(notificationType)) {
+        newNotificationTypes.delete(notificationType);
+      } else {
+        newNotificationTypes.add(notificationType);
+      }
+    }
+
+    handlePermissionsChange({
+      requestMethods: newRequestMethods,
+      notificationTypes: newNotificationTypes,
+    });
   };
 
   const handleMaxAmountChange = (amount: number) => {
@@ -102,22 +138,22 @@ const Permissions: React.FC<PermissionsProps> = ({
     <div>
       <div className="mb-6">
         <ul className="flex flex-col w-full">
-          {capabilities?.supportedPermissions.map((rm, index) => {
-            const RequestMethodIcon = iconMap[rm];
+          {capabilities?.scopes.map((scope, index) => {
+            const ScopeIcon = iconMap[scope];
             return (
               <li
                 key={index}
                 className={cn(
                   "w-full",
-                  rm == "pay_invoice" ? "order-last" : "",
-                  !canEditPermissions && !permissions.requestMethods.has(rm)
+                  scope == "pay_invoice" ? "order-last" : "",
+                  /*!canEditPermissions && !permissions.requestMethods.has(rm)
                     ? "hidden"
-                    : ""
+                    : */ ""
                 )}
               >
                 <div className="flex items-center mb-2">
-                  {RequestMethodIcon && (
-                    <RequestMethodIcon
+                  {ScopeIcon && (
+                    <ScopeIcon
                       className={cn(
                         "text-muted-foreground w-4 mr-3",
                         canEditPermissions ? "hidden" : ""
@@ -125,23 +161,26 @@ const Permissions: React.FC<PermissionsProps> = ({
                     />
                   )}
                   <Checkbox
-                    id={rm}
+                    id={scope}
                     className={cn("mr-2", !canEditPermissions ? "hidden" : "")}
-                    onCheckedChange={() => handleRequestMethodChange(rm)}
-                    checked={permissions.requestMethods.has(rm)}
+                    onCheckedChange={() => handleScopeChange(scope)}
+                    checked={toScopes(
+                      permissions.requestMethods,
+                      permissions.notificationTypes
+                    ).has(scope)}
                   />
                   <Label
-                    htmlFor={rm}
+                    htmlFor={scope}
                     className={`${canEditPermissions && "cursor-pointer"}`}
                   >
-                    {nip47PermissionDescriptions[rm]}
+                    {scopeDescriptions[scope]}
                   </Label>
                 </div>
-                {rm == "pay_invoice" && (
+                {scope == "pay_invoice" && (
                   <div
                     className={cn(
                       "pt-2 pb-2 pl-5 ml-2.5 border-l-2 border-l-primary",
-                      !permissions.requestMethods.has(rm)
+                      !permissions.requestMethods.has(scope)
                         ? canEditPermissions
                           ? "pointer-events-none opacity-30"
                           : "hidden"

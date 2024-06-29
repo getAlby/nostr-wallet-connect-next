@@ -83,13 +83,14 @@ type UpdateAppRequest struct {
 }
 
 type CreateAppRequest struct {
-	Name           string `json:"name"`
-	Pubkey         string `json:"pubkey"`
-	MaxAmount      uint64 `json:"maxAmount"`
-	BudgetRenewal  string `json:"budgetRenewal"`
-	ExpiresAt      string `json:"expiresAt"`
-	RequestMethods string `json:"requestMethods"`
-	ReturnTo       string `json:"returnTo"`
+	Name              string   `json:"name"`
+	Pubkey            string   `json:"pubkey"`
+	MaxAmount         uint64   `json:"maxAmount"`
+	BudgetRenewal     string   `json:"budgetRenewal"`
+	ExpiresAt         string   `json:"expiresAt"`
+	RequestMethods    []string `json:"requestMethods"`
+	NotificationTypes []string `json:"notificationTypes"`
+	ReturnTo          string   `json:"returnTo"`
 }
 
 type StartRequest struct {
@@ -264,7 +265,7 @@ type NewInstantChannelInvoiceResponse struct {
 }
 
 type WalletCapabilitiesResponse struct {
-	Capabilities               []string `json:"capabilities"`
-	SupportedPermissions       []string `json:"supportedPermissions"`
-	SupportedNotificationTypes []string `json:"supportedNotificationTypes"`
+	Scopes            []string `json:"scopes"`
+	Methods           []string `json:"methods"`
+	NotificationTypes []string `json:"notificationTypes"`
 }
