@@ -57,27 +57,11 @@ func (api *api) CreateApp(createAppRequest *CreateAppRequest) (*CreateAppRespons
 		return nil, fmt.Errorf("invalid expiresAt: %v", err)
 	}
 
-	// request methods are a space separated list of known request kinds TODO: it should be a string array in the API
-	requestMethods := strings.Split(createAppRequest.RequestMethods, " ")
-	if len(requestMethods) == 0 {
-		return nil, fmt.Errorf("won't create an app without request methods")
+	if len(createAppRequest.Scopes) == 0 {
+		return nil, fmt.Errorf("won't create an app without scopes")
 	}
 
-	for _, m := range requestMethods {
-		//if we don't support this method, we return an error
-		if !strings.Contains(api.svc.GetLNClient().GetSupportedNIP47Methods(), m) {
-			return nil, fmt.Errorf("did not recognize request method: %s", m)
-		}
-	}
-
-	for _, m := range notificationTypes {
-		//if we don't support this method, we return an error
-		if !strings.Contains(api.svc.GetLNClient().GetSupportedNIP47Methods(), m) {
-			return nil, fmt.Errorf("did not recognize request method: %s", m)
-		}
-	}
-
-	app, pairingSecretKey, err := api.dbSvc.CreateApp(createAppRequest.Name, createAppRequest.Pubkey, createAppRequest.MaxAmount, createAppRequest.BudgetRenewal, expiresAt, requestMethods)
+	app, pairingSecretKey, err := api.dbSvc.CreateApp(createAppRequest.Name, createAppRequest.Pubkey, createAppRequest.MaxAmount, createAppRequest.BudgetRenewal, expiresAt, createAppRequest.Scopes)
 
 	if err != nil {
 		return nil, err
@@ -116,11 +100,10 @@ func (api *api) UpdateApp(userApp *db.App, updateAppRequest *UpdateAppRequest) e
 	maxAmount := updateAppRequest.MaxAmount
 	budgetRenewal := updateAppRequest.BudgetRenewal
 
-	requestMethods := updateAppRequest.RequestMethods
-	if requestMethods == "" {
+	if len(updateAppRequest.Scopes) == 0 {
 		return fmt.Errorf("won't update an app to have no request methods")
 	}
-	newRequestMethods := strings.Split(requestMethods, " ")
+	newScopes := updateAppRequest.Scopes
 
 	expiresAt, err := api.parseExpiresAt(updateAppRequest.ExpiresAt)
 	if err != nil {
@@ -143,17 +126,17 @@ func (api *api) UpdateApp(userApp *db.App, updateAppRequest *UpdateAppRequest) e
 			return err
 		}
 
-		existingMethodMap := make(map[string]bool)
+		existingScopeMap := make(map[string]bool)
 		for _, perm := range existingPermissions {
-			existingMethodMap[perm.RequestMethod] = true
+			existingScopeMap[perm.Scope] = true
 		}
 
 		// Add new permissions
-		for _, method := range newRequestMethods {
-			if !existingMethodMap[method] {
+		for _, method := range newScopes {
+			if !existingScopeMap[method] {
 				perm := db.AppPermission{
 					App:           *userApp,
-					RequestMethod: method,
+					Scope:         method,
 					ExpiresAt:     expiresAt,
 					MaxAmount:     int(maxAmount),
 					BudgetRenewal: budgetRenewal,
@@ -162,12 +145,12 @@ func (api *api) UpdateApp(userApp *db.App, updateAppRequest *UpdateAppRequest) e
 					return err
 				}
 			}
-			delete(existingMethodMap, method)
+			delete(existingScopeMap, method)
 		}
 
 		// Remove old permissions
-		for method := range existingMethodMap {
-			if err := tx.Where("app_id = ? AND request_method = ?", userApp.ID, method).Delete(&db.AppPermission{}).Error; err != nil {
+		for method := range existingScopeMap {
+			if err := tx.Where("app_id = ? AND scope = ?", userApp.ID, method).Delete(&db.AppPermission{}).Error; err != nil {
 				return err
 			}
 		}
@@ -196,11 +179,11 @@ func (api *api) GetApp(userApp *db.App) *App {
 	requestMethods := []string{}
 	for _, appPerm := range appPermissions {
 		expiresAt = appPerm.ExpiresAt
-		if appPerm.RequestMethod == nip47.PAY_INVOICE_METHOD {
+		if appPerm.Scope == nip47.PAY_INVOICE_METHOD {
 			//find the pay_invoice-specific permissions
 			paySpecificPermission = appPerm
 		}
-		requestMethods = append(requestMethods, appPerm.RequestMethod)
+		requestMethods = append(requestMethods, appPerm.Scope)
 	}
 
 	//renewsIn := ""
@@ -236,11 +219,11 @@ func (api *api) ListApps() ([]App, error) {
 	dbApps := []db.App{}
 	api.db.Find(&dbApps)
 
-	permissions := []db.AppPermission{}
-	api.db.Find(&permissions)
+	appPermissions := []db.AppPermission{}
+	api.db.Find(&appPermissions)
 
 	permissionsMap := make(map[uint][]db.AppPermission)
-	for _, perm := range permissions {
+	for _, perm := range appPermissions {
 		permissionsMap[perm.AppId] = append(permissionsMap[perm.AppId], perm)
 	}
 
@@ -255,14 +238,14 @@ func (api *api) ListApps() ([]App, error) {
 			NostrPubkey: userApp.NostrPubkey,
 		}
 
-		for _, permission := range permissionsMap[userApp.ID] {
-			apiApp.RequestMethods = append(apiApp.RequestMethods, permission.RequestMethod)
-			apiApp.ExpiresAt = permission.ExpiresAt
-			if permission.RequestMethod == nip47.PAY_INVOICE_METHOD {
-				apiApp.BudgetRenewal = permission.BudgetRenewal
-				apiApp.MaxAmount = uint64(permission.MaxAmount)
+		for _, appPermission := range permissionsMap[userApp.ID] {
+			apiApp.RequestMethods = append(apiApp.RequestMethods, appPermission.Scope)
+			apiApp.ExpiresAt = appPermission.ExpiresAt
+			if appPermission.Scope == permissions.PAY_INVOICE_SCOPE {
+				apiApp.BudgetRenewal = appPermission.BudgetRenewal
+				apiApp.MaxAmount = uint64(appPermission.MaxAmount)
 				if apiApp.MaxAmount > 0 {
-					apiApp.BudgetUsage = api.permissionsSvc.GetBudgetUsage(&permission)
+					apiApp.BudgetUsage = api.permissionsSvc.GetBudgetUsage(&appPermission)
 				}
 			}
 		}
@@ -701,18 +684,17 @@ func (api *api) GetWalletCapabilities(ctx context.Context) (*WalletCapabilitiesR
 	methods := strings.Split(api.svc.GetLNClient().GetSupportedNIP47Methods(), " ")
 	notificationTypes := strings.Split(api.svc.GetLNClient().GetSupportedNIP47NotificationTypes(), " ")
 
-	// FIXME: permissions need to be decoupled from NIP-47 methods and notifications
-	permissions := utils.Filter(methods, func(s string) bool {
+	scopes := utils.Filter(methods, func(s string) bool {
 		return s != nip47.PAY_KEYSEND_METHOD && s != nip47.MULTI_PAY_INVOICE_METHOD && s != nip47.MULTI_PAY_KEYSEND_METHOD
 	})
 	if len(notificationTypes) > 0 {
-		permissions = append(permissions, "notifications")
+		scopes = append(scopes, "notifications")
 	}
 
 	return &WalletCapabilitiesResponse{
 		Methods:           methods,
 		NotificationTypes: notificationTypes,
-		Scopes:            permissions,
+		Scopes:            scopes,
 	}, nil
 }
 

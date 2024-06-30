@@ -48,7 +48,7 @@ func (controller *getInfoController) HandleGetInfoEvent(ctx context.Context, nip
 	}
 
 	// basic permissions check
-	hasPermission, _, _ := controller.permissionsService.HasPermission(app, nip47Request.Method, 0)
+	hasPermission, _, _ := controller.permissionsService.HasPermission(app, permissions.GET_INFO_SCOPE, 0)
 	if hasPermission {
 		logger.Logger.WithFields(logrus.Fields{
 			"request_event_id": requestEventId,

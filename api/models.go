@@ -76,21 +76,20 @@ type ListAppsResponse struct {
 }
 
 type UpdateAppRequest struct {
-	MaxAmount      uint64 `json:"maxAmount"`
-	BudgetRenewal  string `json:"budgetRenewal"`
-	ExpiresAt      string `json:"expiresAt"`
-	RequestMethods string `json:"requestMethods"`
+	MaxAmount     uint64   `json:"maxAmount"`
+	BudgetRenewal string   `json:"budgetRenewal"`
+	ExpiresAt     string   `json:"expiresAt"`
+	Scopes        []string `json:"scopes"`
 }
 
 type CreateAppRequest struct {
-	Name              string   `json:"name"`
-	Pubkey            string   `json:"pubkey"`
-	MaxAmount         uint64   `json:"maxAmount"`
-	BudgetRenewal     string   `json:"budgetRenewal"`
-	ExpiresAt         string   `json:"expiresAt"`
-	RequestMethods    []string `json:"requestMethods"`
-	NotificationTypes []string `json:"notificationTypes"`
-	ReturnTo          string   `json:"returnTo"`
+	Name          string   `json:"name"`
+	Pubkey        string   `json:"pubkey"`
+	MaxAmount     uint64   `json:"maxAmount"`
+	BudgetRenewal string   `json:"budgetRenewal"`
+	ExpiresAt     string   `json:"expiresAt"`
+	Scopes        []string `json:"scopes"`
+	ReturnTo      string   `json:"returnTo"`
 }
 
 type StartRequest struct {
