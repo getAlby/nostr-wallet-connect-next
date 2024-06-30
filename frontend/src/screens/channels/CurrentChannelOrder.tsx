@@ -737,7 +737,7 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
                         setPaying(false);
                       }}
                     >
-                      Pay With Alby Hub
+                      Pay and open channel
                     </LoadingButton>
                     {!payExternally && (
                       <Button
