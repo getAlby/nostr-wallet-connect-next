@@ -8,9 +8,8 @@ import { useInfo } from "src/hooks/useInfo";
 import {
   AppPermissions,
   BudgetRenewalType,
-  Nip47NotificationType,
-  Nip47RequestMethod,
   Scope,
+  UpdateAppRequest,
 } from "src/types";
 
 import { handleRequestError } from "src/utils/handleRequestError";
@@ -56,29 +55,16 @@ function ShowApp() {
   });
 
   const [permissions, setPermissions] = React.useState<AppPermissions>({
-    requestMethods: new Set<Nip47RequestMethod>(),
-    notificationTypes: new Set<Nip47NotificationType>(),
+    scopes: new Set<Scope>(),
     maxAmount: 0,
     budgetRenewal: "",
     expiresAt: undefined,
   });
 
   React.useEffect(() => {
-    const scopesToRequestMethods = (
-      _scopes: Scope[]
-    ): Set<Nip47RequestMethod> => {
-      throw new Error("TODO - map should come from backend");
-    };
-    const scopesToNotificationTypes = (
-      _scopes: Scope[]
-    ): Set<Nip47NotificationType> => {
-      throw new Error("TODO - map should come from backend");
-    };
-
     if (app) {
       setPermissions({
-        requestMethods: scopesToRequestMethods(app.scopes),
-        notificationTypes: scopesToNotificationTypes(app.scopes),
+        scopes: new Set(app.scopes),
         maxAmount: app.maxAmount,
         budgetRenewal: app.budgetRenewal as BudgetRenewalType,
         expiresAt: app.expiresAt ? new Date(app.expiresAt) : undefined,
@@ -100,16 +86,20 @@ function ShowApp() {
         throw new Error("No CSRF token");
       }
 
+      const updateAppRequest: UpdateAppRequest = {
+        scopes: Array.from(permissions.scopes),
+        budgetRenewal: permissions.budgetRenewal,
+        expiresAt: permissions.expiresAt?.toISOString(),
+        maxAmount: permissions.maxAmount,
+      };
+
       await request(`/api/apps/${app.nostrPubkey}`, {
         method: "PATCH",
         headers: {
           "X-CSRF-Token": csrf,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...permissions,
-          requestMethods: [...permissions.requestMethods].join(" "),
-        }),
+        body: JSON.stringify(updateAppRequest),
       });
 
       await refetchApp();
@@ -214,17 +204,15 @@ function ShowApp() {
                           type="button"
                           variant="outline"
                           onClick={() => {
-                            /*setPermissions({
-                              requestMethods: new Set(
-                                app.requestMethods as Scope[]
-                              ),
+                            setPermissions({
+                              scopes: new Set(app.scopes as Scope[]),
                               maxAmount: app.maxAmount,
                               budgetRenewal:
                                 app.budgetRenewal as BudgetRenewalType,
                               expiresAt: app.expiresAt
                                 ? new Date(app.expiresAt)
                                 : undefined,
-                            });*/
+                            });
                             setEditMode(!editMode);
                             // TODO: clicking cancel and then editing again will leave the days option wrong
                           }}

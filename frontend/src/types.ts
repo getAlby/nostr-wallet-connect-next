@@ -138,8 +138,7 @@ export interface App {
 }
 
 export interface AppPermissions {
-  requestMethods: Set<Nip47RequestMethod>;
-  notificationTypes: Set<Nip47NotificationType>;
+  scopes: Set<Scope>;
   maxAmount: number;
   budgetRenewal: BudgetRenewalType;
   expiresAt?: Date;
@@ -172,8 +171,7 @@ export interface CreateAppRequest {
   maxAmount: number;
   budgetRenewal: string;
   expiresAt: string | undefined;
-  requestMethods: Nip47RequestMethod[];
-  notificationTypes: Nip47NotificationType[];
+  scopes: Scope[];
   returnTo: string;
 }
 
@@ -184,6 +182,13 @@ export interface CreateAppResponse {
   pairingSecretKey: string;
   returnTo: string;
 }
+
+export type UpdateAppRequest = {
+  maxAmount: number;
+  budgetRenewal: string;
+  expiresAt: string | undefined;
+  scopes: string[];
+};
 
 export type Channel = {
   localBalance: number;

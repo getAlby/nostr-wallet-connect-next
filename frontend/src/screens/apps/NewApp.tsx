@@ -9,6 +9,7 @@ import {
   CreateAppResponse,
   Nip47NotificationType,
   Nip47RequestMethod,
+  Scope,
   WalletCapabilities,
   validBudgetRenewals,
 } from "src/types";
@@ -69,7 +70,7 @@ const NewAppInternal = ({ capabilities }: NewAppInternalProps) => {
   const maxAmountParam = queryParams.get("max_amount") ?? "";
   const expiresAtParam = queryParams.get("expires_at") ?? "";
 
-  const initialRequestMethods: Set<Nip47RequestMethod> = React.useMemo(() => {
+  const initialScopes: Set<Scope> = React.useMemo(() => {
     const methods = reqMethodsParam
       ? reqMethodsParam.split(" ")
       : capabilities.methods;
@@ -86,38 +87,66 @@ const NewAppInternal = ({ capabilities }: NewAppInternalProps) => {
           unsupportedMethods
       );
     }
-    return requestMethodsSet;
-  }, [capabilities.methods, reqMethodsParam]);
 
-  const initialNotificationTypes: Set<Nip47NotificationType> =
-    React.useMemo(() => {
-      const notificationTypes = notificationTypesParam
-        ? notificationTypesParam.split(" ")
-        : capabilities.notificationTypes;
+    const notificationTypes = notificationTypesParam
+      ? notificationTypesParam.split(" ")
+      : capabilities.notificationTypes;
 
-      const notificationTypesSet = new Set<Nip47NotificationType>(
-        notificationTypes as Nip47NotificationType[]
+    const notificationTypesSet = new Set<Nip47NotificationType>(
+      notificationTypes as Nip47NotificationType[]
+    );
+    const unsupportedNotificationTypes = Array.from(
+      notificationTypesSet
+    ).filter(
+      (notificationType) =>
+        capabilities.notificationTypes.indexOf(notificationType) < 0
+    );
+    if (unsupportedNotificationTypes.length) {
+      setUnsupportedError(
+        "This app requests methods not supported by your wallet: " +
+          unsupportedNotificationTypes
       );
-      const unsupportedNotificationTypes = Array.from(
-        notificationTypesSet
-      ).filter(
-        (notificationType) =>
-          capabilities.notificationTypes.indexOf(notificationType) < 0
-      );
-      if (unsupportedNotificationTypes.length) {
-        setUnsupportedError(
-          "This app requests methods not supported by your wallet: " +
-            unsupportedNotificationTypes
-        );
-      }
-      return notificationTypesSet;
-    }, [capabilities.notificationTypes, notificationTypesParam]);
+    }
 
-  // TODO: check unsupported notifications here from notificationTypesParam
+    const scopes = new Set<Scope>();
+    if (
+      requestMethodsSet.has("pay_keysend") ||
+      requestMethodsSet.has("pay_invoice") ||
+      requestMethodsSet.has("multi_pay_invoice") ||
+      requestMethodsSet.has("multi_pay_keysend")
+    ) {
+      scopes.add("pay_invoice");
+    }
 
-  // TODO: map request methods to permissions here
+    if (requestMethodsSet.has("get_info")) {
+      scopes.add("get_info");
+    }
+    if (requestMethodsSet.has("get_balance")) {
+      scopes.add("get_balance");
+    }
+    if (requestMethodsSet.has("make_invoice")) {
+      scopes.add("make_invoice");
+    }
+    if (requestMethodsSet.has("lookup_invoice")) {
+      scopes.add("lookup_invoice");
+    }
+    if (requestMethodsSet.has("list_transactions")) {
+      scopes.add("list_transactions");
+    }
+    if (requestMethodsSet.has("sign_message")) {
+      scopes.add("sign_message");
+    }
+    if (notificationTypes.length) {
+      scopes.add("notifications");
+    }
 
-  // TODO: DB rename
+    return scopes;
+  }, [
+    capabilities.methods,
+    capabilities.notificationTypes,
+    notificationTypesParam,
+    reqMethodsParam,
+  ]);
 
   const parseExpiresParam = (expiresParam: string): Date | undefined => {
     const expiresParamTimestamp = parseInt(expiresParam);
@@ -128,8 +157,7 @@ const NewAppInternal = ({ capabilities }: NewAppInternalProps) => {
   };
 
   const [permissions, setPermissions] = useState<AppPermissions>({
-    requestMethods: initialRequestMethods,
-    notificationTypes: initialNotificationTypes,
+    scopes: initialScopes,
     maxAmount: parseInt(maxAmountParam || "100000"),
     budgetRenewal: validBudgetRenewals.includes(budgetRenewalParam)
       ? budgetRenewalParam
@@ -149,8 +177,7 @@ const NewAppInternal = ({ capabilities }: NewAppInternalProps) => {
         pubkey,
         budgetRenewal: permissions.budgetRenewal,
         maxAmount: permissions.maxAmount,
-        requestMethods: Array.from(permissions.requestMethods),
-        notificationTypes: Array.from(permissions.notificationTypes),
+        scopes: Array.from(permissions.scopes),
         expiresAt: permissions.expiresAt?.toISOString(),
         returnTo: returnTo,
       };
