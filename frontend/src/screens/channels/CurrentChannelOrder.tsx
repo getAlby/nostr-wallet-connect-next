@@ -723,7 +723,7 @@ function PayLightningChannelOrder({ order }: { order: NewChannelOrder }) {
                           if (payInvoiceResponse) {
                             setPaid(true);
                             toast({
-                              title: "Successfully paid invoice",
+                              title: "Channel successfully requested",
                             });
                           }
                           setPaid(true);
