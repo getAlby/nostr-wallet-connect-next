@@ -5,7 +5,7 @@ import { useApp } from "src/hooks/useApp";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useDeleteApp } from "src/hooks/useDeleteApp";
 import { useInfo } from "src/hooks/useInfo";
-import { AppPermissions, BudgetRenewalType, PermissionType } from "src/types";
+import { AppPermissions, BudgetRenewalType, ScopeType } from "src/types";
 
 import { handleRequestError } from "src/utils/handleRequestError";
 import { request } from "src/utils/request"; // build the project for this to appear
@@ -50,7 +50,7 @@ function ShowApp() {
   });
 
   const [permissions, setPermissions] = React.useState<AppPermissions>({
-    requestMethods: new Set<PermissionType>(),
+    requestMethods: new Set<ScopeType>(),
     maxAmount: 0,
     budgetRenewal: "",
     expiresAt: undefined,
@@ -59,7 +59,7 @@ function ShowApp() {
   React.useEffect(() => {
     if (app) {
       setPermissions({
-        requestMethods: new Set(app.requestMethods as PermissionType[]),
+        requestMethods: new Set(app.requestMethods as ScopeType[]),
         maxAmount: app.maxAmount,
         budgetRenewal: app.budgetRenewal as BudgetRenewalType,
         expiresAt: app.expiresAt ? new Date(app.expiresAt) : undefined,
@@ -197,7 +197,7 @@ function ShowApp() {
                           onClick={() => {
                             setPermissions({
                               requestMethods: new Set(
-                                app.requestMethods as PermissionType[]
+                                app.requestMethods as ScopeType[]
                               ),
                               maxAmount: app.maxAmount,
                               budgetRenewal:
