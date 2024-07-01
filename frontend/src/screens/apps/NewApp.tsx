@@ -103,7 +103,7 @@ const NewAppInternal = ({ capabilities }: NewAppInternalProps) => {
     );
     if (unsupportedNotificationTypes.length) {
       setUnsupportedError(
-        "This app requests methods not supported by your wallet: " +
+        "This app requests notification types not supported by your wallet: " +
           unsupportedNotificationTypes
       );
     }
