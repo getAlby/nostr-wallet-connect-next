@@ -20,7 +20,6 @@ import (
 	"github.com/getAlby/nostr-wallet-connect/events"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/logger"
-	nip47 "github.com/getAlby/nostr-wallet-connect/nip47/models"
 	permissions "github.com/getAlby/nostr-wallet-connect/nip47/permissions"
 	"github.com/getAlby/nostr-wallet-connect/service"
 	"github.com/getAlby/nostr-wallet-connect/service/keys"
