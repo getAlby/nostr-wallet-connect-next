@@ -689,7 +689,7 @@ func (api *api) GetWalletCapabilities(ctx context.Context) (*WalletCapabilitiesR
 		return nil, err
 	}
 	if len(notificationTypes) > 0 {
-		scopes = append(scopes, "notifications")
+		scopes = append(scopes, permissions.NOTIFICATIONS_SCOPE)
 	}
 
 	return &WalletCapabilitiesResponse{

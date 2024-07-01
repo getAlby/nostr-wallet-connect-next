@@ -115,7 +115,7 @@ func (svc *permissionsService) PermitsNotifications(app *db.App) bool {
 	notificationPermission := db.AppPermission{}
 	err := svc.db.First(&notificationPermission, &db.AppPermission{
 		AppId: app.ID,
-		Scope: "notifications",
+		Scope: NOTIFICATIONS_SCOPE,
 	}).Error
 	if err != nil {
 		return false
