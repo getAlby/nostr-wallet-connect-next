@@ -8,7 +8,7 @@ echo "Installing..."
 sudo mkdir -p /opt/albyhub
 sudo chown -R $USER:$USER /opt/albyhub
 cd /opt/albyhub
-wget https://getalby.com/install/hub/server-linux-armv6
+wget https://getalby.com/install/hub/server-linux-armv6.tar.bz2
 
 # Extract archives
 tar -xvf server-linux-armv6.tar.bz2

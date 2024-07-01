@@ -9,7 +9,7 @@ rm -rf albyhub-backup
 mkdir albyhub-backup
 mv bin albyhub-backup
 cp -r data albyhub-backup
-wget https://getalby.com/install/hub/server-linux-armv6
+wget https://getalby.com/install/hub/server-linux-armv6.tar.bz2
 
 # Extract archives
 tar -xvf server-linux-armv6.tar.bz2
