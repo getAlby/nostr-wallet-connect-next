@@ -8,13 +8,13 @@ echo "Installing..."
 sudo mkdir -p /opt/albyhub
 sudo chown -R $USER:$USER /opt/albyhub
 cd /opt/albyhub
-wget https://github.com/getAlby/nostr-wallet-connect-next/releases/latest/download/albyhub-Server-Linux-armv6.tar.gz
+wget https://github.com/getAlby/nostr-wallet-connect-next/releases/latest/download/albyhub-Server-Linux-armv6.tar.bz2
 
 # Extract archives
-tar -xvf albyhub-Server-Linux-armv6.tar.gz
+tar -xvf albyhub-Server-Linux-armv6.tar.bz2
 
 # Cleanup
-rm albyhub-Server-Linux-armv6.tar.gz
+rm albyhub-Server-Linux-armv6.tar.bz2
 
 ### Create systemd service
 sudo tee -a /etc/systemd/system/albyhub.service > /dev/null << EOF
