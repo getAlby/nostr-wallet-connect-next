@@ -42,12 +42,13 @@ function ShowApp() {
   const { pubkey } = useParams() as { pubkey: string };
   const { data: app, mutate: refetchApp, error } = useApp(pubkey);
   const navigate = useNavigate();
-
   const location = useLocation();
-  const queryParams = new URLSearchParams(location.search);
-  const edit = queryParams.get("edit") ?? "";
+  const [editMode, setEditMode] = React.useState(false);
 
-  const [editMode, setEditMode] = React.useState(!!edit);
+  React.useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    setEditMode(queryParams.has("edit"));
+  }, [location.search]);
 
   const { deleteApp, isDeleting } = useDeleteApp(() => {
     navigate("/apps");
