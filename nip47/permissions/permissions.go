@@ -186,7 +186,9 @@ func RequestMethodsToScopes(requestMethods []string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		scopes = append(scopes, scope)
+		if !slices.Contains(scopes, scope) {
+			scopes = append(scopes, scope)
+		}
 	}
 	return scopes, nil
 }
