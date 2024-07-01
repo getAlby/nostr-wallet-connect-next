@@ -12,10 +12,10 @@ cp -r data albyhub-backup
 wget https://getalby.com/install/hub/server-linux-armv6
 
 # Extract archives
-tar -xvf albyhub-Server-Linux-armv6.tar.bz2
+tar -xvf server-linux-armv6
 
 # Cleanup
-rm albyhub-Server-Linux-armv6.tar.bz2
+rm server-linux-armv6
 
 sudo systemctl start albyhub
 
