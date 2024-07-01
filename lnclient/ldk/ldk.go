@@ -643,6 +643,10 @@ func (ls *LDKService) MakeInvoice(ctx context.Context, amount int64, description
 		})
 	}
 
+	if expiry == 0 {
+		expiry = lnclient.DEFAULT_INVOICE_EXPIRY
+	}
+
 	// TODO: support passing description hash
 	invoice, err := ls.node.Bolt11Payment().Receive(uint64(amount),
 		description,
@@ -798,7 +802,8 @@ func (ls *LDKService) ListChannels(ctx context.Context) ([]lnclient.Channel, err
 
 		channels = append(channels, lnclient.Channel{
 			InternalChannel:                          internalChannel,
-			LocalBalance:                             int64(ldkChannel.OutboundCapacityMsat),
+			LocalBalance:                             int64(ldkChannel.ChannelValueSats*1000 - ldkChannel.InboundCapacityMsat - ldkChannel.CounterpartyUnspendablePunishmentReserve*1000),
+			LocalSpendableBalance:                    int64(ldkChannel.OutboundCapacityMsat),
 			RemoteBalance:                            int64(ldkChannel.InboundCapacityMsat),
 			RemotePubkey:                             ldkChannel.CounterpartyNodeId,
 			Id:                                       ldkChannel.UserChannelId, // CloseChannel takes the UserChannelId
