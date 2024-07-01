@@ -11,9 +11,14 @@ import (
 )
 
 func (svc *nip47Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay, lnClient lnclient.LNClient) error {
+	capabilities := lnClient.GetSupportedNIP47Methods()
+	if len(lnClient.GetSupportedNIP47NotificationTypes()) > 0 {
+		capabilities = append(capabilities, "notifications")
+	}
+
 	ev := &nostr.Event{}
 	ev.Kind = models.INFO_EVENT_KIND
-	ev.Content = strings.Join(lnClient.GetSupportedNIP47Methods(), " ")
+	ev.Content = strings.Join(capabilities, " ")
 	ev.CreatedAt = nostr.Now()
 	ev.PubKey = svc.keys.GetNostrPublicKey()
 	ev.Tags = nostr.Tags{[]string{"notifications", strings.Join(lnClient.GetSupportedNIP47NotificationTypes(), " ")}}
