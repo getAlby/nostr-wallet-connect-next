@@ -187,7 +187,7 @@ export type UpdateAppRequest = {
   maxAmount: number;
   budgetRenewal: string;
   expiresAt: string | undefined;
-  scopes: string[];
+  scopes: Scope[];
 };
 
 export type Channel = {

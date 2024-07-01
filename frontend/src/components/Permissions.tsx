@@ -60,15 +60,21 @@ const Permissions: React.FC<PermissionsProps> = ({
       return;
     }
 
+    let budgetRenewal = permissions.budgetRenewal;
+
     const newScopes = new Set(permissions.scopes);
     if (newScopes.has(scope)) {
       newScopes.delete(scope);
     } else {
       newScopes.add(scope);
+      if (scope === "pay_invoice") {
+        budgetRenewal = "monthly";
+      }
     }
 
     handlePermissionsChange({
       scopes: newScopes,
+      budgetRenewal,
     });
   };
 
@@ -171,13 +177,11 @@ const Permissions: React.FC<PermissionsProps> = ({
                               <SelectContent>
                                 {validBudgetRenewals.map((renewalOption) => (
                                   <SelectItem
-                                    key={renewalOption || "never"}
-                                    value={renewalOption || "never"}
+                                    key={renewalOption}
+                                    value={renewalOption}
                                   >
-                                    {renewalOption
-                                      ? renewalOption.charAt(0).toUpperCase() +
-                                        renewalOption.slice(1)
-                                      : "Never"}
+                                    {renewalOption.charAt(0).toUpperCase() +
+                                      renewalOption.slice(1)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>

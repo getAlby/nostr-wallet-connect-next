@@ -180,7 +180,7 @@ func scopeToRequestMethods(scope string) []string {
 func RequestMethodsToScopes(requestMethods []string) ([]string, error) {
 	scopes := []string{}
 
-	for _, requestMethod := range scopes {
+	for _, requestMethod := range requestMethods {
 		scope, err := RequestMethodToScope(requestMethod)
 		if err != nil {
 			return nil, err
