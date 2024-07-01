@@ -178,7 +178,7 @@ func (api *api) GetApp(userApp *db.App) *App {
 	requestMethods := []string{}
 	for _, appPerm := range appPermissions {
 		expiresAt = appPerm.ExpiresAt
-		if appPerm.Scope == nip47.PAY_INVOICE_METHOD {
+		if appPerm.Scope == permissions.PAY_INVOICE_SCOPE {
 			//find the pay_invoice-specific permissions
 			paySpecificPermission = appPerm
 		}
