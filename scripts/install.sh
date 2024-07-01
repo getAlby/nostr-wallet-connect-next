@@ -8,7 +8,7 @@ echo "Installing..."
 sudo mkdir -p /opt/albyhub
 sudo chown -R $USER:$USER /opt/albyhub
 cd /opt/albyhub
-wget https://github.com/getAlby/nostr-wallet-connect-next/releases/latest/download/albyhub-Server-Linux-armv6.tar.bz2
+wget https://getalby.com/install/hub/server-linux-armv6
 
 # Extract archives
 tar -xvf albyhub-Server-Linux-armv6.tar.bz2
