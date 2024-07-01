@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import { useApp } from "src/hooks/useApp";
 import { useCSRF } from "src/hooks/useCSRF";
@@ -43,7 +43,11 @@ function ShowApp() {
   const { data: app, mutate: refetchApp, error } = useApp(pubkey);
   const navigate = useNavigate();
 
-  const [editMode, setEditMode] = React.useState(false);
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const edit = queryParams.get("edit") ?? "";
+
+  const [editMode, setEditMode] = React.useState(!!edit);
 
   const { deleteApp, isDeleting } = useDeleteApp(() => {
     navigate("/apps");
