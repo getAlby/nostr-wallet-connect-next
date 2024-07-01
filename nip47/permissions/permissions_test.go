@@ -22,7 +22,7 @@ func TestHasPermission_NoPermission(t *testing.T) {
 	result, code, message := permissionsSvc.HasPermission(app, PAY_INVOICE_SCOPE, 100)
 	assert.False(t, result)
 	assert.Equal(t, models.ERROR_RESTRICTED, code)
-	assert.Equal(t, "This app does not have permission to request pay_invoice", message)
+	assert.Equal(t, "This app does not have the pay_invoice scope", message)
 }
 
 func TestHasPermission_Expired(t *testing.T) {

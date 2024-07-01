@@ -56,7 +56,7 @@ func (svc *permissionsService) HasPermission(app *db.App, scope string, amountMs
 	})
 	if findPermissionResult.RowsAffected == 0 {
 		// No permission for this request method
-		return false, models.ERROR_RESTRICTED, fmt.Sprintf("This app does not have permission to request %s", scope)
+		return false, models.ERROR_RESTRICTED, fmt.Sprintf("This app does not have the %s scope", scope)
 	}
 	expiresAt := appPermission.ExpiresAt
 	if expiresAt != nil && expiresAt.Before(time.Now()) {
