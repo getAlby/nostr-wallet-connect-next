@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"strings"
 
 	"github.com/getAlby/nostr-wallet-connect/db"
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
@@ -39,7 +38,7 @@ func NewGetInfoController(permissionsService permissions.PermissionsService, lnC
 func (controller *getInfoController) HandleGetInfoEvent(ctx context.Context, nip47Request *models.Request, requestEventId uint, app *db.App, checkPermission checkPermissionFunc, publishResponse publishFunc) {
 	supportedNotifications := []string{}
 	if controller.permissionsService.PermitsNotifications(app) {
-		supportedNotifications = strings.Split(controller.lnClient.GetSupportedNIP47NotificationTypes(), " ")
+		supportedNotifications = controller.lnClient.GetSupportedNIP47NotificationTypes()
 	}
 
 	responsePayload := &getInfoResponse{

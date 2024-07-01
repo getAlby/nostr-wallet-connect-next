@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 
@@ -681,8 +680,8 @@ func (api *api) GetWalletCapabilities(ctx context.Context) (*WalletCapabilitiesR
 		return nil, errors.New("LNClient not started")
 	}
 
-	methods := strings.Split(api.svc.GetLNClient().GetSupportedNIP47Methods(), " ")
-	notificationTypes := strings.Split(api.svc.GetLNClient().GetSupportedNIP47NotificationTypes(), " ")
+	methods := api.svc.GetLNClient().GetSupportedNIP47Methods()
+	notificationTypes := api.svc.GetLNClient().GetSupportedNIP47NotificationTypes()
 
 	scopes, err := permissions.RequestMethodsToScopes(methods)
 	if err != nil {

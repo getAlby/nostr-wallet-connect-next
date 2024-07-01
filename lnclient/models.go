@@ -71,9 +71,8 @@ type LNClient interface {
 	GetStorageDir() (string, error)
 	GetNetworkGraph(nodeIds []string) (NetworkGraphResponse, error)
 	UpdateLastWalletSyncRequest()
-	// TODO: change the below to return arrays instead of space-separated strings
-	GetSupportedNIP47Methods() string
-	GetSupportedNIP47NotificationTypes() string
+	GetSupportedNIP47Methods() []string
+	GetSupportedNIP47NotificationTypes() []string
 }
 
 type Channel struct {

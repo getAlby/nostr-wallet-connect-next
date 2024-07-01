@@ -3,6 +3,7 @@ package nip47
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/getAlby/nostr-wallet-connect/lnclient"
 	"github.com/getAlby/nostr-wallet-connect/nip47/models"
@@ -12,10 +13,10 @@ import (
 func (svc *nip47Service) PublishNip47Info(ctx context.Context, relay *nostr.Relay, lnClient lnclient.LNClient) error {
 	ev := &nostr.Event{}
 	ev.Kind = models.INFO_EVENT_KIND
-	ev.Content = lnClient.GetSupportedNIP47Methods()
+	ev.Content = strings.Join(lnClient.GetSupportedNIP47Methods(), " ")
 	ev.CreatedAt = nostr.Now()
 	ev.PubKey = svc.keys.GetNostrPublicKey()
-	ev.Tags = nostr.Tags{[]string{"notifications", lnClient.GetSupportedNIP47NotificationTypes()}}
+	ev.Tags = nostr.Tags{[]string{"notifications", strings.Join(lnClient.GetSupportedNIP47NotificationTypes(), " ")}}
 	err := ev.Sign(svc.keys.GetNostrSecretKey())
 	if err != nil {
 		return err
