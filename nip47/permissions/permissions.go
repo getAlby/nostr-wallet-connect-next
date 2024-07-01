@@ -212,3 +212,16 @@ func RequestMethodToScope(requestMethod string) (string, error) {
 	logger.Logger.WithField("request_method", requestMethod).Error("Unsupported request method")
 	return "", fmt.Errorf("unsupported request method: %s", requestMethod)
 }
+
+func AllScopes() []string {
+	return []string{
+		PAY_INVOICE_SCOPE,
+		GET_BALANCE_SCOPE,
+		GET_INFO_SCOPE,
+		MAKE_INVOICE_SCOPE,
+		LOOKUP_INVOICE_SCOPE,
+		LIST_TRANSACTIONS_SCOPE,
+		SIGN_MESSAGE_SCOPE,
+		NOTIFICATIONS_SCOPE,
+	}
+}

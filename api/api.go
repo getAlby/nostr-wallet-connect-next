@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"sync"
 	"time"
 
@@ -57,6 +58,12 @@ func (api *api) CreateApp(createAppRequest *CreateAppRequest) (*CreateAppRespons
 
 	if len(createAppRequest.Scopes) == 0 {
 		return nil, fmt.Errorf("won't create an app without scopes")
+	}
+
+	for _, scope := range createAppRequest.Scopes {
+		if !slices.Contains(permissions.AllScopes(), scope) {
+			return nil, fmt.Errorf("did not recognize requested scope: %s", scope)
+		}
 	}
 
 	app, pairingSecretKey, err := api.dbSvc.CreateApp(createAppRequest.Name, createAppRequest.Pubkey, createAppRequest.MaxAmount, createAppRequest.BudgetRenewal, expiresAt, createAppRequest.Scopes)
