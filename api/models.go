@@ -63,12 +63,12 @@ type App struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 
-	LastEventAt    *time.Time `json:"lastEventAt"`
-	ExpiresAt      *time.Time `json:"expiresAt"`
-	RequestMethods []string   `json:"requestMethods"`
-	MaxAmount      uint64     `json:"maxAmount"`
-	BudgetUsage    uint64     `json:"budgetUsage"`
-	BudgetRenewal  string     `json:"budgetRenewal"`
+	LastEventAt   *time.Time `json:"lastEventAt"`
+	ExpiresAt     *time.Time `json:"expiresAt"`
+	Scopes        []string   `json:"scopes"`
+	MaxAmount     uint64     `json:"maxAmount"`
+	BudgetUsage   uint64     `json:"budgetUsage"`
+	BudgetRenewal string     `json:"budgetRenewal"`
 }
 
 type ListAppsResponse struct {

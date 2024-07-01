@@ -194,16 +194,16 @@ func (api *api) GetApp(userApp *db.App) *App {
 	}
 
 	response := App{
-		Name:           userApp.Name,
-		Description:    userApp.Description,
-		CreatedAt:      userApp.CreatedAt,
-		UpdatedAt:      userApp.UpdatedAt,
-		NostrPubkey:    userApp.NostrPubkey,
-		ExpiresAt:      expiresAt,
-		MaxAmount:      maxAmount,
-		RequestMethods: requestMethods,
-		BudgetUsage:    budgetUsage,
-		BudgetRenewal:  paySpecificPermission.BudgetRenewal,
+		Name:          userApp.Name,
+		Description:   userApp.Description,
+		CreatedAt:     userApp.CreatedAt,
+		UpdatedAt:     userApp.UpdatedAt,
+		NostrPubkey:   userApp.NostrPubkey,
+		ExpiresAt:     expiresAt,
+		MaxAmount:     maxAmount,
+		Scopes:        requestMethods,
+		BudgetUsage:   budgetUsage,
+		BudgetRenewal: paySpecificPermission.BudgetRenewal,
 	}
 
 	if lastEventResult.RowsAffected > 0 {
@@ -239,7 +239,7 @@ func (api *api) ListApps() ([]App, error) {
 		}
 
 		for _, appPermission := range permissionsMap[userApp.ID] {
-			apiApp.RequestMethods = append(apiApp.RequestMethods, appPermission.Scope)
+			apiApp.Scopes = append(apiApp.Scopes, appPermission.Scope)
 			apiApp.ExpiresAt = appPermission.ExpiresAt
 			if appPermission.Scope == permissions.PAY_INVOICE_SCOPE {
 				apiApp.BudgetRenewal = appPermission.BudgetRenewal
