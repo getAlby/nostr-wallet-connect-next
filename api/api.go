@@ -684,9 +684,10 @@ func (api *api) GetWalletCapabilities(ctx context.Context) (*WalletCapabilitiesR
 	methods := strings.Split(api.svc.GetLNClient().GetSupportedNIP47Methods(), " ")
 	notificationTypes := strings.Split(api.svc.GetLNClient().GetSupportedNIP47NotificationTypes(), " ")
 
-	scopes := utils.Filter(methods, func(s string) bool {
-		return s != nip47.PAY_KEYSEND_METHOD && s != nip47.MULTI_PAY_INVOICE_METHOD && s != nip47.MULTI_PAY_KEYSEND_METHOD
-	})
+	scopes, err := permissions.RequestMethodsToScopes(methods)
+	if err != nil {
+		return nil, err
+	}
 	if len(notificationTypes) > 0 {
 		scopes = append(scopes, "notifications")
 	}

@@ -178,6 +178,19 @@ func scopeToRequestMethods(scope string) []string {
 	return []string{}
 }
 
+func RequestMethodsToScopes(requestMethods []string) ([]string, error) {
+	scopes := []string{}
+
+	for _, requestMethod := range scopes {
+		scope, err := RequestMethodToScope(requestMethod)
+		if err != nil {
+			return nil, err
+		}
+		scopes = append(scopes, scope)
+	}
+	return scopes, nil
+}
+
 func RequestMethodToScope(requestMethod string) (string, error) {
 	switch requestMethod {
 	case models.PAY_INVOICE_METHOD, models.PAY_KEYSEND_METHOD, models.MULTI_PAY_INVOICE_METHOD, models.MULTI_PAY_KEYSEND_METHOD:
