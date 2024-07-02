@@ -180,14 +180,20 @@ func (httpSvc *HttpService) startHandler(c echo.Context) error {
 		})
 	}
 
-	err := httpSvc.api.Start(&startRequest)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Message: fmt.Sprintf("Failed to start node: %s", err.Error()),
+	if !httpSvc.cfg.CheckUnlockPassword(startRequest.UnlockPassword) {
+		return c.JSON(http.StatusUnauthorized, ErrorResponse{
+			Message: "Invalid password",
 		})
 	}
 
-	err = httpSvc.saveSessionCookie(c)
+	go func() {
+		err := httpSvc.api.Start(&startRequest)
+		if err != nil {
+			logger.Logger.WithError(err).Error("Failed to start node")
+		}
+	}()
+
+	err := httpSvc.saveSessionCookie(c)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, ErrorResponse{

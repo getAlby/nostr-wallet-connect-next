@@ -116,6 +116,14 @@ export const budgetOptions: Record<string, number> = {
   Unlimited: 0,
 };
 
+export const startupMessages: string[] = [
+  "Unlocking",
+  "Starting the wallet",
+  "Connecting to the network",
+  "Syncing",
+  "Still syncing, please wait...",
+];
+
 export interface ErrorResponse {
   message: string;
 }

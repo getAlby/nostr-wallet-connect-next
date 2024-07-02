@@ -8,7 +8,8 @@ import { toast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
 import useSetupStore from "src/state/SetupStore";
-import { SetupNodeInfo } from "src/types";
+import { SetupNodeInfo, startupMessages as messages } from "src/types";
+import { asyncTimeout } from "src/utils/asyncTimeout";
 import { handleRequestError } from "src/utils/handleRequestError";
 import { request } from "src/utils/request";
 
@@ -16,9 +17,12 @@ export function SetupFinish() {
   const navigate = useNavigate();
   const { nodeInfo, unlockPassword } = useSetupStore();
 
-  const { mutate: refetchInfo } = useInfo();
+  const { data: info } = useInfo(true);
   const { data: csrf } = useCSRF();
   const [connectionError, setConnectionError] = React.useState(false);
+  const [loadingMessage, setLoadingMessage] = React.useState(
+    "Setting up your Hub..."
+  );
   const hasFetchedRef = React.useRef(false);
 
   const defaultOptions = {
@@ -40,16 +44,27 @@ export function SetupFinish() {
     (async () => {
       const succeeded = await finishSetup(csrf, nodeInfo, unlockPassword);
       if (succeeded) {
-        const info = await refetchInfo();
-        if (!info) {
-          throw new Error("Failed to re-fetch info");
+        // only setup call is successful as start is async
+        let messageIndex = 1;
+        const intervalId = setInterval(() => {
+          // we don't check for info.running as HomeRedirect takes care of it
+          if (messageIndex < messages.length) {
+            setLoadingMessage(messages[messageIndex]);
+            messageIndex++;
+          } else {
+            clearInterval(intervalId);
+          }
+        }, 5000);
+
+        await asyncTimeout(180000); // wait for 3 minutes
+        if (!info?.running) {
+          setConnectionError(true);
         }
-        navigate("/");
       } else {
         setConnectionError(true);
       }
     })();
-  }, [csrf, nodeInfo, refetchInfo, navigate, unlockPassword]);
+  }, [csrf, nodeInfo, info, navigate, unlockPassword, loadingMessage]);
 
   if (connectionError) {
     return (
@@ -57,7 +72,7 @@ export function SetupFinish() {
         <div className="flex flex-col gap-5 text-center items-center">
           <div className="grid gap-2">
             <h1 className="font-semibold text-lg">Connection Failed</h1>
-            <p>Please check your node configuration.</p>
+            <p>Please check your node configuration and try again.</p>
           </div>
           <Button
             onClick={() => {
@@ -76,7 +91,7 @@ export function SetupFinish() {
       <div className="flex flex-col gap-5 justify-center text-center">
         <Lottie options={defaultOptions} height={400} width={400} />
         <h1 className="font-semibold text-lg font-headline">
-          Setting up your Hub...
+          {loadingMessage}
         </h1>
       </div>
     </Container>
