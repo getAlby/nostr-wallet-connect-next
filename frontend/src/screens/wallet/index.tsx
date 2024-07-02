@@ -31,19 +31,19 @@ function Wallet() {
         <div className="grid grid-cols-3 items-center gap-4">
           <ExternalLink to="https://www.getalby.com/topup">
             <Button size="lg" className="w-full" variant="secondary">
-              <CreditCard className="h-4 w-4 mr-2" />
+              <CreditCard className="h-4 w-4 shrink-0 mr-2" />
               Buy Bitcoin
             </Button>
           </ExternalLink>
           <Link to="/wallet/receive">
             <Button size="lg" className="w-full">
-              <ArrowDownIcon className="h-4 w-4 mr-2" />
+              <ArrowDownIcon className="h-4 w-4 shrink-0 mr-2" />
               Receive
             </Button>
           </Link>
           <Link to="/wallet/send">
             <Button size="lg" className="w-full">
-              <ArrowUpIcon className="h-4 w-4 mr-2" />
+              <ArrowUpIcon className="h-4 w-4 shrink-0 mr-2" />
               Send
             </Button>
           </Link>
