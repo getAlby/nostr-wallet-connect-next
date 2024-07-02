@@ -19,7 +19,7 @@ function Wallet() {
 
   return (
     <>
-      <AppHeader title="Wallet" description="Send and receive transactions" />
+      <AppHeader title="Wallet" description="" />
       <BreezRedeem />
       <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-5">
         <div className="text-5xl font-semibold">
@@ -28,21 +28,21 @@ function Wallet() {
           )}{" "}
           sats
         </div>
-        <div className="flex items-center gap-4">
+        <div className="grid grid-cols-3 items-center gap-4">
           <ExternalLink to="https://www.getalby.com/topup">
-            <Button size="lg" variant="secondary">
+            <Button size="lg" className="w-full" variant="secondary">
               <CreditCard className="h-4 w-4 mr-2" />
               Buy Bitcoin
             </Button>
           </ExternalLink>
           <Link to="/wallet/receive">
-            <Button size="lg">
+            <Button size="lg" className="w-full">
               <ArrowDownIcon className="h-4 w-4 mr-2" />
               Receive
             </Button>
           </Link>
           <Link to="/wallet/send">
-            <Button size="lg">
+            <Button size="lg" className="w-full">
               <ArrowUpIcon className="h-4 w-4 mr-2" />
               Send
             </Button>
