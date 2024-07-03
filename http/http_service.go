@@ -186,13 +186,6 @@ func (httpSvc *HttpService) startHandler(c echo.Context) error {
 		})
 	}
 
-	go func() {
-		err := httpSvc.api.Start(&startRequest)
-		if err != nil {
-			logger.Logger.WithError(err).Error("Failed to start node")
-		}
-	}()
-
 	err := httpSvc.saveSessionCookie(c)
 
 	if err != nil {
@@ -200,6 +193,13 @@ func (httpSvc *HttpService) startHandler(c echo.Context) error {
 			Message: fmt.Sprintf("Failed to save session: %s", err.Error()),
 		})
 	}
+
+	go func() {
+		err := httpSvc.api.Start(&startRequest)
+		if err != nil {
+			logger.Logger.WithError(err).Error("Failed to start node")
+		}
+	}()
 
 	return c.NoContent(http.StatusNoContent)
 }
