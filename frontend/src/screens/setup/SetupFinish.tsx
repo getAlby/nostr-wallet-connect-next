@@ -8,7 +8,7 @@ import { toast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
 import useSetupStore from "src/state/SetupStore";
-import { SetupNodeInfo, startupMessages as messages } from "src/types";
+import { SetupNodeInfo } from "src/types";
 import { asyncTimeout } from "src/utils/asyncTimeout";
 import { handleRequestError } from "src/utils/handleRequestError";
 import { request } from "src/utils/request";
@@ -20,9 +20,6 @@ export function SetupFinish() {
   const { data: info } = useInfo(true);
   const { data: csrf } = useCSRF();
   const [connectionError, setConnectionError] = React.useState(false);
-  const [loadingMessage, setLoadingMessage] = React.useState(
-    "Setting up your Hub..."
-  );
   const hasFetchedRef = React.useRef(false);
 
   const defaultOptions = {
@@ -45,17 +42,6 @@ export function SetupFinish() {
       const succeeded = await finishSetup(csrf, nodeInfo, unlockPassword);
       if (succeeded) {
         // only setup call is successful as start is async
-        let messageIndex = 1;
-        const intervalId = setInterval(() => {
-          // we don't check for info.running as HomeRedirect takes care of it
-          if (messageIndex < messages.length) {
-            setLoadingMessage(messages[messageIndex]);
-            messageIndex++;
-          } else {
-            clearInterval(intervalId);
-          }
-        }, 5000);
-
         await asyncTimeout(180000); // wait for 3 minutes
         if (!info?.running) {
           setConnectionError(true);
@@ -64,7 +50,7 @@ export function SetupFinish() {
         setConnectionError(true);
       }
     })();
-  }, [csrf, nodeInfo, info, navigate, unlockPassword, loadingMessage]);
+  }, [csrf, nodeInfo, info, navigate, unlockPassword]);
 
   if (connectionError) {
     return (
@@ -91,7 +77,7 @@ export function SetupFinish() {
       <div className="flex flex-col gap-5 justify-center text-center">
         <Lottie options={defaultOptions} height={400} width={400} />
         <h1 className="font-semibold text-lg font-headline">
-          {loadingMessage}
+          Setting up your Hub...
         </h1>
       </div>
     </Container>
