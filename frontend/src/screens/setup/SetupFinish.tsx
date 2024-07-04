@@ -15,9 +15,11 @@ import { request } from "src/utils/request";
 export function SetupFinish() {
   const navigate = useNavigate();
   const { nodeInfo, unlockPassword } = useSetupStore();
-
-  const { data: info } = useInfo(true);
+  // we use this only for polling
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { data: _ } = useInfo(true);
   const { data: csrf } = useCSRF();
+  const [loading, setLoading] = React.useState(false);
   const [connectionError, setConnectionError] = React.useState(false);
   const hasFetchedRef = React.useRef(false);
 
@@ -31,13 +33,20 @@ export function SetupFinish() {
   };
 
   useEffect(() => {
+    if (!loading) {
+      return;
+    }
     const timer = setTimeout(() => {
-      if (!info?.running) {
-        setConnectionError(true);
-      }
+      // SetupRedirect takes care of redirection once info.running is true
+      // if it still didn't redirect after 3 minutes, we show an error
+      setLoading(false);
+      setConnectionError(true);
     }, 180000);
-    return () => clearTimeout(timer);
-  }, [info?.running]);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [loading]);
 
   useEffect(() => {
     // ensure setup call is only called once
@@ -47,9 +56,11 @@ export function SetupFinish() {
     hasFetchedRef.current = true;
 
     (async () => {
+      setLoading(true);
       const succeeded = await finishSetup(csrf, nodeInfo, unlockPassword);
       // only setup call is successful as start is async
       if (!succeeded) {
+        setLoading(false);
         setConnectionError(true);
       }
     })();

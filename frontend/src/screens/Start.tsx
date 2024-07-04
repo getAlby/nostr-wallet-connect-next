@@ -22,32 +22,45 @@ export default function Start() {
   const [unlockPassword, setUnlockPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [buttonText, setButtonText] = React.useState("Login");
-  const [intervalId, setIntervalId] = React.useState<
-    NodeJS.Timeout | undefined
-  >();
-  const [timeoutId, setTimeoutId] = React.useState<
-    NodeJS.Timeout | undefined
-  >();
+  // we use this only for polling
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { data: _ } = useInfo(true);
   const { data: csrf } = useCSRF();
-  const { data: info } = useInfo(true);
   const { toast } = useToast();
 
   React.useEffect(() => {
-    return () => {
-      if (intervalId) {
+    if (!loading) {
+      return;
+    }
+    let messageIndex = 1;
+    const intervalId = setInterval(() => {
+      if (messageIndex < messages.length) {
+        setButtonText(messages[messageIndex]);
+        messageIndex++;
+      } else {
         clearInterval(intervalId);
       }
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  });
+    }, 5000);
 
-  async function asyncTimeout(ms: number): Promise<void> {
-    return new Promise((resolve) => {
-      setTimeoutId(setTimeout(resolve, ms));
-    });
-  }
+    const timeoutId = setTimeout(() => {
+      // if redirection didn't happen in 3 minutes info.running is false
+      toast({
+        title: "Failed to start",
+        description: "Please try starting the node again.",
+        variant: "destructive",
+      });
+
+      setLoading(false);
+      setButtonText("Login");
+      setUnlockPassword("");
+      return;
+    }, 180000); // wait for 3 minutes
+
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
+  }, [loading, toast]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,30 +80,8 @@ export default function Start() {
           unlockPassword,
         }),
       });
-
-      let messageIndex = 1;
-      setIntervalId(
-        setInterval(() => {
-          if (messageIndex < messages.length) {
-            setButtonText(messages[messageIndex]);
-            messageIndex++;
-          } else {
-            clearInterval(intervalId);
-          }
-        }, 5000)
-      );
-
-      await asyncTimeout(180000); // wait for 3 minutes
-      if (!info?.running) {
-        toast({
-          title: "Failed to start",
-          description: "Please try starting the node again.",
-          variant: "destructive",
-        });
-      }
     } catch (error) {
       handleRequestError(toast, "Failed to connect", error);
-    } finally {
       setLoading(false);
       setButtonText("Login");
       setUnlockPassword("");
