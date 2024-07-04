@@ -15,9 +15,7 @@ import { request } from "src/utils/request";
 export function SetupFinish() {
   const navigate = useNavigate();
   const { nodeInfo, unlockPassword } = useSetupStore();
-  // we use this only for polling
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: _ } = useInfo(true);
+  useInfo(true); // poll the info endpoint to auto-redirect when app is running
   const { data: csrf } = useCSRF();
   const [loading, setLoading] = React.useState(false);
   const [connectionError, setConnectionError] = React.useState(false);

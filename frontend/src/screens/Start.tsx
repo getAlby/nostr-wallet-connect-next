@@ -22,9 +22,7 @@ export default function Start() {
   const [unlockPassword, setUnlockPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [buttonText, setButtonText] = React.useState("Login");
-  // we use this only for polling
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: _ } = useInfo(true);
+  useInfo(true); // poll the info endpoint to auto-redirect when app is running
   const { data: csrf } = useCSRF();
   const { toast } = useToast();
 
