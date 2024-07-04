@@ -7,10 +7,17 @@ import { LoadingButton } from "src/components/ui/loading-button";
 import { useToast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
-import { startupMessages as messages } from "src/types";
 import { asyncTimeout } from "src/utils/asyncTimeout";
 import { handleRequestError } from "src/utils/handleRequestError";
 import { request } from "src/utils/request";
+
+const messages: string[] = [
+  "Unlocking",
+  "Starting the wallet",
+  "Connecting to the network",
+  "Syncing",
+  "Still syncing, please wait...",
+];
 
 export default function Start() {
   const [unlockPassword, setUnlockPassword] = React.useState("");
