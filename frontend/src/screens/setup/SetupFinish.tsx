@@ -9,7 +9,6 @@ import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
 import useSetupStore from "src/state/SetupStore";
 import { SetupNodeInfo } from "src/types";
-import { asyncTimeout } from "src/utils/asyncTimeout";
 import { handleRequestError } from "src/utils/handleRequestError";
 import { request } from "src/utils/request";
 
@@ -32,6 +31,15 @@ export function SetupFinish() {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!info?.running) {
+        setConnectionError(true);
+      }
+    }, 180000);
+    return () => clearTimeout(timer);
+  }, [info?.running]);
+
+  useEffect(() => {
     // ensure setup call is only called once
     if (!csrf || hasFetchedRef.current) {
       return;
@@ -40,17 +48,12 @@ export function SetupFinish() {
 
     (async () => {
       const succeeded = await finishSetup(csrf, nodeInfo, unlockPassword);
-      if (succeeded) {
-        // only setup call is successful as start is async
-        await asyncTimeout(180000); // wait for 3 minutes
-        if (!info?.running) {
-          setConnectionError(true);
-        }
-      } else {
+      // only setup call is successful as start is async
+      if (!succeeded) {
         setConnectionError(true);
       }
     })();
-  }, [csrf, nodeInfo, info, navigate, unlockPassword]);
+  }, [csrf, nodeInfo, navigate, unlockPassword]);
 
   if (connectionError) {
     return (

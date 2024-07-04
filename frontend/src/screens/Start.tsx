@@ -7,7 +7,6 @@ import { LoadingButton } from "src/components/ui/loading-button";
 import { useToast } from "src/components/ui/use-toast";
 import { useCSRF } from "src/hooks/useCSRF";
 import { useInfo } from "src/hooks/useInfo";
-import { asyncTimeout } from "src/utils/asyncTimeout";
 import { handleRequestError } from "src/utils/handleRequestError";
 import { request } from "src/utils/request";
 
@@ -23,9 +22,32 @@ export default function Start() {
   const [unlockPassword, setUnlockPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
   const [buttonText, setButtonText] = React.useState("Login");
+  const [intervalId, setIntervalId] = React.useState<
+    NodeJS.Timeout | undefined
+  >();
+  const [timeoutId, setTimeoutId] = React.useState<
+    NodeJS.Timeout | undefined
+  >();
   const { data: csrf } = useCSRF();
   const { data: info } = useInfo(true);
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  });
+
+  async function asyncTimeout(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeoutId(setTimeout(resolve, ms));
+    });
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,15 +69,16 @@ export default function Start() {
       });
 
       let messageIndex = 1;
-      const intervalId = setInterval(() => {
-        // we don't check for info.running as HomeRedirect takes care of it
-        if (messageIndex < messages.length) {
-          setButtonText(messages[messageIndex]);
-          messageIndex++;
-        } else {
-          clearInterval(intervalId);
-        }
-      }, 5000);
+      setIntervalId(
+        setInterval(() => {
+          if (messageIndex < messages.length) {
+            setButtonText(messages[messageIndex]);
+            messageIndex++;
+          } else {
+            clearInterval(intervalId);
+          }
+        }, 5000)
+      );
 
       await asyncTimeout(180000); // wait for 3 minutes
       if (!info?.running) {
